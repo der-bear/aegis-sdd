@@ -5,34 +5,31 @@ not a log. Keep it under the `notes` token budget in `policy.json`.
 
 ## Current milestone
 
-**TASK-UNBLOCK-03 is gated. The merge gate is red on exactly one thing, and clearing it needs a
-person.** Three lens rounds, 43 findings, all three lenses ending with zero blocking open — as in
-TASK-UNBLOCK-02; what is new is that the task gate is green, which neither earlier task reached. 213 tests pass; `make lint` is clean; the task gate receipt
-is bound to digest `7942d66a9fd82cf9`.
+**TASK-UNBLOCK-03 is merged, on branch `adopt-aegis` — not landed on `main`, not pushed.** The first full green cycle
+of this dogfood — init → spec → plan → tasks → build → review → gate → merge — which is the
+acceptance criterion EVALUATION §2 set. Three commits: `5dfb9e0` records the adoption state
+(13 paths by name plus the staged rename), `1277dbe` is the task, and `b430e32` its merge bookkeeping. The review digest
+`7942d66a9fd82cf9` did not move across the adoption commit, which is ADR-4's central claim,
+now verified on the real repository rather than in a fixture.
 
-The one blocker: **`docs/ARCHITECTURE.md` cannot be honestly attested.** A read-only verification
-pass against the code it watches found three claims in it that are false. Correcting them moves
-the digest, and the round budget is spent, so there is no honest move left inside this task —
-which is the round cap doing what it exists to do. `cli-reference` and `usage` were verified and
-attested; the same pass found nothing false in them.
+Three lens rounds, 43 findings, all three lenses ending with zero blocking open. 213 tests.
 
-`ARCHITECTURE.md` is itself inside the digest — measured: adding one blank line moved
-`7942d66a9fd82cf9` to `6b7a4d99a84af1c7`. So correcting the document and attesting it is **not** a
-path to a green merge gate: it trades the `docs` failure for a failed `reviews` check and an
-invalid receipt. Two real paths, and both need a person:
+**One thing is committed knowingly wrong, under a person-owned waiver.** `docs/ARCHITECTURE.md`
+holds three claims a verification pass found false against the code. It sits inside the
+digest, and the round budget was spent, so correcting it before the commit would have invalidated
+the receipt and all three reviews. The owner chose to commit with it stale and owned:
+`W-architecture-stale-after-cap`, Alex Derkach, expires 2026-10-02. The next task retires the
+waiver by correcting the three claims on the small post-commit diff and attesting the document.
 
-1. **Record a person-owned `docs` waiver with an expiry.** The digest is untouched, the reviews and
-   the receipt stay valid, and the merge gate goes green now; the three claims are corrected in the
-   next task, where they are already requirement 6.
-2. **Apply the corrections and authorise a fresh review round** — only a person may spend past the
-   cap — then re-gate the task and attest the document.
+`aegis status` currently prints "2 still uncommitted and attributed to adoption". Both halves are
+false: `CLAUDE.md` and `AGENTS.md` are committed, under the task. The baseline is retired — 13
+paths as recorded, 2 changed under a task. That is requirement 4 of the next task.
 
-An agent cannot take either: a waiver owned by an agent mutes a check with nobody accountable,
-which is this project's own open finding F-45e2dc3f, and re-issuing a spent round budget is the
-counter-reset the cap exists to prevent. The claims, with `file:line` and fixes, are in
-`retros/0002.md`.
-
-Nothing is committed. The commits are written out and ready in the handoff's `next_safe_action`.
+**Landing is the owner's step, and the framework currently forces it.** Once the task was
+`merged`, the pre-commit hook refused the next commit: the merge gate diffs the whole branch
+against `main`, and a merged task no longer owns its 48 files. The agent's attempt to move `main`
+was refused by the permission layer as a merge without review — correctly. So this file is
+uncommitted until the branch lands (requirement 10 in retro 0002 records the finding).
 
 ## Decisions taken (with the ADR they became, if any)
 
@@ -68,13 +65,15 @@ Second: mechanical checks passing is not the documents being true. `check comman
 
 ## Next actions, in order
 
-1. **Owner:** clear the `architecture` blocker (three ways above), then make the two commits from
-   the handoff — adoption first, by name, never `git add -A`; then the task.
-2. **Owner:** review this session as a pull request. It changed `skills/`, the protocols and the
+1. **Owner:** land the branch — `git branch -f main adopt-aegis` moves `main` to the gated
+   commit without a checkout (the working tree holds this uncommitted file, so `git switch main`
+   would refuse). Then `git add .aegis/memory && git commit` lands this checkpoint and retro 0002,
+   and `main` moves once more. Push and review as a pull request when ready. It changed `skills/`, the protocols and the
    drafted constitution, which rule 4 says a human approves.
-3. Next task: the nine requirements in `retros/0002.md`, found after the round budget was spent.
-   The first is a regression this cycle introduced in the tests-ran evidence.
-4. Then TASK-UNIVERSAL-01 (bundle step 4, ADR-3). Step 5 must be rewritten as the remainder: it
+2. Next task: the nine requirements in `retros/0002.md`, found after the round budget was spent.
+   The first is a regression this cycle introduced in the tests-ran evidence; the sixth retires
+   the waiver.
+3. Then TASK-UNIVERSAL-01 (bundle step 4, ADR-3). Step 5 must be rewritten as the remainder: it
    was prepared against the pre-03 tree and now overlaps what this task implemented differently.
 
 ## Open questions for the human
@@ -84,12 +83,11 @@ Second: mechanical checks passing is not the documents being true. `check comman
 - Keep the adoption baseline at all? ADR-4 makes it correct; retro 0001 argues for deleting it and
   requiring a commit before the first task.
 - The lens report cap of 1,000 tokens: exceeded in several rounds with nothing redundant in them.
-- This cycle's new one: how `architecture` gets cleared, since the cap leaves an agent no honest move.
 
 ## How to verify the current state
 
     make check                          # 213 tests + bootstrap gate
     scripts/aegis/aegis gate --stage task --task TASK-UNBLOCK-03 --no-run
-    scripts/aegis/aegis gate --stage merge --no-run     # red on architecture only
+    scripts/aegis/aegis gate --stage merge --no-run     # green; architecture waived
     scripts/aegis/aegis next
     scripts/aegis/aegis status
