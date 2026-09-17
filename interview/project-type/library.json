@@ -1,0 +1,22 @@
+{
+  "id": "project-type/library",
+  "extends": "core",
+  "title": "Library or SDK",
+  "questions": [
+    {
+      "id": "q.lib.compat",
+      "ask": "What is the public API compatibility promise?",
+      "kind": "single",
+      "options": [
+        "semver-strict",
+        "semver-loose",
+        "pre-1.0"
+      ],
+      "default": "semver-strict",
+      "writes": "standards.compatibility",
+      "autonomy": "auto-default",
+      "severity": "blocking",
+      "rationale": "For a library the public surface is the product; this sets what counts as a breaking change."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "project-type/stateful",
+  "extends": "core",
+  "title": "Stateful or embedded system",
+  "questions": [
+    {
+      "id": "q.state.recovery",
+      "ask": "What must survive a restart?",
+      "kind": "free",
+      "default": "in-flight work is resumed from persisted state",
+      "writes": "standards.recovery",
+      "autonomy": "auto-default",
+      "severity": "blocking",
+      "rationale": "Recovery expectations decide the state machine, and the state machine is the documentation profile's required diagram."
+    }
+  ]
+}

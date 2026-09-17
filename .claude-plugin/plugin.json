@@ -1,0 +1,10 @@
+{
+  "name": "aegis",
+  "version": "1.0.0",
+  "description": "Spec-driven development framework for agent teams: generated delegation packets, exclusive write leases, read-only review lenses, and deterministic staged gates.",
+  "author": {
+    "name": "Alex Derkach"
+  },
+  "keywords": ["sdd", "spec-driven", "multi-agent", "orchestration", "gates", "registries"],
+  "license": "MIT"
+}

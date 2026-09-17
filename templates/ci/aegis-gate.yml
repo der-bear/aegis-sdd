@@ -1,0 +1,46 @@
+# Copy to .github/workflows/ to make the merge invariant a property of the repository
+# rather than something every agent has to cooperate with.
+#
+# The commit hook is per-machine and per-agent; this runs on the candidate merge commit no
+# matter who produced it, which is the only place the invariant actually holds.
+name: aegis gate
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the gate diffs against the base; a shallow clone has nothing to diff
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Set AEGIS_REPO in the repository or organisation variables. Left unset, this step
+      # fails loudly rather than cloning a placeholder that does not exist — a CI job that
+      # silently skips the gate is worse than one that never ran.
+      - name: Install Aegis
+        env:
+          AEGIS_REPO: ${{ vars.AEGIS_REPO }}
+          AEGIS_REF: ${{ vars.AEGIS_REF }}
+        run: |
+          test -n "$AEGIS_REPO" || {
+            echo "Set the AEGIS_REPO repository variable to the Aegis checkout URL." >&2
+            exit 1
+          }
+          # Pin the version. Tracking the default branch means someone else's release can
+          # turn this project red on a commit that changed nothing here.
+          git clone --depth 1 --branch "${AEGIS_REF:-main}" "$AEGIS_REPO" "$RUNNER_TEMP/aegis"
+          "$RUNNER_TEMP/aegis/install.sh" "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Set up whatever the project's own commands need — services, toolchains, caches —
+      # before this step. The gate runs them; it does not provision them.
+      - name: Gate
+        run: aegis gate --stage merge

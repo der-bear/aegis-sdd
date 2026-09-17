@@ -1,0 +1,37 @@
+{
+  "id": "project-type/web-saas",
+  "extends": "project-type/api-service",
+  "title": "Web SaaS",
+  "questions": [
+    {
+      "id": "q.web.tenancy",
+      "ask": "What is the tenancy model?",
+      "kind": "single",
+      "options": [
+        "single-tenant",
+        "multi-tenant-shared-db",
+        "multi-tenant-isolated"
+      ],
+      "writes": "standards.tenancy",
+      "autonomy": "always-ask",
+      "severity": "blocking",
+      "rationale": "Never auto-answered: it shapes every table and query, and reversing it later is a migration project rather than a change."
+    },
+    {
+      "id": "q.web.frontend",
+      "ask": "What is the frontend model?",
+      "kind": "single",
+      "options": [
+        "spa",
+        "ssr",
+        "hybrid"
+      ],
+      "default": "spa",
+      "detect": "frontend_model",
+      "writes": "doc_profile.frontend_model",
+      "autonomy": "auto-if-detected:0.8",
+      "severity": "optional",
+      "rationale": "Sets the boundary between frontend and backend build leases."
+    }
+  ]
+}

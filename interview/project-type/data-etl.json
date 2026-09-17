@@ -1,0 +1,36 @@
+{
+  "id": "project-type/data-etl",
+  "extends": "core",
+  "title": "Data pipeline",
+  "questions": [
+    {
+      "id": "q.data.pii",
+      "ask": "Does this pipeline carry personal data?",
+      "kind": "single",
+      "options": [
+        "yes",
+        "no",
+        "unsure"
+      ],
+      "writes": "policy.pii",
+      "autonomy": "always-ask",
+      "severity": "blocking",
+      "rationale": "Never auto-answered. A yes makes the security lens blocking on every task touching the data path."
+    },
+    {
+      "id": "q.data.schema-evolution",
+      "ask": "How do source schemas evolve?",
+      "kind": "single",
+      "options": [
+        "contract-tests",
+        "versioned-schemas",
+        "manual"
+      ],
+      "default": "contract-tests",
+      "writes": "standards.schema_evolution",
+      "autonomy": "auto-default",
+      "severity": "blocking",
+      "rationale": "Upstream schema drift is the main cause of pipelines that fail quietly rather than loudly."
+    }
+  ]
+}

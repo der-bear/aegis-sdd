@@ -1,0 +1,107 @@
+{
+  "id": "core",
+  "title": "Core configuration",
+  "description": "Asked for every project. Everything here has a configuration consequence; a question that changes nothing is deleted, not kept for colour.",
+  "questions": [
+    {
+      "id": "q.core.mode",
+      "ask": "How should initialisation run?",
+      "kind": "single",
+      "options": ["interactive", "hybrid", "autonomous"],
+      "default": "hybrid",
+      "writes": "policy.mode",
+      "autonomy": "auto-default",
+      "severity": "blocking",
+      "rationale": "Decides how much you are asked. The --mode flag overrides this."
+    },
+    {
+      "id": "q.core.profile",
+      "ask": "Which framework profile fits this project?",
+      "kind": "single",
+      "options": ["S", "M", "L"],
+      "default": "S",
+      "detect": "repo_size",
+      "writes": "policy.profile",
+      "autonomy": "auto-if-detected:0.7",
+      "severity": "blocking",
+      "rationale": "S is one agent and two registries; L is the full roster. Starting at L on a small project makes the framework the bottleneck it exists to remove."
+    },
+    {
+      "id": "q.core.project-type",
+      "ask": "What kind of system is this?",
+      "kind": "single",
+      "options": ["api-service", "web-saas", "data-etl", "library", "stateful"],
+      "default": "api-service",
+      "detect": "project_type",
+      "writes": "doc_profile.kind",
+      "autonomy": "auto-if-detected:0.8",
+      "severity": "blocking",
+      "rationale": "Selects the documentation profile and the question packs that follow."
+    },
+    {
+      "id": "q.core.autonomy-limits",
+      "ask": "Which decisions may agents take without asking you?",
+      "kind": "multi",
+      "options": ["code-style", "internal-refactors", "new-dependencies", "schema-changes", "public-contracts"],
+      "default": ["code-style", "internal-refactors"],
+      "writes": "policy.autonomy_limits",
+      "autonomy": "always-ask",
+      "severity": "blocking",
+      "rationale": "This is the escalation boundary every builder is held to. It is the one setting worth your attention even in a hurry."
+    },
+    {
+      "id": "q.core.testing",
+      "ask": "What is the testing mandate?",
+      "kind": "single",
+      "options": ["strict-tdd", "tests-with-code", "critical-paths-only"],
+      "default": "tests-with-code",
+      "writes": "policy.testing_mandate",
+      "autonomy": "auto-default",
+      "severity": "blocking",
+      "rationale": "Changes the builder protocol and what the task gate demands."
+    },
+    {
+      "id": "q.core.nfr",
+      "ask": "Rank the non-functional priorities that should decide close calls.",
+      "kind": "scale",
+      "options": ["delivery-speed", "performance", "security", "compatibility", "operability"],
+      "default": ["delivery-speed", "security"],
+      "writes": "policy.nfr_priorities",
+      "autonomy": "always-ask",
+      "severity": "blocking",
+      "rationale": "These are the comparison criteria for architecture options and the focus order for review lenses. Without them the agent invents its own."
+    },
+    {
+      "id": "q.core.lens-strictness",
+      "ask": "How strict should automated review be?",
+      "kind": "single",
+      "options": ["minimal", "standard", "strict"],
+      "default": "standard",
+      "writes": "policy.lens_strictness",
+      "autonomy": "auto-default",
+      "severity": "deferrable:phase2",
+      "rationale": "Picks the lens matrix. Strict roughly doubles review cost per task."
+    },
+    {
+      "id": "q.core.commands",
+      "ask": "How are this project's packages tested, linted and built?",
+      "kind": "free",
+      "default": {},
+      "detect": "packages",
+      "writes": "capabilities.packages",
+      "autonomy": "auto-if-detected:0.6",
+      "severity": "blocking",
+      "rationale": "The gate runs exactly these commands. A monorepo declares one entry per package so a task only pays for what it touched."
+    },
+    {
+      "id": "q.core.frozen",
+      "ask": "Which paths must agents never modify?",
+      "kind": "free",
+      "default": [],
+      "writes": "standards.frozen_zones",
+      "autonomy": "always-ask",
+      "severity": "blocking",
+      "rationale": "Copied into the constitution and enforced by the write-lease check. Empty is a valid answer for a greenfield project."
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "context/brownfield",
+  "title": "Existing codebase",
+  "description": "Loaded when detection finds an existing codebase. The theme throughout: inherit debt as an explicit baseline rather than pretending the repository was always this way.",
+  "questions": [
+    {
+      "id": "q.ctx.frozen",
+      "ask": "Which parts of the existing code are off limits?",
+      "kind": "free",
+      "default": [],
+      "writes": "standards.frozen_zones",
+      "autonomy": "always-ask",
+      "severity": "blocking",
+      "rationale": "Becomes a hard boundary on every write lease. Legacy that nobody understands belongs here."
+    },
+    {
+      "id": "q.ctx.baseline",
+      "ask": "How should existing violations be treated?",
+      "kind": "single",
+      "options": [
+        "ratchet-from-today",
+        "fix-before-adopting"
+      ],
+      "default": "ratchet-from-today",
+      "writes": "policy.legacy_baseline",
+      "autonomy": "auto-default",
+      "severity": "blocking",
+      "rationale": "Ratcheting scopes every check to the diff, so adopting the framework does not turn the whole repository red on day one."
+    }
+  ]
+}

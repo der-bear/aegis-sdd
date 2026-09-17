@@ -1,0 +1,41 @@
+{
+  "id": "project-type/api-service",
+  "extends": "core",
+  "title": "API service",
+  "questions": [
+    {
+      "id": "q.api.errors",
+      "ask": "What error envelope do responses use?",
+      "kind": "single",
+      "options": ["problem+json", "custom"],
+      "default": "problem+json",
+      "detect": "error_format",
+      "writes": "standards.api_errors",
+      "autonomy": "auto-if-detected:0.8",
+      "severity": "deferrable:phase2",
+      "rationale": "Keeps error contracts consistent across builders working in parallel."
+    },
+    {
+      "id": "q.api.schema-evolution",
+      "ask": "How may request and response contracts change?",
+      "kind": "single",
+      "options": ["contract-tests", "versioned-schemas", "manual"],
+      "default": "contract-tests",
+      "writes": "standards.schema_evolution",
+      "autonomy": "auto-default",
+      "severity": "blocking",
+      "rationale": "The single largest source of silent breakage between services."
+    },
+    {
+      "id": "q.api.diagram-tool",
+      "ask": "Which diagram toolchain?",
+      "kind": "single",
+      "options": ["mermaid", "structurizr"],
+      "default": "mermaid",
+      "writes": "doc_profile.diagram_tool",
+      "autonomy": "auto-default",
+      "severity": "optional",
+      "rationale": "Mermaid renders anywhere and diffs cleanly; Structurizr is worth its extra tool only when C4 levels must stay consistent by construction."
+    }
+  ]
+}
