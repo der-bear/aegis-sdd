@@ -64,10 +64,10 @@
   ],
   "risk_tier": "C",
   "size": "L",
-  "status": "gated",
+  "status": "merged",
   "supersedes": [
     "TASK-UNBLOCK-01",
     "TASK-UNBLOCK-02"
   ],
-  "updated": "2026-09-17T23:35:05"
+  "updated": "2026-09-18T01:50:10"
 }

@@ -15,3 +15,4 @@
 {"at": "2026-09-18T01:27:31", "event": "gate", "failing_checks": [], "passed": true, "seconds": 3.8, "stage": "task", "task": "TASK-UNBLOCK-03"}
 {"at": "2026-09-18T01:33:58", "event": "gate", "failing_checks": ["handoff"], "passed": false, "seconds": 12.2, "stage": "task", "task": "TASK-UNBLOCK-03"}
 {"at": "2026-09-18T01:34:26", "event": "gate", "failing_checks": [], "passed": true, "seconds": 7.9, "stage": "task", "task": "TASK-UNBLOCK-03"}
+{"at": "2026-09-18T01:50:10", "event": "status", "task": "TASK-UNBLOCK-03", "value": "merged"}
