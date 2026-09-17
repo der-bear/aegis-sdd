@@ -1,0 +1,154 @@
+{
+  "diff_digest": "7942d66a9fd82cf9",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: core.py:471-472 drops records under `.aegis/`/`.agents/`; a widening can no longer exempt answers.json, so the trace warn at checks.py:546 and the digest still cover it",
+      "first_seen_round": 1,
+      "id": "F-3207b898",
+      "line": 444,
+      "message": "`_pre_adoption_files` trusts `capabilities.baseline.files` verbatim (config.py:575-577 copies `answers.detected.baseline` with no validation) and applies no key filter, although the recorder at scaffold.py:149 excludes `.aegis/`. A shell write to answers.json plus `aegis compile` baselines arbitrary paths at their current hashes — including `.aegis/answers.json` itself — which drops them from `changed_files`, hence from `diff_digest` and every lens diff, so the compensating control the code claims at checks.py:537-542 (warn plus digest invalidation) never fires and the widening conceals itself.",
+      "minimal_fix": "drop baseline keys under `.aegis/`/`.agents/` at core.py:444, mirroring scaffold.py:149",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: checks.py:536-543 fails on every scope path inside a frozen zone before the framework-owned skip, so a zone under `.aegis/` is no longer exempt; only the case-folding gap above remains",
+      "first_seen_round": 1,
+      "id": "F-16447792",
+      "line": 582,
+      "message": "`check_trace` skips every path under `.aegis/` unconditionally and never reads `frozen_zones`, so a project that freezes `.aegis/standards/**` or `.aegis/constitution.md` — the paths this project's own rules protect — gets no trace failure when a shell edit lands there. R-23 requires that trace not exempt a change inside a frozen zone; the R-23 test only exercises `vendor/**`, outside `.aegis/`, so the gap is untested.",
+      "minimal_fix": "before the `.aegis/`/shared skip, keep any path matching `standards.json.frozen_zones` as a failure",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-23",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:31:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 3: core.py:407-411 keys mode 120000 as `symlink:<target>`; probed: a regular file holding the bytes `symlink:real.py`, a forged 100644 index entry with those bytes, and a staged 120000 repoint all stay in scope while the committed link is exempt (tests/test_aegis.py:2435-2455 pass)",
+      "first_seen_round": 2,
+      "id": "F-1a0f5daa",
+      "line": 398,
+      "message": "`content_key` records a symlink as `symlink:<target>` (core.py:389, scaffold.py:159) but `_digest_at` and `_digest_in_index` sha256 the blob bytes, so a baselined symlink can never equal its record at HEAD or in the index: after the adoption commit `_is_adoption_state` compares `symlink:real.py` against a 64-hex digest and returns False. The path therefore stays in the scope of every task based before that commit and `status` never reports the baseline retired - the deadlock ADR-4 section 5 exists to remove, for any tree holding an uncommitted symlink at adoption; tests never commit the link.",
+      "minimal_fix": "in both digest helpers return `\"symlink:\" + blob` when git reports mode 120000 for the path",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "9fb58e7a46f76666",
+      "requirement": "R-27",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: core.py:388-395 keys a link by its target and both recorder and comparison call it; the new asymmetry against the git-blob digests is filed above as a separate defect",
+      "first_seen_round": 1,
+      "id": "F-c870a45c",
+      "line": 465,
+      "message": "The content branch uses `os.path.isfile` and `file_sha256`, both of which follow symlinks, while the `absent` branch above correctly uses `lexists`. Replacing a baselined regular file with a symlink to an out-of-repo copy keeps it exempt, so the type change is invisible to scope, trace, the lenses and the review digest until it is staged — undoing the file-vs-symlink guard `diff_digest` applies twenty lines below.",
+      "minimal_fix": "reject `os.path.islink(full)` here, and hash a link as its `readlink` bytes in scaffold.py:159 so a path baselined as a symlink still matches",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: scaffold.py:171 stamps `absent_recorded` at record time and 213 returns before any backfill when it is set, 236 sets it after completing one",
+      "first_seen_round": 1,
+      "id": "F-f5cfe549",
+      "line": 213,
+      "message": "Nothing restricts the backfill to a baseline recorded before absences existed: R-27 and ADR-4 allow completing only a baseline that predates the absent record, but every `aegis migrate` re-runs against the current index. A rename staged after adoption whose destination is a baselined path with unchanged content records the source as `absent`, so that path's removal becomes attributed to adoption and invisible to every task's scope; the pairing proves current git similarity, not adoption-time absence.",
+      "minimal_fix": "stamp the baseline `absent_recorded: true` when recorded or completed, and return [] when it is set",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: checks.py:837-842 now skips only prose suffixes, so a candidate carrying a lockfile or config counts as code and still owes the profile's diagrams",
+      "first_seen_round": 1,
+      "id": "F-327268d8",
+      "line": 829,
+      "message": "`_carries_code` classifies `.json`, `.yml`, `.toml` and `.lock` as not code, so a closing candidate whose only non-prose change is a lockfile or a config-only feature downgrades the profile's required diagrams from a failure to a warning. That contradicts `check_trace`'s own reasoning, which refuses to treat lockfiles as generated because they record which code will actually run.",
+      "minimal_fix": "treat lockfiles and non-`.aegis/` config as code in `_carries_code`, or gate the relaxation on an empty scope outside framework paths",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": null,
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:31:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 3: checks.py:539-541 folds both sides as flow.py:260 does, and `test_the_gate_folds_a_frozen_zone_the_way_the_lease_does` passes",
+      "first_seen_round": 2,
+      "id": "F-a756928a",
+      "line": 538,
+      "message": "The new frozen-zone failure matches the raw path, while `lease_violation` case-folds both sides for exactly this reason (flow.py:258). A zone whose spelling differs in case from the path git reports is refused to a Claude Code write and passed by the gate check R-23 names, so the two implementations of one rule disagree; git reports on-disk spellings, so I have no demonstrated path.",
+      "minimal_fix": "match `rel.lower()` against lower-cased zones, as `lease_violation` does",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "9fb58e7a46f76666",
+      "requirement": "R-23",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-a5843574",
+      "line": 411,
+      "message": "`content_key` and `_git_key` both drop the mode of a regular file, so `chmod +x` on a baselined path stays attributed to adoption in the tree, the index and at HEAD (probed: staged mode 100755 and its commit are absent from `changed_files`, `staged_files` and the digest). `diff_digest` says itself that an exec bit changes what runs without changing a byte, but R-27 attributes by content and is silent on mode, so this is a design question, not a broken control.",
+      "minimal_fix": "key mode 100755 and an executable file as `exec:<sha256>` in both helpers, still accepting a bare hash for baselines already recorded",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "7942d66a9fd82cf9",
+      "requirement": null,
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "security",
+  "recorded": "2026-09-17T23:31:02",
+  "reopened": [],
+  "report_tokens": 443,
+  "reviewer": "lens-security-r3 (fresh general-purpose subagent, claude-fable-5.1, round 3)",
+  "round": 3,
+  "task": "TASK-UNBLOCK-03",
+  "verdict": "pass-with-notes"
+}

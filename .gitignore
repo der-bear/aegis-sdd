@@ -1,0 +1,6 @@
+# Compiled bytecode is not source, and it was reaching the diff every lens read.
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store

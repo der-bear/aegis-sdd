@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Aegis SDD command line. Zero dependencies beyond Python 3.9+.
+#
+# The symlink dance matters: `install.sh` links this into ~/.local/bin, and resolving
+# BASH_SOURCE without following the link pointed the interpreter at ~/.local/bin/aegis_cli,
+# which does not exist. The documented installation could not run a single command.
+set -euo pipefail
+
+target="${BASH_SOURCE[0]}"
+while [ -L "$target" ]; do
+  link="$(readlink "$target")"
+  case "$link" in
+    /*) target="$link" ;;
+    *)  target="$(cd "$(dirname "$target")" && pwd)/$link" ;;
+  esac
+done
+here="$(cd "$(dirname "$target")" && pwd)"
+
+exec python3 -B "$here/aegis_cli/__main__.py" "$@"

@@ -1,0 +1,38 @@
+# The framework's own gate, running on the framework's own repository.
+#
+# This is the barrier the local hooks are not: `git commit --no-verify` skips a git hook, and a
+# Claude Code hook only sees what Claude Code runs. This job sees the candidate no matter who
+# produced it, which is the only place the merge invariant actually holds.
+#
+# The commit hook is per-machine and per-agent; this runs on the candidate merge commit no
+# matter who produced it, which is the only place the invariant actually holds.
+name: aegis gate
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the gate diffs against the base; a shallow clone has nothing to diff
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # This repository is the framework, so it installs itself rather than cloning a copy.
+      # An adopting project uses templates/ci/aegis-gate.yml, which clones a pinned ref.
+      - name: Install Aegis
+        run: |
+          ./install.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Set up whatever the project's own commands need — services, toolchains, caches —
+      # before this step. The gate runs them; it does not provision them.
+      - name: Gate
+        run: aegis gate --stage merge

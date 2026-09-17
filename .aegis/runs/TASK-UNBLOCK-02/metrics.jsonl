@@ -1,0 +1,15 @@
+{"at": "2026-09-17T16:54:26", "event": "status", "task": "TASK-UNBLOCK-02", "value": "building"}
+{"at": "2026-09-17T16:54:27", "event": "packet", "risk_tier": "A", "task": "TASK-UNBLOCK-02", "tokens": 2399}
+{"at": "2026-09-17T17:05:55", "event": "gate", "failing_checks": ["env", "reviews", "trace"], "passed": false, "seconds": 3.0, "stage": "task", "task": "TASK-UNBLOCK-02"}
+{"at": "2026-09-17T17:08:29", "event": "gate", "failing_checks": ["reviews", "trace"], "passed": false, "seconds": 4.4, "stage": "task", "task": "TASK-UNBLOCK-02"}
+{"at": "2026-09-17T17:44:33", "blocking": 3, "event": "lens", "findings": 6, "lens": "correctness", "round": 1, "task": "TASK-UNBLOCK-02", "verdict": "fail"}
+{"at": "2026-09-17T17:48:43", "blocking": 2, "event": "lens", "findings": 6, "lens": "design", "round": 1, "task": "TASK-UNBLOCK-02", "verdict": "fail"}
+{"at": "2026-09-17T17:49:20", "blocking": 1, "event": "lens", "findings": 3, "lens": "security", "round": 1, "task": "TASK-UNBLOCK-02", "verdict": "fail"}
+{"at": "2026-09-17T21:10:10", "blocking": 0, "event": "lens", "findings": 0, "lens": "security", "round": 2, "task": "TASK-UNBLOCK-02", "verdict": "pass"}
+{"at": "2026-09-17T21:13:32", "blocking": 0, "event": "lens", "findings": 1, "lens": "correctness", "round": 2, "task": "TASK-UNBLOCK-02", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T21:14:08", "blocking": 0, "event": "lens", "findings": 3, "lens": "design", "round": 2, "task": "TASK-UNBLOCK-02", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T21:25:36", "blocking": 0, "event": "lens", "findings": 2, "lens": "security", "round": 3, "task": "TASK-UNBLOCK-02", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T21:25:44", "blocking": 0, "event": "lens", "findings": 0, "lens": "correctness", "round": 3, "task": "TASK-UNBLOCK-02", "verdict": "pass"}
+{"at": "2026-09-17T21:26:49", "blocking": 0, "event": "lens", "findings": 4, "lens": "design", "round": 3, "task": "TASK-UNBLOCK-02", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T21:31:27", "event": "gate", "failing_checks": ["reviews", "trace"], "passed": false, "seconds": 4.1, "stage": "task", "task": "TASK-UNBLOCK-02"}
+{"at": "2026-09-17T22:00:42", "event": "status", "task": "TASK-UNBLOCK-02", "value": "abandoned"}

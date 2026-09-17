@@ -1,0 +1,271 @@
+{
+  "diff_digest": "dfba5dd9e9494022",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:40:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Per-lens list from reviews/${lens}.json; prints only that lens's ids.",
+      "first_seen_round": 1,
+      "id": "F-2adb7625",
+      "line": 147,
+      "message": "The refine loop hands every lens the same prior-finding list built from reviews/*.json (all lenses), then instructs each lens that 'every open prior finding must appear' in its reconciled list. `aegis lens record` rejects an id the recording lens never raised (verified: a correctness report reconciling a security id exits 2 with 'never raised'). Consequence: in any refinement round where at least one lens has a finding, every other lens's re-record is rejected, its record stays on the old digest, check_reviews fails 'did not review this version', and the loop burns rounds without converging — the spec's user scenario (reach a green task gate without hand-editing) cannot complete. The workflow tests only grep for strings, so this path is unexercised.",
+      "minimal_fix": "Build `prior` inside the per-lens map from `.aegis/runs/${task}/reviews/${lens}.json` only, so each lens is handed only its own ids.",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-57c5beb7",
+      "line": 368,
+      "message": "Tokens are not checked for shell expansions or git's abbreviated options: `git commit -qm \"$(git commit -qam w)\" -- .aegis/runs/T-1` and `git commit --inc -qm m -- .aegis/runs/T-1` are exempt. Through the real hook both exited 0 and lib code was committed.",
+      "minimal_fix": "Exempt only the exact workflow command, matched by a strict regex.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-14",
+      "rounds": [
+        3
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-6d1d7e2e",
+      "line": 25,
+      "message": "The pre-filter needs a bare word `git`, so `\\git commit -qam w`, `/usr/bin/git commit -qam w` and `\"git\" commit -qam w` exit 0 before commit-scope runs. Each committed a product change while the merge gate was red.",
+      "minimal_fix": "Match git by basename after shell unquoting, not a literal word.",
+      "path": "hooks/pre-commit-gate.sh",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-14",
+      "rounds": [
+        3
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:19:44",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: Clean tree records files {}; migrate, init and init --force kept it.",
+      "first_seen_round": 2,
+      "id": "F-9654c361",
+      "line": 173,
+      "message": "Clean-tree adoption stores `baseline: {}`, read here and at line 240 as unrecorded, so a later migrate or init baselines post-adoption files. An orphan reading SECRET_KEY then vanished from trace and env.",
+      "minimal_fix": "Test key presence, not truthiness, here and at line 240.",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-10",
+      "rounds": [
+        2
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:19:44",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: Newlines split segments; the round-2 input is gate and the hook exited 2.",
+      "first_seen_round": 2,
+      "id": "F-a09d3fc8",
+      "line": 362,
+      "message": "A bare newline lexes as whitespace, so `cd /repo`, newline, `git add x.py && git commit -m y` returns index; with only .aegis/runs staged the hook exited 0.",
+      "minimal_fix": "Split segments on bare newlines.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-14",
+      "rounds": [
+        2
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-c9ec7723",
+      "line": 466,
+      "message": "Exemption checks only current dirtiness and bytes: baselined lib/pay.py, fixed and committed by T-1, then reverted to its adoption bytes, vanished from T-2's scope, trace and diff. R-10 exempts only files still uncommitted since adoption.",
+      "minimal_fix": "Stop exempting a file once any commit since baseline head touches it.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-10",
+      "rounds": [
+        3
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:19:44",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: bash -c and npm segments now gate; hook exited 2.",
+      "first_seen_round": 2,
+      "id": "F-f8741aaf",
+      "line": 419,
+      "message": "Segments beside an exempt-form commit are ignored: `git commit -qm m -- .aegis/runs/T-1 && bash -c 'git add x.py && git commit -qm w'` is exempt. The real hook exited 0 and x.py landed ungated.",
+      "minimal_fix": "Exempt only if every other segment is read-only git or `git add` under .aegis/runs.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-14",
+      "rounds": [
+        2
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:40:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Refreshed at 844 and 926; round-1 probes stay open.",
+      "first_seen_round": 1,
+      "id": "F-5acde346",
+      "line": 868,
+      "message": "The 'code changed since it was raised' check compares against `raised_digest`, which is set once at first raise and never refreshed. Verified: raise at D1, change to D2, lens reconciles `unresolved` at D2 (or re-raises it by identical content at D2), then a second lens run at the same D2 reconciles `resolved` with no code change → disposition becomes `fixed`. R-1's literal wording is met, but the control it describes (code comment: 'a lens cannot resolve a finding the code did not answer'; ARCHITECTURE.md: 'fixed requires the code to have changed') is defeated: re-running a nondeterministic lens on an unchanged tree can clear a blocking finding, which is exactly the route to a green gate the rule exists to close.",
+      "minimal_fix": "Refresh `raised_digest` to the current digest whenever a finding is re-raised by content (line 827) or reconciled `unresolved`, so `changed` means 'changed since the finding was last confirmed present'.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:40:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Transition before focus; refused claim left ACTIVE=T-1.",
+      "first_seen_round": 1,
+      "id": "F-5bf06ae4",
+      "line": 504,
+      "message": "`task_claim` calls `task_focus` before `task_status(building)` can refuse the transition under `parallel_builders`. Verified in a profile-S fixture: with T-1 building, `aegis task claim T-2` exits 2 ('allows 1 task(s) in flight') but leaves `.aegis/runs/ACTIVE` = T-2 while T-2 stays `planned`, so the lease hook now enforces the refused task's lease against the in-flight T-1 builder (its writes under src/orders/** are refused as outside T-2's lease). A refused claim must leave state untouched.",
+      "minimal_fix": "Move `task_focus(ctx, task_id)` after the `task_status(ctx, task_id, \"building\")` call so focus only switches once the transition is accepted.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:19:44",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: Re-raised false-positive kept Alex and reason; reopen sets disposition_by lens.",
+      "first_seen_round": 2,
+      "id": "F-ba4b228e",
+      "line": 840,
+      "message": "Re-raising by content drops disposition_by/reason, so a human false-positive fails 'without a reason' and a human-closed came-back finding fails 'came back' again. Conversely `unresolved` on a human-fixed finding (921) keeps disposition_by: human, so `next` advised a third patch.",
+      "minimal_fix": "Carry disposition_by/reason/at when the disposition is kept; set disposition_by to lens on reopen.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-16",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:19:44",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: Runner passes its own reviews/$lens.json ids with the reconcile instruction.",
+      "first_seen_round": 2,
+      "id": "F-ea48b9d1",
+      "line": 60,
+      "message": "The Codex prompt omits prior ids, so its re-review of a lens with open findings lacks `reconciled` and record refuses it.",
+      "minimal_fix": "Pass the ids from reviews/$lens.json with the reconcile instruction.",
+      "path": "scripts/aegis/codex-lens.sh",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-16",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-0d37ec49",
+      "line": 1029,
+      "message": "`--by correctness`, the lens's own name, cleared a came-back correctness finding; only `lens` and `lens-*` are refused.",
+      "minimal_fix": "Also refuse the record's bare lens name.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-21",
+      "rounds": [
+        3
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:40:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Rejected at 857; probe exited 2.",
+      "first_seen_round": 1,
+      "id": "F-24de666e",
+      "line": 894,
+      "message": "A round-2 report that omits the `reconciled` key entirely falls through to the absence-after-edit heuristic: verified that after a code change an empty `findings` with no `reconciled` marks an open severity-5 finding `fixed` ('not raised again after the change'). The strict 'incomplete reconciliation is rejected' edge case therefore applies only when the lens chooses to include the list; the workflow always asks for it but the recorder cannot tell a model that omitted it from a first-round runner. The spec is silent here (R-1 is conditional on the list being present), so this is advisory.",
+      "minimal_fix": "Optionally add a `--reconcile` flag to `aegis lens record` (set by the workflow's re-review step) that rejects a report without `reconciled` when open prior findings exist.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:40:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Abandoned task printed 'status abandoned'.",
+      "first_seen_round": 1,
+      "id": "F-e164b161",
+      "line": 407,
+      "message": "`task claim` on a task whose status is not `planned` (e.g. `review`, `gated`, `abandoned`) returns and prints 'status building' regardless of the actual status: verified that claiming a task in `review` prints 'claimed T-1: lease enforced, status building' while the manifest still says `review`. The idempotent-on-building case is correct; the message is wrong for every other status and can mislead an orchestrator reading the output.",
+      "minimal_fix": "Return and print the manifest's actual status after the claim (`checks.load_task(...)['status']`) instead of the literal 'building'.",
+      "path": "scripts/aegis/aegis_cli/__main__.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:40:02",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Kinds unioned at 451; packet and plan both tier A.",
+      "first_seen_round": 1,
+      "id": "F-726afc35",
+      "line": 446,
+      "message": "The packet's risk tier comes from declared change kinds only (manifest.change_kinds), while `aegis lens plan` and `check_reviews` use effective kinds (declared ∪ detected). For TASK-UNBLOCK-01 the packet tells the builder 'Risk tier C: mechanical; batched review is acceptable' and records `risk_tier: C` in the packet metric, whereas the plan reports tier A with an independent reviewer required. This is by construction (the packet is generated before a diff exists) and the spec is silent on it; noted only because the two tiers are reported as if they were the same fact.",
+      "minimal_fix": "No change required by the spec; if desired, label the packet's tier as 'declared' so it is not read as the review tier.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-17T16:19:44",
+  "reopened": [],
+  "report_tokens": 841,
+  "reviewer": "lens-correctness",
+  "round": 3,
+  "task": "TASK-UNBLOCK-01",
+  "verdict": "fail"
+}

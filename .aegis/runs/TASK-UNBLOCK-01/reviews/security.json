@@ -1,0 +1,235 @@
+{
+  "diff_digest": "dfba5dd9e9494022",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:26:34",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 3: disposition requires --by and stores it (1033, 1062); _closed_by_a_person rejects lens/builder/framework names (1029)",
+      "first_seen_round": 2,
+      "id": "F-1381c0df",
+      "line": 988,
+      "message": "`aegis lens disposition` stamps `disposition_by: human` for any caller, and the orchestrator's own loop (agents/aegis-orchestrator.md:55) runs that command. After a finding comes back, `aegis lens disposition T F false-positive --reason x` from any agent clears both the second strike and the blocking check, with no waiver or digest guard.",
+      "minimal_fix": "record `--by <who>` instead of asserting `human`, and fail a came-back disposition whose `by` equals the handoff's `agent`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-16",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:45:39",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: push, -a/-p, paths outside .aegis/runs and stage-then-commit now return gate (core.py 337, 351, 404, 418), and the hook test runs them",
+      "first_seen_round": 1,
+      "id": "F-1a888c5b",
+      "line": 34,
+      "message": "The bookkeeping exemption (lines 33-36) reads the index at hook time and exits 0 when every staged path is under .aegis/runs/, but the regex at line 25 also fires on `git push`, and neither `-a`, `--include`, nor a pathspec is checked. `git add .aegis/runs/T && git push` pushes any product commits with the merge gate skipped; `git add .aegis/runs/T && git commit -a -m x` (or `git commit -m x -- src/foo.py`) commits working-tree code the hook never gated. The hook's own stderr (lines 49-50) claims 'nothing else bypasses this gate'; this is an unauthenticated switch anyone can set by staging one run file. Bounded: `merged` still requires a gate receipt, so this defeats the early error, not the merge invariant.",
+      "minimal_fix": "apply the exemption only for `commit` (not `push`) and only when `$flat` contains no `-a`/`--all`/`--include`/`--only` and no pathspec after `--`",
+      "path": "hooks/pre-commit-gate.sh",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-7",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:26:34",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 3: baseline always {head,recorded,files} even empty (scaffold 165); presence checked at 176 and 243, --force included",
+      "first_seen_round": 2,
+      "id": "F-255c7bb4",
+      "line": 173,
+      "message": "A clean adoption stores `detected.baseline = {}`, which migrate (here) and a re-run init (lines 236, 240) treat as never recorded, so either one re-baselines every untracked file outside open leases. Init on a clean tree, add `lib/x.py` with no task, run `aegis migrate`: trace, the env scan, the lens plan, the digest and the commit hook's merge gate all stop seeing it.",
+      "minimal_fix": "treat a present `baseline` key as recorded (also under `--force`) and store `{\"untracked\": {}}` for a clean tree",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-10",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-310ded7e",
+      "line": 37,
+      "message": "protect-paths guards `.aegis/generated/` and the constitution but not `.aegis/answers.json`, which an unfocused agent, or any Bash write, can edit to empty frozen_zones. `aegis compile` then keeps drift green and trace skips `.aegis/`, so the path is unfrozen with no human, defeating lease_violation's own claim (line 257) that only a human unfreezes.",
+      "minimal_fix": "protect answers.json, or fail the gate on agent-made frozen_zones edits",
+      "path": "hooks/protect-paths.sh",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-11",
+      "rounds": [
+        3
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:45:39",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: a re-raise sets raised_digest to the current digest (flow.py 844) and `unresolved` refreshes it (926)",
+      "first_seen_round": 1,
+      "id": "F-3bd0520f",
+      "line": 827,
+      "message": "A prior finding re-raised by content keeps its original `raised_digest` (line 827), but the reconciliation check at 868 (and the implicit path at 898) compares that stale digest against the current one. Round 1 raises F at digest D1; an unrelated edit moves the tree to D2; round 2 re-raises F (same id, still open, raised_digest still D1); round 3 with no further change records `reconciled: [{id: F, followup: resolved}]` -> `changed` is D1 != D2 -> F is marked fixed although the code round 2 confirmed defective is byte-identical. A builder whose 'fix' only touches notes.md/handoff.json (excluded from the digest) plus a lens that says resolved closes a blocking finding with no code change since it was last confirmed present.",
+      "minimal_fix": "on re-raise set `raised_digest` to `payload[\"diff_digest\"]` (last confirmed present), not `prior.get(\"raised_digest\", ...)`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-3c8485a5",
+      "line": 525,
+      "message": "Stage a rename into runs, `git mv src/auth.py .aegis/runs/T/k.py` (no commit word, so nothing runs), then a bare `git commit`. staged_files and working_tree_files report only the new runs path, trace skips `.aegis/`, and the digest excludes runs, so the merge gate runs green while src/auth.py leaves HEAD unowned and unreviewed.",
+      "minimal_fix": "pass --no-renames in staged_files; keep the old path in working_tree_files",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-14",
+      "rounds": [
+        3
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-4ad7cbdd",
+      "line": 314,
+      "message": "commit_scope reads paths as shlex tokens but bash brace-expands first: `git commit -m x -- .aegis/runs/{T,../../src/auth.py}` commits the tracked src/auth.py, yet the one literal token still normpaths to `.aegis/runs/src/auth.py}` under the prefix. _under_runs returns true, the classifier says exempt, and the hook skips the gate.",
+      "minimal_fix": "gate a commit path token containing any of { } $ ` * ? [",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-14",
+      "rounds": [
+        3
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:26:34",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 3: index form deleted; a VAR= prefix and a bare commit both return gate (405, 348)",
+      "first_seen_round": 2,
+      "id": "F-50340335",
+      "line": 389,
+      "message": "commit_scope strips `GIT_INDEX_FILE=` and returns `index` while the hook reads the default index, so with only a runs file staged there, `GIT_INDEX_FILE=/tmp/i git commit -m x` commits a prepared index as bookkeeping. The hook's `git diff --cached --name-only` also lists a staged `git mv src/auth.py .aegis/runs/T/auth.py` only by its new name, so that deletion is exempt too.",
+      "minimal_fix": "return `gate` for an index-form commit with any `GIT_*` assignment, and add `--no-renames` to the hook's staged listing",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-14",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:26:34",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 3: --lens required (__main__ 149); lens_record rejects a payload whose lens differs (flow 831)",
+      "first_seen_round": 2,
+      "id": "F-5dd90884",
+      "line": 793,
+      "message": "`lens record` takes the lens identity from the untrusted payload and never compares it with the transport, so a report piped with `--reviewer lens-correctness` but `\"lens\": \"security\"` writes security.json. That report counts as the required security review and can close security's open findings through `reconciled`, so the own-findings-only rule (R-19) is enforced only by the prompt.",
+      "minimal_fix": "add `--lens` to `lens record` (passed by the workflow, docs and codex-lens.sh) and reject a payload whose `lens` differs",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-16",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-7fc9bd6d",
+      "line": 25,
+      "message": "The hook's line-25 prefilter exits 0 before commit_scope ever runs whenever `commit`/`push` is not preceded by whitespace or `;&|`. `\\git commit -am x`, `/usr/bin/git commit -am x`, and `git -c alias.ci=commit ci -am x` each commit product code with no gate at all.",
+      "minimal_fix": "match commit/push as a word anywhere; let commit_scope reject the rest",
+      "path": "hooks/pre-commit-gate.sh",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-14",
+      "rounds": [
+        3
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:45:39",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: a report without `reconciled` is rejected while open prior findings are not raised again (flow.py 857-867), and absence closes nothing",
+      "first_seen_round": 1,
+      "id": "F-82a985fb",
+      "line": 894,
+      "message": "The strict path (unknown ids rejected, omitted open findings rejected) runs only when the untrusted piped-in report happens to include a `reconciled` key. A round-2 report with `findings: []` and no `reconciled` falls to line 894 and marks every open prior finding fixed on any digest change, with no per-id accounting. The report producer chooses which control applies. In the orchestrator-driven runner (skills/build/SKILL.md sections 3-4) prior ids are never passed and `reconciled` is never mentioned, so that loop always takes the lenient path; in the workflow a model that drops the field gets the same. Concrete input: `{\"lens\":\"correctness\",\"verdict\":\"pass\",\"findings\":[]}` recorded after the builder touches any leased file -> all open sev>=3 findings for that lens become fixed -> check_reviews passes.",
+      "minimal_fix": "when `prior_findings` has any open entry and `reconciled is None`, raise AegisError('re-review must reconcile prior findings by id') instead of inferring fixes from absence",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:26:34",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 3: frozen checked before the no-focus return (253-260); trace dropped the frozen clause (checks 529)",
+      "first_seen_round": 2,
+      "id": "F-9730714b",
+      "line": 533,
+      "message": "Trace now skips unowned frozen-zone changes on the premise that the lease check refuses agent writes, but `lease_violation` returns before its frozen check when no task is focused (flow.py 249), which covers the orchestrator and the doc-manager the workflow dispatches after clearing focus. An agent edit to a frozen path now passes the hook and every gate; R-11 exempts frozen files only from the unrequested-documentation report, not from trace.",
+      "minimal_fix": "drop `or matches_any(rel, frozen)`: an unowned change in a frozen zone is exactly the orphan trace exists to catch",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-11",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:45:39",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: `reopened_in` is persisted on the finding (flow.py 831, 920) and check_reviews and next read it from there (1042, 1607)",
+      "first_seen_round": 1,
+      "id": "F-ea21b0dd",
+      "line": 915,
+      "message": "`reopened` is recomputed per record (line 915) and read by check_reviews (1007) and next_action (1561) from the latest record only. After a round-2 `unresolved` reopens a fixed finding, a round-3 `resolved` following any edit marks it fixed again and the new record's `reopened` is empty, so the gate passes on a third patch. skills/build/SKILL.md lines 80-81 and the orchestrator profile say a returned finding stops the loop and the gate fails on it; the mechanism only holds for one round. Advisory because next_action does emit a human step at the reopen.",
+      "minimal_fix": "persist `reopened: true` on the finding and keep it in the record's `reopened` list until a human disposition (false-positive/waived/deferred) clears it",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    }
+  ],
+  "lens": "security",
+  "recorded": "2026-09-17T16:26:34",
+  "reopened": [],
+  "report_tokens": 1041,
+  "reviewer": "lens-security",
+  "round": 3,
+  "task": "TASK-UNBLOCK-01",
+  "verdict": "fail"
+}

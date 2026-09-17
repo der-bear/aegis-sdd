@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aegis internal event registry",
+  "description": "Contracts between modules that the type system does not already enforce. If a language-level type is the contract, do not duplicate it here.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "status", "origin", "producers", "consumers"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9-.]*$" },
+      "status": { "enum": ["proposed", "active", "deprecated"] },
+      "origin": { "type": "string", "pattern": "^(TASK|RETRO|ADR|LEGACY)-" },
+      "schema": { "type": "string" },
+      "producers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+      "consumers": { "type": "array", "items": { "type": "string" } },
+      "delivery": { "enum": ["at-least-once", "at-most-once", "exactly-once", "in-process"] },
+      "ordering": { "enum": ["none", "per-key", "total"] },
+      "docs": { "type": "string" },
+      "superseded_by": { "type": "string" },
+      "verified": { "enum": ["confirmed", "observed", "unverified"] }
+    },
+    "additionalProperties": false
+  }
+}

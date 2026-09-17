@@ -1,0 +1,17 @@
+{"at": "2026-09-17T22:00:42", "event": "status", "task": "TASK-UNBLOCK-03", "value": "building"}
+{"at": "2026-09-17T22:00:43", "event": "packet", "risk_tier": "A", "task": "TASK-UNBLOCK-03", "tokens": 3165}
+{"at": "2026-09-17T22:32:27", "event": "gate", "failing_checks": ["handoff", "reviews"], "passed": false, "seconds": 2.2, "stage": "task", "task": "TASK-UNBLOCK-03"}
+{"at": "2026-09-17T22:43:44", "blocking": 3, "event": "lens", "findings": 4, "lens": "correctness", "round": 1, "task": "TASK-UNBLOCK-03", "verdict": "fail"}
+{"at": "2026-09-17T22:45:38", "blocking": 4, "event": "lens", "findings": 5, "lens": "security", "round": 1, "task": "TASK-UNBLOCK-03", "verdict": "fail"}
+{"at": "2026-09-17T22:46:27", "blocking": 3, "event": "lens", "findings": 6, "lens": "design", "round": 1, "task": "TASK-UNBLOCK-03", "verdict": "fail"}
+{"at": "2026-09-17T23:07:14", "blocking": 1, "event": "lens", "findings": 2, "lens": "correctness", "round": 2, "task": "TASK-UNBLOCK-03", "verdict": "fail"}
+{"at": "2026-09-17T23:07:14", "blocking": 1, "event": "lens", "findings": 2, "lens": "security", "round": 2, "task": "TASK-UNBLOCK-03", "verdict": "fail"}
+{"at": "2026-09-17T23:07:15", "blocking": 0, "event": "lens", "findings": 2, "lens": "design", "round": 2, "task": "TASK-UNBLOCK-03", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T23:25:53", "blocking": 0, "event": "lens", "findings": 2, "lens": "design", "round": 3, "task": "TASK-UNBLOCK-03", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T23:31:02", "blocking": 0, "event": "lens", "findings": 1, "lens": "security", "round": 3, "task": "TASK-UNBLOCK-03", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T23:31:04", "blocking": 0, "event": "lens", "findings": 3, "lens": "correctness", "round": 3, "task": "TASK-UNBLOCK-03", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T23:35:05", "event": "status", "task": "TASK-UNBLOCK-03", "value": "gated"}
+{"at": "2026-09-17T23:35:05", "event": "gate", "failing_checks": [], "passed": true, "seconds": 224.1, "stage": "task", "task": "TASK-UNBLOCK-03"}
+{"at": "2026-09-18T01:27:31", "event": "gate", "failing_checks": [], "passed": true, "seconds": 3.8, "stage": "task", "task": "TASK-UNBLOCK-03"}
+{"at": "2026-09-18T01:33:58", "event": "gate", "failing_checks": ["handoff"], "passed": false, "seconds": 12.2, "stage": "task", "task": "TASK-UNBLOCK-03"}
+{"at": "2026-09-18T01:34:26", "event": "gate", "failing_checks": [], "passed": true, "seconds": 7.9, "stage": "task", "task": "TASK-UNBLOCK-03"}

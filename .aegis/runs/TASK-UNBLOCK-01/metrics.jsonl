@@ -1,0 +1,19 @@
+{"at": "2026-09-17T03:24:48", "event": "status", "task": "TASK-UNBLOCK-01", "value": "building"}
+{"at": "2026-09-17T03:24:48", "event": "packet", "risk_tier": "C", "task": "TASK-UNBLOCK-01", "tokens": 1130}
+{"at": "2026-09-17T03:26:47", "event": "gate", "failing_checks": ["env", "events", "reviews", "trace"], "passed": false, "seconds": 0.5, "stage": "task", "task": "TASK-UNBLOCK-01"}
+{"at": "2026-09-17T03:28:32", "event": "gate", "failing_checks": ["env", "events", "reviews", "trace"], "passed": false, "seconds": 59.1, "stage": "task", "task": "TASK-UNBLOCK-01"}
+{"at": "2026-09-17T03:29:10", "event": "gate", "failing_checks": ["env", "events", "reviews", "trace"], "passed": false, "seconds": 1.4, "stage": "task", "task": "TASK-UNBLOCK-01"}
+{"at": "2026-09-17T03:39:50", "blocking": 3, "event": "lens", "findings": 4, "lens": "security", "round": 1, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T03:41:14", "blocking": 3, "event": "lens", "findings": 6, "lens": "correctness", "round": 1, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T03:41:14", "blocking": 1, "event": "lens", "findings": 6, "lens": "design", "round": 1, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T15:18:48", "event": "gate", "failing_checks": ["env", "reviews"], "passed": false, "seconds": 0.9, "stage": "task", "task": "TASK-UNBLOCK-01"}
+{"at": "2026-09-17T15:22:10", "event": "gate", "failing_checks": ["reviews"], "passed": false, "seconds": 0.6, "stage": "task", "task": "TASK-UNBLOCK-01"}
+{"at": "2026-09-17T15:40:02", "blocking": 5, "event": "lens", "findings": 5, "lens": "correctness", "round": 2, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T15:43:32", "blocking": 1, "event": "lens", "findings": 5, "lens": "design", "round": 2, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T15:45:39", "blocking": 5, "event": "lens", "findings": 5, "lens": "security", "round": 2, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T16:04:12", "event": "gate", "failing_checks": ["reviews"], "passed": false, "seconds": 2.0, "stage": "task", "task": "TASK-UNBLOCK-01"}
+{"at": "2026-09-17T16:11:18", "blocking": 0, "event": "lens", "findings": 4, "lens": "design", "round": 3, "task": "TASK-UNBLOCK-01", "verdict": "pass-with-notes"}
+{"at": "2026-09-17T16:19:44", "blocking": 3, "event": "lens", "findings": 4, "lens": "correctness", "round": 3, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T16:26:34", "blocking": 4, "event": "lens", "findings": 4, "lens": "security", "round": 3, "task": "TASK-UNBLOCK-01", "verdict": "fail"}
+{"at": "2026-09-17T16:26:38", "event": "gate", "failing_checks": ["reviews"], "passed": false, "seconds": 2.6, "stage": "task", "task": "TASK-UNBLOCK-01"}
+{"at": "2026-09-17T16:54:04", "event": "status", "task": "TASK-UNBLOCK-01", "value": "abandoned"}

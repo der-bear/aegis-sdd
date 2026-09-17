@@ -1,0 +1,11 @@
+{
+  "diagram_tool": "mermaid",
+  "generated": [
+    "api-reference"
+  ],
+  "kind": "library",
+  "required": [
+    "api-reference",
+    "usage-examples"
+  ]
+}

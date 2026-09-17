@@ -1,0 +1,107 @@
+{
+  "autonomy_limits": [
+    "code-style",
+    "internal-refactors"
+  ],
+  "budgets": {
+    "builder_startup": 12000,
+    "claude_md": 2000,
+    "handoff": 1500,
+    "lens_report": 1000,
+    "lens_startup": 8000,
+    "notes": 3000,
+    "packet": 6000,
+    "skill_body": 2500,
+    "skill_metadata_total": 3000
+  },
+  "legacy_baseline": "ratchet-from-today",
+  "lens_matrix": {
+    "always": [
+      "correctness"
+    ],
+    "auth": [
+      "security"
+    ],
+    "concurrency": [
+      "design"
+    ],
+    "contract": [
+      "design"
+    ],
+    "cross-module": [
+      "design"
+    ],
+    "data-migration": [
+      "security",
+      "design"
+    ],
+    "dependency": [
+      "security"
+    ],
+    "feature-close": [
+      "design"
+    ],
+    "money": [
+      "security",
+      "design"
+    ],
+    "route": [
+      "security"
+    ]
+  },
+  "lens_strictness": "standard",
+  "mode": "hybrid",
+  "nfr_priorities": [
+    "compatibility",
+    "security",
+    "operability"
+  ],
+  "parallel_builders": 2,
+  "profile": "M",
+  "refinement_rounds": 3,
+  "registries": [
+    "env",
+    "integrations",
+    "events",
+    "flags",
+    "diagrams"
+  ],
+  "risk_tiers": {
+    "A": {
+      "description": "irreversible or authority-bearing; builder is never final reviewer",
+      "independent_reviewer": true,
+      "match_change_kinds": [
+        "auth",
+        "data-migration",
+        "money",
+        "concurrency"
+      ],
+      "review_rounds": 2
+    },
+    "B": {
+      "description": "standard feature work behind a contract",
+      "independent_reviewer": true,
+      "match_change_kinds": [
+        "route",
+        "contract",
+        "cross-module",
+        "dependency"
+      ],
+      "review_rounds": 1
+    },
+    "C": {
+      "description": "mechanical; batched review is acceptable",
+      "independent_reviewer": false,
+      "match_change_kinds": [
+        "code",
+        "docs",
+        "test"
+      ],
+      "review_rounds": 1
+    }
+  },
+  "self_governance": [
+    "retro"
+  ],
+  "testing_mandate": "tests-with-code"
+}

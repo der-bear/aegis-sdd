@@ -1,0 +1,6 @@
+{
+  "compatibility": "pre-1.0",
+  "frozen_zones": [
+    "docs/spec-v0.3-original.md"
+  ]
+}

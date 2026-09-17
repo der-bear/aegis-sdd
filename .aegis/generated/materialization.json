@@ -1,0 +1,15 @@
+{
+  "answers_digest": "b0804b17eb5fd2639c5ea3de67aa1d85be88cafc0c4081ff89dadca0ee3004db",
+  "banks": [
+    "context/brownfield",
+    "core",
+    "project-type/api-service",
+    "project-type/data-etl",
+    "project-type/library",
+    "project-type/stateful",
+    "project-type/web-saas"
+  ],
+  "compiler_version": 3,
+  "config_digest": "f034292efd6323febf32981bcc359dbc3b645bab6d46a7e9adbb57ecfb2f866a",
+  "note": "Regenerate with `aegis compile`. Never hand-edit anything under generated/."
+}

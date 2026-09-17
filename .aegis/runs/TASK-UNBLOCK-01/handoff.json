@@ -1,0 +1,51 @@
+{
+  "task": "TASK-UNBLOCK-01",
+  "agent": "claude-fable-5.1 (session agent, no aegis-builder dispatch)",
+  "summary": "ADR-2 group A: explicit lens reconciliation (R-1), one round budget (R-2), packet reads spec.md sections (R-3), ADRs in .aegis/decisions (R-4), pure packet + task claim (R-5), structured next steps (R-6), no AEGIS_SKIP_GATE (R-7), orchestrator no longer sets gated (R-8), answers complete and constitution drafted (R-9); plus set_answer derives status from the ledger.",
+  "changed_files": [
+    "scripts/aegis/aegis_cli/flow.py",
+    "scripts/aegis/aegis_cli/__main__.py",
+    "scripts/aegis/aegis_cli/config.py",
+    "workflows/aegis-task.js",
+    "hooks/pre-commit-gate.sh",
+    "agents/aegis-orchestrator.md",
+    "agents/lens-correctness.md",
+    "skills/build/SKILL.md",
+    "skills/review-lens/SKILL.md",
+    "skills/spec/SKILL.md",
+    "tests/test_aegis.py",
+    "README.md",
+    "docs/ARCHITECTURE.md"
+  ],
+  "verification": [
+    {
+      "command": "make check",
+      "result": "pass",
+      "note": "110 tests + bootstrap gate"
+    },
+    {
+      "command": "scripts/aegis/aegis check setup",
+      "result": "pass"
+    },
+    {
+      "command": "scripts/aegis/aegis check protocols",
+      "result": "pass",
+      "note": "after aegis migrate refreshed 4 copies"
+    }
+  ],
+  "deviations": [
+    "Implemented by the session agent, not by a dispatched aegis-builder: the patches change the builder loop itself, so a builder could not run under the unfixed loop.",
+    "The constitution is a draft awaiting human signature; check setup passes on content, not on signature.",
+    "The task gate cannot pass `trace` until the baseline tree is committed: every file is untracked against base_sha, so 119 files count as changed by this task.",
+    "ABANDONED 2026-09-17 after its third and last review round left seven blocking findings in one class (the commit-hook exemption, baseline history, answers.json). Per the round cap a fourth round was not started; the mechanism was simplified by deletion and re-issued as TASK-UNBLOCK-02 with a fresh round budget and fresh lenses.",
+    "correctness F-57c5beb7 ($(...) and --inc bypass commit_scope) -> bundle universal-01 step 2: the exemption becomes one exact command; the parser is deleted.",
+    "correctness F-6d1d7e2e (\\git, /usr/bin/git, \"git\" bypass the prefilter) -> step 2: git detection moves to tested Python; the hook prefilter only skips commands without 'commit' or 'push'.",
+    "correctness F-c9ec7723 (committed-then-reverted baseline file hidden) -> step 2: a baselined file leaves the baseline once any commit since the baseline head touched it.",
+    "security F-3c8485a5 (staged rename into .aegis/runs) -> step 3: --no-renames and rename sources listed on both sides.",
+    "security F-4ad7cbdd (brace expansion) -> step 2: nothing but the exact bookkeeping command is exempt.",
+    "security F-7fc9bd6d (prefilter and inline alias) -> steps 2 and 3: an inline alias.*=commit|push runs the gate.",
+    "security F-310ded7e (answers.json unprotected) -> step 3: protect-paths refuses agent edits to .aegis/answers.json."
+  ],
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}

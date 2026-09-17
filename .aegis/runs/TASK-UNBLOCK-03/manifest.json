@@ -1,0 +1,73 @@
+{
+  "acceptance": [
+    "make check green",
+    "task gate green",
+    "merge gate green after the adoption commit",
+    "spec acceptance criteria R-1..R-28 hold"
+  ],
+  "base_sha": "00c7c9f0f0beaf0897aa2774001d59bd4f9cd38a",
+  "change_kinds": [
+    "code",
+    "docs",
+    "test"
+  ],
+  "created": "2026-09-17T22:00:42",
+  "feature": "unblock-cycle",
+  "id": "TASK-UNBLOCK-03",
+  "objective": "Make the adoption commit possible and true (ADR-4), and make every protocol, pointer file and measured number say what the code does",
+  "owns": [
+    ".github/**",
+    ".gitignore",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "agents/**",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "hooks/**",
+    "schemas/**",
+    "scripts/aegis/**",
+    "skills/**",
+    "tests/**",
+    "workflows/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-1",
+    "R-10",
+    "R-11",
+    "R-12",
+    "R-13",
+    "R-14",
+    "R-15",
+    "R-16",
+    "R-17",
+    "R-18",
+    "R-19",
+    "R-2",
+    "R-20",
+    "R-21",
+    "R-22",
+    "R-23",
+    "R-24",
+    "R-25",
+    "R-26",
+    "R-27",
+    "R-28",
+    "R-3",
+    "R-4",
+    "R-5",
+    "R-6",
+    "R-7",
+    "R-8",
+    "R-9"
+  ],
+  "risk_tier": "C",
+  "size": "L",
+  "status": "gated",
+  "supersedes": [
+    "TASK-UNBLOCK-01",
+    "TASK-UNBLOCK-02"
+  ],
+  "updated": "2026-09-17T23:35:05"
+}

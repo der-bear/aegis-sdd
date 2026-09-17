@@ -1,0 +1,97 @@
+{
+  "diff_digest": "a950967e27166cb6",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:10:10",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: protect-paths.sh:39 sets `shopt -s nocasematch` before the case at :40, so `.aegis/Answers.json` and `.AEGIS/answers.json` now hit the answers/constitution/generated arms and exit 2.",
+      "first_seen_round": 1,
+      "id": "F-26fe12b5",
+      "line": 45,
+      "message": "protect-paths.sh guards `.aegis/answers.json`, the constitution and `generated/` with case-sensitive bash `case` globs, but the realpath at line 36 preserves the input's casing (posixpath.realpath only substitutes symlink targets, never on-disk canonical case). On a case-insensitive filesystem (the macOS default on this repo) an unfocused agent Writes `.aegis/Answers.json` (or `.AEGIS/answers.json`) and the write lands on the real file unrefused, defeating R-26; this is the Edit/Write path the hook exists to cover and the same class as the `..`/symlink variants the file's own comments say were fixed. The lease hook only backstops focused agents, so nothing else stops the orchestrator/doc-manager.",
+      "minimal_fix": "add `shopt -s nocasematch` before the case (covers answers.json, constitution, generated/).",
+      "path": "hooks/protect-paths.sh",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-26",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:10:10",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: flow.py:254 matches `rel.lower()` against lowercased zones; folding both sides can only merge distinct names, so it widens the refused set and never narrows it.",
+      "first_seen_round": 1,
+      "id": "F-029400c6",
+      "line": 253,
+      "message": "`lease_violation` matches frozen zones with `matches_any`->`glob_regex`, which compiles without re.IGNORECASE, so on a case-insensitive FS an unfocused agent writing `Vendor/lib.py` into frozen `vendor/**` is not refused, though R-23 requires refusal 'focused or not'. Advisory only: `check_trace` still sees the tracked path at the gate, so the write cannot reach merge unnoticed; `nocasematch` in protect-paths does not cover this Python path.",
+      "minimal_fix": "compile glob_regex (core.py ~661) with re.IGNORECASE.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-23",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-45e2dc3f",
+      "line": 147,
+      "message": "`apply_waivers` downgrades a blocking check to `warn` for any unexpired waiver of a waivable kind with no requirement that `owner` be a person, unlike the `finding` waivers `_dismissal_problems` hardened; this repo's live `.aegis/waivers.json` shows the consequence — both entries are owned by \"claude-session TASK-UNBLOCK-01 (pending human review)\", a name the gate itself rejects for a review finding, and one of them mutes a `budget` failure about that session's own oversized security report. Advisory: R-25 governs only `finding` waivers and the schema deliberately permits the other kinds, so the builder may decline this in writing.",
+      "minimal_fix": "either require `_names_a_person(owner)` for every waiver, or have apply_waivers label an agent-owned waiver provisional in its note.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "a950967e27166cb6",
+      "requirement": "R-25",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-6b7d463b",
+      "line": 1090,
+      "message": "`disposition` accepts any non-empty `--by` after strip, so `--by x` dismisses a sev-5 finding while a waiver's `owner` must be at least 2 characters — the two names carrying the same decision are held to different shapes. Observation only: per R-21 the name is a recorded claim, not an authentication, so a short or generic name like `bot` passing is the documented limit rather than a defect.",
+      "minimal_fix": "require len(by.strip()) >= 2 in `disposition`, matching the waiver owner's minLength.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "a950967e27166cb6",
+      "requirement": "R-21",
+      "rounds": [
+        3
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:10:10",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: `_dismissal_problems` (flow.py:1042-1077) now requires a non-agent `--by` for `false-positive` as well as waived/deferred, and check_reviews calls it for every finding at :1203.",
+      "first_seen_round": 1,
+      "id": "F-8092a6f6",
+      "line": 1156,
+      "message": "An agent-asserted `false-positive` permanently closes a sev>=3 first-strike finding with no person and no waiver: `disposition()` accepts any `--by` for false-positive, `check_reviews` person-gates only waived/deferred (line 1162) and reopened (1126), and `lens_record` keeps false-positive sticky on re-raise so it never becomes a second strike. Observation, not a violation: R-21/R-25 are silent on first-strike false-positive.",
+      "minimal_fix": "if tightening, require a person's --by for false-positive on sev>=3.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-25",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    }
+  ],
+  "lens": "security",
+  "recorded": "2026-09-17T21:25:36",
+  "reopened": [],
+  "report_tokens": 532,
+  "reviewer": "lens-security-02 (fresh general-purpose subagent, claude-opus-5)",
+  "round": 3,
+  "task": "TASK-UNBLOCK-02",
+  "verdict": "pass-with-notes"
+}

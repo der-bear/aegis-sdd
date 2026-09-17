@@ -1,0 +1,62 @@
+{
+  "task": "TASK-UNBLOCK-03",
+  "agent": "claude-fable-5.1 (session agent, no aegis-builder dispatch)",
+  "summary": "ADR-4 rebuilt adoption attribution on content, not history, so the adoption commit the documentation instructs is possible for the first time. Three rounds, three lenses, 43 findings, all three ending with zero blocking open. 213 tests pass; the task gate is green at digest 7942d66a9fd82cf9, which neither earlier task reached. Merge gate red on one document only. Detail: .aegis/memory/retros/0002.md.",
+  "changed_files": [
+    "scripts/aegis/aegis_cli/core.py",
+    "scripts/aegis/aegis_cli/checks.py",
+    "scripts/aegis/aegis_cli/flow.py",
+    "scripts/aegis/aegis_cli/config.py",
+    "scripts/aegis/aegis_cli/detect.py",
+    "scripts/aegis/aegis_cli/scaffold.py",
+    "scripts/aegis/aegis_cli/__main__.py",
+    "tests/test_aegis.py",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "skills/review-lens/SKILL.md",
+    "agents/lens-design.md",
+    "agents/lens-security.md",
+    ".github/workflows/aegis-gate.yml"
+  ],
+  "verification": [
+    {
+      "command": "make check",
+      "result": "pass",
+      "note": "198 tests and the bootstrap gate, which now includes `check commands`"
+    },
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "scripts/aegis/aegis check commands",
+      "result": "pass",
+      "note": "zero documented commands that cannot run"
+    }
+  ],
+  "deviations": [
+    "ARCHITECTURE left stale on purpose: attesting would sign claims there is evidence against. cli-reference and usage were attested after a verification pass found nothing false; the signature names the session agent, not a person.",
+    "Nothing committed or pushed, constitution unsigned. No --no-verify, no fourth round, no agent-owned `docs` waiver: each bypasses the rule that produced this escalation."
+  ],
+  "registry_drafts": [],
+  "lease_expansion_request": [
+    ".github/** — granted by the orchestrator to install the CI workflow"
+  ],
+  "open_questions": [
+    "THE BLOCKER: three claims in docs/ARCHITECTURE.md are false against the code. Worst: the hook's bookkeeping exemption is a prefix over .aegis/runs/, not the exact match the document describes, so a commit containing nothing but gate-receipt.json is exempt - the gate's own evidence sits inside its exemption.",
+    "Five owner decisions carried: how architecture gets cleared; keep the adoption baseline at all; the 1,000-token report cap; the unsigned constitution, which an agent must not sign; and which project is project 2."
+  ],
+  "new_dependencies": [
+    "PROCESS CHANGE, cheap: run the document verification pass BEFORE the last lens round, because doc and review staleness compete for one round budget. Into skills/build/SKILL.md step 5 next.",
+    "The next task's requirements are the nine findings recorded after the budget was spent, in .aegis/memory/retros/0002.md. One is a regression this task introduced in the tests-ran evidence, latent here.",
+    "Bundle step 4 (ADR-3) needs its own task; step 5 overlaps this task now and must be rewritten as the remainder. The land step (ADR-1 plus ADR-2 C8) stays the barrier before the graph."
+  ],
+  "invalidated_assumptions": [
+    "That a green task gate implies a committable state. Document freshness and review freshness are independent checks over the same files, and once the round budget is spent only one can be satisfied. Two consecutive cycles ended in that vice, so it is a class; the mechanism at fault is review bound to a moving working tree - the second empirical argument for ADR-1.",
+    "That mechanical checks passing means the documents are true. `check commands`, `check protocols` and `check pointers` are green while three prose claims are false."
+  ],
+  "next_safe_action": "One blocker, then two commits. docs/ARCHITECTURE.md must not be attested as it stands: it is inside the digest, so correcting it moves 7942d66a9fd82cf9 and invalidates the receipt and all three reviews, which means correcting-and-attesting is not a path to green on its own. The two real paths, why an agent can take neither, and the exact commit sequence are in .aegis/memory/NOTES.md under 'Current milestone' and 'Next actions'."
+}

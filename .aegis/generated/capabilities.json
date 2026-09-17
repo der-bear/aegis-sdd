@@ -1,0 +1,59 @@
+{
+  "baseline": {
+    "files": {
+      ".claude-plugin/plugin.json": "3d198cb99114fd9d9ea0998d1deb75ecce03810412375f745e8968af3a1e3949",
+      "AGENTS.md": "de63176aac518e2fbf7fde3ddc19847b6671a57e56c5ae47961cb603d9d87dee",
+      "CLAUDE.md": "2023b3a1fe01a93918a5563443c4db766430d599bbac525b5f7787999c1603ff",
+      "Makefile": "6d6a3473151367b4b376e3c221d0fd1ee4b6fdbc603e2222999f78a2db32ad6c",
+      "aegis-sdd-framework-full.md": "absent",
+      "docs/spec-v0.3-original.md": "8822e3d40342adf6e17a0af74a76a7938f14865c4f902ab57c92f0cf6dd350bc",
+      "install.sh": "528a04892de36616e6c930906f194714e0dd4442ac70437de4e49b47ed75483a",
+      "interview/context/brownfield.json": "b99753ad95e9bb6ac4977c0e3e54fc59de5250f39111e33bd73e274d0ef2643e",
+      "interview/core.json": "0f79ef762ae9434855f49168376770a06a2d93206276c3499bd7f472ab6aa3a3",
+      "interview/project-type/api-service.json": "67a8cf2d9494d03eb46a9bc9a38cb5d3fa688d46bb87c8663b40c6c72b788686",
+      "interview/project-type/data-etl.json": "1fd70c71db1b21b706e966687173dc046ddca4df0d7c6c4cad25e58f0f587f3b",
+      "interview/project-type/library.json": "e933c9aa6b1ea417c507bdbe4bd01cf173b8ff8ba7a38e104d19a46dff0739d1",
+      "interview/project-type/stateful.json": "a61af13b63bfa9aca9ce2a03e6ac0eb192e1064a08a5e55f6505ceac377fc12c",
+      "interview/project-type/web-saas.json": "5436507bca5c194e6c738de14a78cf05dedd1cb939b98146ce4cadc35f89e02e",
+      "templates/ci/aegis-gate.yml": "6f5d66a56733a1adb747a79a1dc5649d3e299710f16492dce59f4d3bd5d31337"
+    },
+    "head": "00c7c9f0f0beaf0897aa2774001d59bd4f9cd38a",
+    "recorded": "2026-09-17"
+  },
+  "default_package": "aegis-sdd",
+  "generated_paths": [
+    "**/*.lock",
+    "**/*.snap",
+    "**/__generated__/**",
+    "**/build/**",
+    "**/dist/**",
+    ".aegis/generated/**"
+  ],
+  "migration_paths": [
+    "**/migrations/**"
+  ],
+  "packages": {
+    "aegis-sdd": {
+      "lint": "make lint",
+      "paths": [
+        "**"
+      ],
+      "test": "make test"
+    }
+  },
+  "shared_paths": [
+    ".github/**",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "CLAUDE.md",
+    "README.md"
+  ],
+  "test_paths": [
+    "**/*.spec.*",
+    "**/*.test.*",
+    "**/*_test.*",
+    "**/test/**",
+    "**/test_*.py",
+    "tests/**"
+  ]
+}

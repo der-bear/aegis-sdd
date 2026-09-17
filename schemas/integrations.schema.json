@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aegis integrations registry",
+  "description": "External trust boundaries only. Internal routes belong in the API contract (OpenAPI or equivalent), not here — an index of 200 CRUD endpoints buys no invariant and will not be maintained.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "kind", "status", "origin", "owner"],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9-]*$",
+        "description": "<system>.<event-or-resource>"
+      },
+      "kind": { "enum": ["webhook-in", "webhook-out", "api-client", "queue-consumer", "queue-producer"] },
+      "status": { "enum": ["proposed", "active", "deprecated"] },
+      "origin": { "type": "string", "pattern": "^(TASK|RETRO|ADR|LEGACY)-", "description": "what introduced this entry" },
+      "owner": { "type": "string", "minLength": 2 },
+      "endpoint": { "type": "string" },
+      "auth": {
+        "type": "string",
+        "description": "mechanism name only; the secret is an env reference elsewhere",
+        "pattern": "^(none|hmac-[a-z0-9]+|bearer|basic|oauth2|mtls|signature-[a-z0-9]+)$"
+      },
+      "secret_ref": { "type": "string", "pattern": "^env:[A-Z][A-Z0-9_]*$" },
+      "payload_schema": { "type": "string" },
+      "consumer": { "type": "string" },
+      "producer": { "type": "string" },
+      "retry": { "type": "string" },
+      "idempotent": { "type": "boolean" },
+      "docs": { "type": "string" },
+      "superseded_by": { "type": "string" },
+      "verified": { "enum": ["confirmed", "observed", "unverified"], "description": "brownfield backfill starts at observed and is promoted by a human" }
+    },
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": { "properties": { "kind": { "const": "webhook-in" } }, "required": ["kind"] },
+        "then": { "required": ["endpoint", "consumer", "payload_schema"] }
+      },
+      {
+        "if": { "properties": { "kind": { "const": "webhook-out" } }, "required": ["kind"] },
+        "then": { "required": ["endpoint", "producer", "retry"] }
+      },
+      {
+        "if": { "properties": { "kind": { "const": "api-client" } }, "required": ["kind"] },
+        "then": { "required": ["endpoint", "auth"] }
+      }
+    ]
+  }
+}

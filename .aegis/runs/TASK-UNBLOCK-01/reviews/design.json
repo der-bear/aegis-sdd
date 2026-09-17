@@ -1,0 +1,271 @@
+{
+  "diff_digest": "dfba5dd9e9494022",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:11:18",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: codex-lens.sh 41-61 passes its own prior ids with the two-phase instruction.",
+      "first_seen_round": 2,
+      "id": "F-1f524cca",
+      "line": 60,
+      "message": "flow.py 857-867 now rejects a re-review that leaves open findings unreconciled, but codex-lens.sh never passes prior ids or asks for `reconciled`. After any fix, `codex-lens.sh T <lens>` exits 2 at record time, so the README's cross-engine review can record only round 1.",
+      "minimal_fix": "Put this lens's ids from reviews/<lens>.json and the two-phase reconcile instruction in the prompt, as the workflow does.",
+      "path": "scripts/aegis/codex-lens.sh",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-16",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:43:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: aegis-task.js 157-170 reads reviews/${lens}.json separately for each lens.",
+      "first_seen_round": 1,
+      "id": "F-544ad48b",
+      "line": 147,
+      "message": "The re-review prompt hands every lens the same unfiltered, unlabelled prior list built from reviews/*.json (line 147: every lens's record, no lens tag) and instructs 'one entry per prior id … every open prior finding must appear' (lines 164-166), but flow.lens_record loads only reviews/<lens>.json (796-798) and rejects any reconciled id that lens never raised (838-844). Concrete input: tier-B task -> correctness + security; round 1 each raises one finding; round 2 either lens that obeys the prompt is rejected 'never raised', the rerecord agent's error is unchecked (174-176), and the gate then fails 'did not review this version' (flow 1002-1006). A lens newly added by replan (152-157) with no prior record fails the same way. The protocol, schema and workflow state the reconciled contract identically, but the workflow feeds each lens ids the recorder will refuse.",
+      "minimal_fix": "Build the prior list per lens from reviews/${lens}.json and omit the reconcile paragraph when that file does not exist.",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:43:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: build/SKILL.md 72-90: re-review each lens with its own ids; disposition only dismisses.",
+      "first_seen_round": 1,
+      "id": "F-3baf4b52",
+      "line": 74,
+      "message": "The build protocol's Refine step (71-75) is 'fix it, or record why not' followed by `aegis lens disposition … fixed`, and never mentions re-running the lens with prior ids or a reconciled list. That contradicts next_action (1574-1576: disposition only for false-positive/waived/deferred), the workflow (138-140: 'Do not record a disposition'), flow.disposition (947-952: fixed refused on unchanged code) and ARCHITECTURE §5 (211-215). aegis-orchestrator.md line 53 ('builder fixes -> re-record') and skills/review/SKILL.md ('re-review after fixes') likewise never hand ids back. Consequence: the spec's own user scenario — an orchestrator re-running lenses with prior ids — exists only in the JS workflow; an orchestrator-driven cycle never produces reconciled, falls back to the absence-after-edit rule, and a hand `disposition fixed` followed by the lens re-wording the same claim identically registers as reopened and fails the gate on the first strike.",
+      "minimal_fix": "Replace the disposition example with: re-run each lens with the ids from reviews/<lens>.json and record its reconciled list; disposition is for false-positive/waived/deferred only.",
+      "path": "skills/build/SKILL.md",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:11:18",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: EVALUATION.md is now kind record; check_docs skips staleness for records (723-726).",
+      "first_seen_round": 2,
+      "id": "F-458363ee",
+      "line": 25,
+      "message": "EVALUATION.md is an audit record, yet it is registered as a narrative diagram watching tests/**, and check_docs ignores `status: proposed`. Every task adds tests, so the commit hook's merge gate fails 'evaluation is stale' until someone attests a file that did not change.",
+      "minimal_fix": "Allow EVALUATION.md as a record instead of giving it a watch on code it does not describe.",
+      "path": ".aegis/registry/diagrams.json",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": null,
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:11:18",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: flow.task_diff is the one source; the workflow and codex-lens.sh call `aegis diff`.",
+      "first_seen_round": 2,
+      "id": "F-6b9fb04a",
+      "line": 72,
+      "message": "The task diff now has three copies that disagree: changed_files applies the baseline, while aegis-task.js 72-73 and codex-lens.sh 49-53 still add every untracked file. Lenses are handed pre-adoption files that their digest does not cover, so the problem §3 describes is still there in both runners.",
+      "minimal_fix": "Produce the task diff from one aegis command built on changed_files and delete both shell copies.",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-10",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-7f5ff6ad",
+      "line": 22,
+      "message": "ARCHITECTURE §5 calls `aegis diff` the one source of a reviewer's diff, yet the review, build and orchestrator protocols never name it. An orchestrator-run review may hand lenses `git diff`, which omits new untracked files the recorded digest covers.",
+      "minimal_fix": "Name `aegis diff <TASK-ID>` as the lens input in all three protocols.",
+      "path": "skills/review/SKILL.md",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-22",
+      "rounds": [
+        3
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:43:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: Enforced in check_reviews 1051-1055 and next_action 1629-1636.",
+      "first_seen_round": 1,
+      "id": "F-877a2c9d",
+      "line": 704,
+      "message": "lens_plan publishes min_review_rounds from the tier, but nothing consumes it: check_reviews (980, 1023), next_action (1565) and the workflow (128-131) compare only against refinement_rounds. Tier A's review_rounds: 2 (config.py 155) is therefore decorative — a tier A task passes with a single review round — while docs/ARCHITECTURE.md §4 (195-196) still says the tier 'decides the number of rounds' and ADR-2 A2 says it 'sets a minimum'. A published field with no reader is the decorative-field pattern ADR-2 RC4/C9 names.",
+      "minimal_fix": "Either fail check_reviews when record.round < min_review_rounds, or drop the field and reword ARCHITECTURE §4 to 'sets independent_reviewer'.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-2",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:11:18",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: aegis-task.js 132-138 dispatches the builder only for `next: fix`.",
+      "first_seen_round": 2,
+      "id": "F-8b07c293",
+      "line": 135,
+      "message": "The new minimum-rounds step is named `re-run lens-X` (flow.py 1633), so this regex sends it to aegis-builder with the instruction 'change the code so the finding no longer holds'. A tier-A task with a clean first review then uses up a builder run with no finding to fix, and invites an edit nobody asked for.",
+      "minimal_fix": "Dispatch the builder only for `fix` steps and send `re-run lens` straight to re-review.",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-18",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T16:11:18",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: Owned in the ADR-2 amendments, ARCHITECTURE §3 and spec Risks; the digest choice is explained.",
+      "first_seen_round": 2,
+      "id": "F-9f63626d",
+      "line": 297,
+      "message": "Onboarding output now sits inside core.changed_files, so every task's scope and diff_digest depend on init/migrate. That goes against ADR-1 ('nothing in the kernel may depend on it'), ADR-2 ('adds nothing to the kernel', §B 'no new mechanisms') and spec.md:125, and a migrate that records a baseline mid-task changes every open task's digest without any code change, making its reviews and receipts stale.",
+      "minimal_fix": "Amend ADR-2 §B and the spec's Risks line to own this decision, and keep the exemption out of diff_digest.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "4b8eb32a52416100",
+      "requirement": "R-10",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-14937232",
+      "line": 230,
+      "message": "ADR-2 Consequences still says approving A + B 'adds nothing to the kernel'. That contradicts the amendment just above it: B built a baseline that the kernel reads.",
+      "minimal_fix": "Reword Consequences to name the baseline the kernel now reads.",
+      "path": ".aegis/decisions/ADR-2-scale-and-onboarding.md",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-10",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:43:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: README 74-75 prints separate run: and then: lines.",
+      "first_seen_round": 1,
+      "id": "F-857be523",
+      "line": 74,
+      "message": "The README's `aegis next` example still shows `run: aegis lens plan TASK-042-01   # then dispatch lens-security` — a shell comment inside the command, the exact format R-6 removed (acceptance: no next command contains `#`). The CLI now prints `run:` and a separate `then:` line (__main__ 207-209); a human or Codex reader following the README expects the old shape.",
+      "minimal_fix": "Split into `run: aegis lens plan TASK-042-01` and `then: dispatch lens-security`.",
+      "path": "README.md",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-9358d151",
+      "line": 139,
+      "message": "Spec Contracts and the `commit-scope` help still list `exempt | index | gate`, and `disposition_by` is now any name, not `lens | human`. The packet quotes Contracts word for word, so every task of this feature is briefed with the old shapes.",
+      "minimal_fix": "Update Contracts and help: exempt|gate, disposition_by lens|name, aegis diff.",
+      "path": ".aegis/specs/unblock-cycle/spec.md",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-14",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:43:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: All three record lines attach both flags; lens-correctness.md 13-14 no longer echoes reviewer.",
+      "first_seen_round": 1,
+      "id": "F-a9940c8c",
+      "line": 52,
+      "message": "The orchestrator loop records with `echo '<json>' | aegis lens record <ID>` and no --reviewer/--digest (same line in skills/build/SKILL.md 63 and skills/review/SKILL.md 32), while the review-lens contract (66-68) tells the lens to omit both and lens_record (785-789) rejects a digest-less report — so the documented command exits 2 on every compliant report. Where a reviewer identity does arrive on that path it is because agents/lens-correctness.md line 13 tells the model to echo `\"reviewer\": \"lens-correctness\"`, the opposite of the workflow's instruction (102-103) and of ADR-1 §Decision 5; check_reviews (1013-1022) then trusts that self-report for the independence check.",
+      "minimal_fix": "Write the line as `aegis lens record <ID> --reviewer lens-<name> --digest <diff_digest from lens plan>` and drop the reviewer instruction from lens-correctness.md line 13.",
+      "path": "agents/aegis-orchestrator.md",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-d3312f0f",
+      "line": 79,
+      "message": "R-21 refuses a 'framework agent' but never defines one, and the code's list (flow.py 1018) accepts `--by opus` or `--by gpt-5.6-sol` as a person. As written, R-21 cannot be checked without reading that regex.",
+      "minimal_fix": "State in R-21 which names count as framework agents.",
+      "path": ".aegis/specs/unblock-cycle/spec.md",
+      "raised_digest": "dfba5dd9e9494022",
+      "requirement": "R-21",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T15:43:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: flow.py 449-451 takes the packet tier from declared ∪ detected kinds.",
+      "first_seen_round": 1,
+      "id": "F-e4b222ac",
+      "line": 446,
+      "message": "The packet's risk tier is computed from declared kinds only (446) while lens_plan (690) and check_reviews (988) use declared ∪ detected. The architecture is silent on which tier the packet prints; §9's determinism requirement and the packet's own comment (478) argue declared-only is correct at packet time, when no diff exists to detect from. The only consequence is metrics.jsonl's risk_tier (task_claim 513-514) recording the declared tier, which can under-report a task whose diff later earns tier A. Not a defect.",
+      "minimal_fix": "None required; if the metric matters, record the effective tier at gate time instead.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "0680ba8c44adcd5d",
+      "requirement": null,
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    }
+  ],
+  "lens": "design",
+  "recorded": "2026-09-17T16:11:18",
+  "reopened": [],
+  "report_tokens": 882,
+  "reviewer": "lens-design",
+  "round": 3,
+  "task": "TASK-UNBLOCK-01",
+  "verdict": "pass-with-notes"
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ADR-1-candidate-commits",
+    "path": ".aegis/decisions/ADR-1-candidate-commits.md",
+    "status": "accepted-for-v2 · sequencing decided by a second opinion (below)",
+    "title": "ADR-1: The candidate commit should become the unit of workflow state"
+  },
+  {
+    "id": "ADR-2-scale-and-onboarding",
+    "path": ".aegis/decisions/ADR-2-scale-and-onboarding.md",
+    "status": "accepted — scope A + B; C–E are hypotheses gated on the first dogfood retro",
+    "title": "ADR-2: Scaling Aegis to large, heterogeneous projects — root causes, sequence, and onboarding"
+  },
+  {
+    "id": "ADR-3-lenses-roles-engines-are-data",
+    "path": ".aegis/decisions/ADR-3-lenses-roles-engines-are-data.md",
+    "status": "accepted — built as its own task once the unblock cycle lands",
+    "title": "ADR-3: Lenses, roles and engines are data; code only computes the plan"
+  },
+  {
+    "id": "ADR-4-adoption-is-a-commit",
+    "path": ".aegis/decisions/ADR-4-adoption-is-a-commit.md",
+    "status": "draft (TASK-UNBLOCK-03)",
+    "title": "ADR-4: adoption is a commit, not a permanent exemption"
+  }
+]

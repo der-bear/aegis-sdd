@@ -1,0 +1,108 @@
+[
+  {
+    "body_tokens": 630,
+    "change_kinds": [],
+    "description": "System health audit for an Aegis project — configuration drift, budget overruns, stale diagrams, expired waivers, orphaned protocols, and whether the profile still fits. Use on a schedule or before a release, not during a task.",
+    "name": "audit",
+    "path": ".aegis/protocols/audit.md"
+  },
+  {
+    "body_tokens": 1736,
+    "change_kinds": [],
+    "description": "Run the full Aegis cycle for one task — packet, builder, lenses, refinement, documentation sync, gate. Use to implement a task that already has a manifest.",
+    "name": "build",
+    "path": ".aegis/protocols/build.md"
+  },
+  {
+    "body_tokens": 1000,
+    "change_kinds": [],
+    "description": "The procedure for implementing one Aegis task inside its write lease — orient, plan, build with tests, verify, hand off. Use when implementing a task that has a packet, in any runner. Not for review, documentation or planning.",
+    "name": "build-task",
+    "path": ".aegis/protocols/build-task.md"
+  },
+  {
+    "body_tokens": 707,
+    "change_kinds": [
+      "docs",
+      "contract"
+    ],
+    "description": "How Aegis documentation is written and kept true — ownership headers, one fact one home, generate-over-draw, diagram staleness. Use when writing or updating any document or diagram in an Aegis project. Not for writing protocols — use protocol-authoring.",
+    "name": "doc-authoring",
+    "path": ".aegis/protocols/doc-authoring.md"
+  },
+  {
+    "body_tokens": 787,
+    "change_kinds": [],
+    "description": "The procedure for applying a task's documentation obligations — registry drafts, diagram attestation, derived indexes. Use after review and before the gate, exactly once per task, in any runner. Not for writing product code.",
+    "name": "doc-sync",
+    "path": ".aegis/protocols/doc-sync.md"
+  },
+  {
+    "body_tokens": 1360,
+    "change_kinds": [],
+    "description": "Initialise Aegis SDD in this repository — detect what the code already says, ask only what it cannot, then compile the configuration. Use when setting up Aegis in a new or existing project, or when re-running setup after answers change.",
+    "name": "init",
+    "path": ".aegis/protocols/init.md"
+  },
+  {
+    "body_tokens": 783,
+    "change_kinds": [],
+    "description": "Compare architecture options for a specified feature and write architecture.md plus an ADR. Use after /aegis:spec and before /aegis:tasks, when the approach is not already obvious.",
+    "name": "plan",
+    "path": ".aegis/protocols/plan.md"
+  },
+  {
+    "body_tokens": 927,
+    "change_kinds": [],
+    "description": "The protocol for writing protocols. Use when adding a new Aegis skill, changing an existing one, or reviewing a proposed protocol change. Not for product code, and not for documentation — use doc-authoring for that.",
+    "name": "protocol-authoring",
+    "path": ".aegis/protocols/protocol-authoring.md"
+  },
+  {
+    "body_tokens": 885,
+    "change_kinds": [
+      "route",
+      "contract",
+      "dependency",
+      "data-migration"
+    ],
+    "description": "Conventions for Aegis registries — what belongs in one, entry shape, lifecycle, and how brownfield entries are backfilled honestly. Use when adding an integration, event, environment variable, flag or diagram entry, or when adding a new registry type. Not for product documentation.",
+    "name": "registry-authoring",
+    "path": ".aegis/protocols/registry-authoring.md"
+  },
+  {
+    "body_tokens": 744,
+    "change_kinds": [],
+    "description": "Milestone retrospective for an Aegis project — read the recorded metrics, find repeating patterns, propose protocol changes as pull requests. Use at the end of a milestone or week, not after a single task.",
+    "name": "retro",
+    "path": ".aegis/protocols/retro.md"
+  },
+  {
+    "body_tokens": 766,
+    "change_kinds": [],
+    "description": "Run the Aegis review lenses over a task's diff and record their findings, without implementing anything. Use to review completed work, re-review after fixes, or review a task built elsewhere.",
+    "name": "review",
+    "path": ".aegis/protocols/review.md"
+  },
+  {
+    "body_tokens": 1308,
+    "change_kinds": [],
+    "description": "The shared contract every Aegis review lens follows — scope, severity meaning, output format, and what is never a finding. Use when reviewing a task diff as any lens, in any runner. Not for implementing fixes.",
+    "name": "review-lens",
+    "path": ".aegis/protocols/review-lens.md"
+  },
+  {
+    "body_tokens": 737,
+    "change_kinds": [],
+    "description": "Elicit scope for a feature and write .aegis/specs/<feature>/spec.md with verifiable requirements. Use when starting a new feature or capability, before any architecture or implementation work.",
+    "name": "spec",
+    "path": ".aegis/protocols/spec.md"
+  },
+  {
+    "body_tokens": 721,
+    "change_kinds": [],
+    "description": "Decompose a specified feature into Aegis task manifests with exclusive write leases, requirement links and acceptance criteria. Use after /aegis:plan and before any implementation.",
+    "name": "tasks",
+    "path": ".aegis/protocols/tasks.md"
+  }
+]

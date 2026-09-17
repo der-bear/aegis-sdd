@@ -1,0 +1,235 @@
+{
+  "diff_digest": "a950967e27166cb6",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:14:08",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: core.py:358 fullmatches the raw `command.strip()`; tests:1405 sends the newline form through the real hook and expects exit 2.",
+      "first_seen_round": 1,
+      "id": "F-c5ab4ca1",
+      "line": 350,
+      "message": "`commit_scope` fullmatches `_BOOKKEEPING` on whitespace-collapsed text (line 345), so `git commit -q -m \"chore(T-1): task manifest\"`, a newline, then `-- .aegis/runs/T-1` is exempt while bash runs the first line alone and commits the whole index ungated. The exemption is not exact: it reopens the 'second line' class (UNBLOCK-01 F-a09d3fc8) that R-14 and ARCHITECTURE §6 say the deletion closed.",
+      "minimal_fix": "Fullmatch the uncollapsed `command.strip()` (or return gate on any newline) and add this case to the table.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-14",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:14:08",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: spec:161-166, §3:187, README:231, the trace hint at checks.py:549 and handoff deviation 6 all state the re-issue on the new base.",
+      "first_seen_round": 1,
+      "id": "F-ab352424",
+      "line": 546,
+      "message": "Committing the owner's staged rename, as this hint, the spec edge case ('until it is committed') and the handoff prescribe, puts both paths in `00c7c9f...HEAD` and strips the destination's exemption (core.py:393-397), so TASK-UNBLOCK-02's unwaivable trace still fails on both. For any task based before the commit this remedy cannot work, so this task's 'task gate green' is unreachable without re-basing or re-issuing it.",
+      "minimal_fix": "Baseline a pending deletion as absent (exempt while still absent and uncommitted), or state that only tasks based after the commit escape it.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-26",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:14:08",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: tests:1596 asserts `changed_files` against the commit holding auth.py, so only the rename branch can supply it; braces now sit inside the exact form (tests:1602).",
+      "first_seen_round": 1,
+      "id": "F-20afc6a7",
+      "line": 1585,
+      "message": "`test_a_staged_rename_keeps_its_source_in_scope` uses base None, so the empty-tree diff already lists the committed src/auth.py and the test stays green with the rename branch of `working_tree_files` removed; `test_brace_expansion_cannot_ride_the_bookkeeping_exemption` (1592) uses `-m x`, which is gated whatever the pathspec. The R-26 and R-14 criteria name tests that do not lock the fixes they cite.",
+      "minimal_fix": "Assert scope against a real base_sha after the mv, and put the braces inside the exact bookkeeping form.",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-26",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:26:49",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: flow.py:1059-1066 names nobody, the builder, the lens or an agent, its docstring at 1047, and spec R-25:96, §5:236-238, build SKILL:92 and orchestrator:83 all exclude the builder.",
+      "first_seen_round": 2,
+      "id": "F-4685024b",
+      "line": 1057,
+      "message": "`_dismissal_problems` calls `_names_a_person(by, builder, lens)`, so a dismissal by the task's own builder is refused too, while R-25, ARCHITECTURE §5:237 and skills/build/SKILL.md:92 say only that the name must not be one the gate recognises as an agent. A person who built the task by hand is told their own name \"is not a person\" and must find a second name, so the rule is not the same in the code as in the three documents that state it.",
+      "minimal_fix": "Add \"and not the task's builder\" to R-25, §5 and the build protocol, and say \"is the builder, not an independent person\" in the message.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "6f974569332745db",
+      "requirement": "R-25",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:14:08",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: `_dismissal_problems` (flow.py:1042) is called by check_reviews:1203 and next_action:1741, which returns a `human` step; orchestrator 82-84 lists it under stop-and-ask.",
+      "first_seen_round": 1,
+      "id": "F-67985309",
+      "line": 1735,
+      "message": "R-25 changed who may defer a finding but not the code and docs that depend on that rule: `next_action` skips a waived or deferred blocking finding and advises `gate` [cli], which then fails with 'without a waiver record' or 'not a person'. Meanwhile aegis-orchestrator.md:56 still lists `waived|deferred` as the orchestrator's own step, so the loop dead-ends at a red gate whose only agent route to green is typing a person's name, which ARCHITECTURE §5 forbids.",
+      "minimal_fix": "Emit a `human` step for such findings before advising the gate, and list deferral under 'When to stop and ask'.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-25",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-cc565f76",
+      "line": 168,
+      "message": "§8's table records TASK-UNBLOCK-02 as a finished cycle — \"Rounds 2\", \"Blocking left at the end 0\", \"reviews green\" — while the task is still in review: metrics.jsonl ends at round 2 for the three lenses and a third round is running now. R-24 exempts a `record` document from staleness, so nothing will flag those numbers when they move, in the file that declares itself authoritative for the status of each finding.",
+      "minimal_fix": "Date the row (\"as of round 2, review open\") or fill the outcome column once the task is gated.",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "a950967e27166cb6",
+      "requirement": "R-24",
+      "rounds": [
+        3
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:26:49",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: flow.py:1857 ends \"commit them before the first task — a task created earlier keeps them in its scope\", and §3 now ends at \"predated adoption\" (ARCHITECTURE:191).",
+      "first_seen_round": 2,
+      "id": "F-e0149809",
+      "line": 1848,
+      "message": "`status` still advises \"commit them to retire the exemption\" unqualified, while the `skipped` branch three lines below, the trace hint, §3:187 and README:231 all now add \"before the first task\" (and §3:191 closes with the unqualified sentence again). A user with an open task who follows the status line puts the baselined paths into that task's scope and reds its trace — the failure this task documented everywhere else.",
+      "minimal_fix": "End the status line with \"before the first task; a task created earlier keeps them in scope\" and drop the trailing sentence in §3.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "6f974569332745db",
+      "requirement": "R-10",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:14:08",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: core.py:339 matches any `-c`/`--config-env` setting `alias.` whatever the value, so `git -c 'alias.ci=!git commit' ci -am x` gates.",
+      "first_seen_round": 1,
+      "id": "F-ffc14168",
+      "line": 333,
+      "message": "`_INLINE_ALIAS` needs commit|push in the alias value with no space, so `git -c 'alias.ci=!git commit' ci -am x` returns none and commits ungated, though R-14 names an inline alias among the spellings that run the gate.",
+      "minimal_fix": "Return gate for any git `-c`/`--config-env` that sets `alias.*`, whatever its value.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-14",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:14:08",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: core.py:393 and flow.py:1844 read only `baseline[\"files\"]`; no `untracked` key remains.",
+      "first_seen_round": 1,
+      "id": "F-09824c52",
+      "line": 385,
+      "message": "Nothing writes `baseline.untracked`, yet it is read here and at flow.py:1824 as `files or untracked`; an empty `files` map is falsy, so a stray `untracked` key would silently become the exemption list.",
+      "minimal_fix": "Read only `files` in both places.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-10",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-48261f05",
+      "line": 385,
+      "message": "`_pre_adoption_files` opens with \"Uncommitted files\" and five lines later says `aegis init` \"records the untracked files\", with the exemption stated as the hash alone — the wording and the rule the README, §3 and the trace hint dropped this round. It is now the only place the baseline is described two ways, and it is the place a maintainer reads before changing the function.",
+      "minimal_fix": "Say \"records the uncommitted files\" and \"exempt while no commit since the baseline head touched it and its hash matches\".",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "a950967e27166cb6",
+      "requirement": "R-10",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-4a62d02b",
+      "line": 173,
+      "message": "§8 says \"Nine classes surfaced\" and \"Each is now a requirement with a test (R-10 to R-15)\", but six are listed, that range is six requirements, and two of the listed six are both R-11 — so the count agrees with neither the list nor the spec. A reader checking the record against `spec.md` finds three classes that do not exist.",
+      "minimal_fix": "Write the number the list and the requirement range support, or name the missing classes.",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "a950967e27166cb6",
+      "requirement": "R-16",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:26:49",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: README:229-232 reads \"every file left uncommitted at adoption\" with the source side of a pending rename never exempt.",
+      "first_seen_round": 2,
+      "id": "F-c82a2dcf",
+      "line": 229,
+      "message": "The README limits say \"files untracked at adoption\" and \"a deletion or rename pending at adoption is never exempt\", but R-10 and §3:182-186 record every uncommitted file and exclude only the rename's source — this repository's baseline holds the destination `docs/spec-v0.3-original.md` (capabilities.json:8). The two documents describe the same baseline differently, so a reader cannot tell which paths are exempt.",
+      "minimal_fix": "Write \"uncommitted\" and \"the source side of a rename\" in the README limits.",
+      "path": "README.md",
+      "raised_digest": "6f974569332745db",
+      "requirement": "R-10",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-d8d37217",
+      "line": 196,
+      "message": "\"31 of 43 findings … and none came back\" is offered as the evidence that stable ids earned their place, but it counts recurrence per id: §8's own next paragraph records the hook class bypassed in all three rounds under new ids, and this task's F-c5ab4ca1 cites UNBLOCK-01's F-a09d3fc8 as the class it reopens. The record therefore credits the two-strike mechanism with a property it did not deliver, and ADR-1's empirical case rests on that line.",
+      "minimal_fix": "Say \"none was reopened under its own id; the hook class recurred under new ones\".",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "a950967e27166cb6",
+      "requirement": "R-16",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "design",
+  "recorded": "2026-09-17T21:26:49",
+  "reopened": [],
+  "report_tokens": 1103,
+  "reviewer": "lens-design-02 (fresh general-purpose subagent, claude-opus-5)",
+  "round": 3,
+  "task": "TASK-UNBLOCK-02",
+  "verdict": "pass-with-notes"
+}

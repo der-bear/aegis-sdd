@@ -1,0 +1,166 @@
+{
+  "diff_digest": "7942d66a9fd82cf9",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `_TESTS_RAN` is tried first and a go per-package pattern was added; the input I named, uncached mixed `go test ./...`, classifies `ran`",
+      "first_seen_round": 1,
+      "id": "F-4e118d3a",
+      "line": 953,
+      "message": "`tests_ran` tries `_TESTS_NONE` first and `no test files` matches anywhere in the output, so a passing `go test ./...` over a repo where any one package has no test file is classified `none`. Verified: mixed go output returns `none` and no `_TESTS_RAN` pattern matches it, so `_test_evidence` hard-fails the gate with \"exited 0 and ran no tests\" on a genuinely green run.",
+      "minimal_fix": "add a go RAN pattern `^ok\\s+\\S+\\s+[\\d.]+s` and let it outweigh `no test files`",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": null,
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: probed a baselined regular file replaced by a symlink to identical content: now in `changed_files` (the inverse case is a separate finding above)",
+      "first_seen_round": 1,
+      "id": "F-7c909f8c",
+      "line": 465,
+      "message": "`os.path.isfile` and `file_sha256` both follow symlinks, so a baselined regular file replaced by a symlink to identical content stays exempt (verified in a probe repo). `diff_digest` at line 519 counts that same swap as a change, so the edit is inside the digest but outside every scope the gate builds.",
+      "minimal_fix": "record and compare a symlink by type plus `os.readlink` target in both `_adoption_baseline` (scaffold.py:159) and here, as `diff_digest` already does",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `absence_is_removal=True` on the index path; probed a staged `git rm` of a baselined file - now in both `staged_files` and `changed_files`",
+      "first_seen_round": 1,
+      "id": "F-8d544a60",
+      "line": 410,
+      "message": "`_is_adoption_state` returns True whenever `digest == at_baseline_head`, and that is None for every path untracked at adoption (nearly the whole framework on this repository), so a staged deletion — index digest None — is accepted as adoption state. Verified: after committing a baselined file and `git rm --cached` it, `staged_files` is [] and `changed_files` omits the path, so the deletion reaches a commit unowned and unreviewed.",
+      "minimal_fix": "compare only when the baseline head held the path: `at_baseline_head is not None and digest == at_baseline_head`",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:31:04",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: probed init with a link: recorded `symlink:real.py`; after the adoption commit `_digest_at` and `_digest_in_index` both return `symlink:real.py`, `link.py` is in neither `changed_files` nor `staged_files`, `aegis status` reports the baseline retired, and `_pre_adoption_files` is the only reader of either helper",
+      "first_seen_round": 2,
+      "id": "F-c0d97cf7",
+      "line": 398,
+      "message": "`content_key` records a symlink as `symlink:<target>`, but `_digest_at` and `_digest_in_index` return `sha256(<blob bytes>)`, which for mode 120000 is the hash of the target string - a value that can never equal a `symlink:` record. Verified: a link present at adoption is exempt before the adoption commit and permanently in `changed_files` after it, and `aegis status` still reports it \"still uncommitted\", so the baseline never retires and the trace failure has nothing that can clear it.",
+      "minimal_fix": "in both git readers, key a 120000 entry as `\"symlink:\" + blob text` so the record namespace matches `content_key`",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "9fb58e7a46f76666",
+      "requirement": "R-27",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:31:04",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: the pattern accepts `(cached)` in a non-capturing group; `tests_ran` on `ok a (cached)` plus a `[no test files]` package returns `ran` (probed)",
+      "first_seen_round": 2,
+      "id": "F-65591020",
+      "line": 978,
+      "message": "The new go pattern requires a duration, so `go test ./...` with warm build cache prints `ok <pkg> (cached)` and matches no RAN pattern; one package without tests then reaches `no test files` and the run is classified `none`. Verified: cached-plus-mixed output returns `none`, which hard-fails the gate on a green re-run.",
+      "minimal_fix": "allow `(cached)` in the go pattern",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "9fb58e7a46f76666",
+      "requirement": null,
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-95f08f93",
+      "line": 983,
+      "message": "`go test -run NoSuch ./...` exits 0 and prints `ok <pkg> 0.004s [no tests to run]`, which the go pattern matches, so `tests_ran` returns `ran` (probed) and `_test_evidence` accepts a filter that matched nothing, the case its own docstring names. Before round 2 this output was `unknown` and drew a warning; now it is a silent green.",
+      "minimal_fix": "add `(?! \\[no tests to run\\])` to the go pattern, narrow the bare `PASS` alternative to `^--- PASS:`, and put `no tests to run` in `_TESTS_NONE`",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "7942d66a9fd82cf9",
+      "requirement": null,
+      "rounds": [
+        3
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:14",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: net-state is defensible and R-27 now states it explicitly; the round-1 edge case still holds - a commit recording other content keeps the path in scope even after the working tree is put back",
+      "first_seen_round": 1,
+      "id": "F-aba955ac",
+      "line": 468,
+      "message": "R-27 requires that no commit recorded content other than the record, but only HEAD is inspected. A commit that records different content followed by a revert commit re-exempts the path (verified), so history a task owns drops out of attribution.",
+      "minimal_fix": "check every commit in `since` that touched the path, not only what HEAD holds",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-8956fa3f",
+      "line": 433,
+      "message": "`git ls-files -s -- <rel>` takes a pathspec, so a baselined name containing `?`, `*` or `[` lists every match and `split()` keys the first: probed `x?.md` beside `x1.md` and `_digest_in_index` returned `x1.md`'s blob (ls-tree is literal, so `_digest_at` is unaffected). The staged half of the exemption then compares the wrong content for such a path.",
+      "minimal_fix": "query `\":(literal)\" + rel`",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "7942d66a9fd82cf9",
+      "requirement": "R-27",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-a399bfe8",
+      "line": 408,
+      "message": "`content_key` records a link via `os.readlink`, which decodes with the filesystem encoding, while `_git_key` decodes the blob as UTF-8; on a non-UTF-8 locale a target with non-ASCII bytes keys differently on the two sides and never reaches the adoption state. Identical on macOS and any UTF-8 locale, so no failing input on this repository.",
+      "minimal_fix": "`\"symlink:\" + os.fsdecode(blob)`",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "7942d66a9fd82cf9",
+      "requirement": "R-27",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-17T23:31:04",
+  "reopened": [],
+  "report_tokens": 778,
+  "reviewer": "lens-correctness-r3 (fresh general-purpose subagent, claude-fable-5.1, round 3)",
+  "round": 3,
+  "task": "TASK-UNBLOCK-03",
+  "verdict": "pass-with-notes"
+}

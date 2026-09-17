@@ -1,0 +1,63 @@
+{
+  "acceptance": [
+    "make check green",
+    "bootstrap gate green",
+    "task gate green with fresh lenses within the round cap",
+    "spec acceptance criteria R-1..R-26 hold"
+  ],
+  "base_sha": "00c7c9f0f0beaf0897aa2774001d59bd4f9cd38a",
+  "change_kinds": [
+    "code",
+    "docs",
+    "test"
+  ],
+  "created": "2026-09-17T16:54:26",
+  "feature": "unblock-cycle",
+  "id": "TASK-UNBLOCK-02",
+  "objective": "Re-issue of TASK-UNBLOCK-01 after its round cap: the commit-hook exemption deleted down to one exact command, the third-round security fixes, and a waiver kind for review findings",
+  "owns": [
+    "README.md",
+    "agents/**",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "hooks/**",
+    "schemas/**",
+    "scripts/aegis/**",
+    "skills/**",
+    "tests/**",
+    "workflows/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-1",
+    "R-10",
+    "R-11",
+    "R-12",
+    "R-13",
+    "R-14",
+    "R-15",
+    "R-16",
+    "R-17",
+    "R-18",
+    "R-19",
+    "R-2",
+    "R-20",
+    "R-21",
+    "R-22",
+    "R-23",
+    "R-24",
+    "R-25",
+    "R-26",
+    "R-3",
+    "R-4",
+    "R-5",
+    "R-6",
+    "R-7",
+    "R-8",
+    "R-9"
+  ],
+  "risk_tier": "C",
+  "size": "L",
+  "status": "abandoned",
+  "updated": "2026-09-17T22:00:42"
+}

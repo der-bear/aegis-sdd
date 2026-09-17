@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aegis feature flag registry",
+  "description": "A flag without a sunset date becomes permanent configuration nobody dares remove, so the date is required.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "status", "origin", "owner", "default", "sunset"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$" },
+      "status": { "enum": ["proposed", "active", "deprecated"] },
+      "origin": { "type": "string", "pattern": "^(TASK|RETRO|ADR|LEGACY)-" },
+      "owner": { "type": "string", "minLength": 2 },
+      "default": { "type": ["boolean", "string", "number"] },
+      "sunset": { "type": "string", "format": "date" },
+      "description": { "type": "string" },
+      "docs": { "type": "string" },
+      "superseded_by": { "type": "string" },
+      "verified": { "enum": ["confirmed", "observed", "unverified"] }
+    },
+    "additionalProperties": false
+  }
+}

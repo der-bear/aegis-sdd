@@ -1,0 +1,139 @@
+{
+  "diff_digest": "a950967e27166cb6",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:13:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: _BOOKKEEPING now fullmatches command.strip(); the newline form returns gate and the hook exits 2 (CASES row plus the bypass list), while the workflow's one-line command stays exempt.",
+      "first_seen_round": 1,
+      "id": "F-99fcf9cb",
+      "line": 350,
+      "message": "The exemption is checked against whitespace-flattened text, so `git commit -q -m \"chore(T-1): task manifest\" --<newline>.aegis/runs/T-1` counts as exempt (the hook exits 0), but bash runs a commit with no pathspec. Verified: a staged src/evil.py was committed with no gate.",
+      "minimal_fix": "Fullmatch against the raw command with only backslash-newlines folded; the workflow's one-line command still matches.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-14",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:13:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Branching on 'R'/'C' in record[:2] puts src/c.py back in scope with no bogus /c.py for status RD (probed).",
+      "first_seen_round": 1,
+      "id": "F-0a07a559",
+      "line": 268,
+      "message": "Only `R `, `RM` and ` R` consume the source record, so a rename in state RD or RT (`git mv src/c.py src/c2.py && rm src/c2.py`) drops src/c.py from scope and adds a bogus `/c.py`. The deletion never reaches the lens diff or trace.",
+      "minimal_fix": "Branch on 'R' in record[:2] / 'C' in record[:2] instead of listing XY pairs.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-26",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:13:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: All three spellings now gate: any -c/--config-env alias.*, and a shell invoked by path through _SHELL_STRING (probed).",
+      "first_seen_round": 1,
+      "id": "F-37786e46",
+      "line": 333,
+      "message": "Inline aliases `git -c alias.ci='!git commit' ci -am x` and `X=commit git --config-env=alias.ci=X ci -am x` both return none, and both commit (verified); so does `/bin/bash -c \"git commit -am x\"`. None of the three runs the gate.",
+      "minimal_fix": "Gate any -c/--config-env alias.* definition whatever its value; allow a path before sh/bash in _SHELL_STRING.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-14",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:25:44",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 3: checks.expired() compares parsed dates and core._valid_date enforces the YYYY-MM-DD shape, so 20260101 and 2026-W01-1 now read as expired and fail validation (probed); waiver_for, apply_waivers and _dismissal_problems all use it.",
+      "first_seen_round": 2,
+      "id": "F-066ef5ac",
+      "line": 1066,
+      "message": "Waiver expiry is a string compare, but the schema's date check (date.fromisoformat, Python 3.11+) also accepts `20260101` and `2026-W01-1`, and both sort as unexpired on 2026-09-17 (verified). A dismissal dated that way never expires within its year.",
+      "minimal_fix": "Compare date.fromisoformat(w['expires']) >= date.today() here and in waiver_for.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "6f974569332745db",
+      "requirement": "R-25",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:13:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: diff, log and staged_files read -z and the log adds --no-renames; a committed non-ASCII baselined file is in scope by its real name (probed).",
+      "first_seen_round": 1,
+      "id": "F-20a871c2",
+      "line": 395,
+      "message": "`git log --name-only` quotes non-ASCII paths and omits rename sources, so a baselined `legacy/résumé.py` that was committed and then reverted to its adoption bytes stays exempt (verified).",
+      "minimal_fix": "git -c core.quotepath=off log -z --no-renames --name-only.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-10",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:13:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: shopt -s nocasematch refuses .aegis/Answers.json, .AEGIS/answers.json and the generated/constitution variants (probed).",
+      "first_seen_round": 1,
+      "id": "F-a4cb5f98",
+      "line": 45,
+      "message": "The answers.json refusal matches case-sensitively, so on case-insensitive APFS a write to `.aegis/Answers.json` (same inode) exits 0.",
+      "minimal_fix": "shopt -s nocasematch before the case statement.",
+      "path": "hooks/protect-paths.sh",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-26",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T21:13:32",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: The rename test now bases changed_files on the commit sha, which fails under the old parser (probed); a new RD test covers the deleted destination.",
+      "first_seen_round": 1,
+      "id": "F-ebe91059",
+      "line": 1585,
+      "message": "This R-26 test passes without the rename-source change: with base None, the diff from the empty tree to HEAD already lists the committed src/auth.py. Restoring the old parser keeps it green (verified).",
+      "minimal_fix": "Assert on changed_files(ctx, <HEAD sha after the auth commit>).",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "fc4ff96522e56ec4",
+      "requirement": "R-26",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-17T21:25:44",
+  "reopened": [],
+  "report_tokens": 117,
+  "reviewer": "lens-correctness-02 (fresh general-purpose subagent, claude-opus-5)",
+  "round": 3,
+  "task": "TASK-UNBLOCK-02",
+  "verdict": "pass"
+}

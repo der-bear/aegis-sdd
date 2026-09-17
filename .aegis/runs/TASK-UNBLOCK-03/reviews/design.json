@@ -1,0 +1,187 @@
+{
+  "diff_digest": "7942d66a9fd82cf9",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:15",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: EVALUATION section 8 now carries \"What the third task's own review says about its size\" - 28 requirements, a whole-framework diff, the tier-A review conceded nominal, and the commit named as the fix; manifest records `supersedes`. Splitting now would re-inherit the same requirements, so the written answer is adequate.",
+      "first_seen_round": 1,
+      "id": "F-327a1791",
+      "line": 15,
+      "message": "The lease holds 28 requirements across 13 globs and a ~642 KB diff, against tasks.md's rule that one task fits one builder's context and one reviewable outcome. Because `check requirements` credits only gated/merged tasks, each abandonment at the round cap moves every requirement to the re-issue (24 -> 26 -> 28, 10 -> 10 -> 13 globs), so the escalation rule guarantees the next re-issue is larger; no lens can read this diff, making the tier-A independent review nominal.",
+      "minimal_fix": "Owner question: credit a re-issue with the abandoned task's already-tested requirements, or split UNBLOCK-03 by mechanism.",
+      "path": ".aegis/protocols/tasks.md",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "none",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:15",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: spec.md:45-50 - R-10's history clause is gone and the amendment tag names TASK-UNBLOCK-03 and R-27; line 150 is the single combined acceptance entry naming the four locking classes",
+      "first_seen_round": 1,
+      "id": "F-3ab9384f",
+      "line": 48,
+      "message": "Spec R-10 still requires the rule ADR-4 deletes — \"outside every task's scope only while no commit since the baseline head has touched it\" — with no amendment tag, though R-14 carries one for the same kind of supersession, and the acceptance list keeps both `R-10` and `R-10 (amended)`. R-10 and R-27 now demand opposite attribution, so the packet's own criterion \"R-1..R-28 hold\" cannot be satisfied and a later implementer restores the deleted rule.",
+      "minimal_fix": "Tag R-10 \"(Amended by TASK-UNBLOCK-03: attribution is by content, R-27)\" and drop its history clause.",
+      "path": ".aegis/specs/unblock-cycle/spec.md",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:15",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: section 8's table has three columns with a \"Status in its manifest\" row matching all three manifests; the baseline bullet states the old rule in the past tense as ADR-4's reason and names deletion as the owner's open question",
+      "first_seen_round": 1,
+      "id": "F-ed27c78f",
+      "line": 210,
+      "message": "EVALUATION §8 contradicts the run artefacts and the code shipped beside it: it records TASK-UNBLOCK-02 as \"reviews clean, then corrected\" while its manifest says `abandoned`, there is no row for TASK-UNBLOCK-03, it states the superseded history rule in the present tense (\"committing a baselined path returns it to the scope of every task\"), and it gives the pre-ADR-4 route as the current one. A reader concludes the adoption commit is still impossible and the remedy is deletion.",
+      "minimal_fix": "Add the third task's row, mark 01 and 02 abandoned per their manifests, and rewrite the two paragraphs in the past tense with ADR-4 as the resolution.",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-28",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:15",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: `.gitignore` holds `__pycache__/` and `*.pyc`; diff-r2.patch contains no `.pyc` file headers; `CompiledBytecodeIsNotSource` asserts the ignore entry",
+      "first_seen_round": 1,
+      "id": "F-544ef719",
+      "line": 256,
+      "message": "The repository has no `.gitignore`, and `core.working_tree_files` reads `git status --untracked-files=all`, so nine `__pycache__/*.pyc` files enter `changed_files`, the diff digest and every `aegis diff` a lens reads — they are in this task's own diff. Compiled bytecode is therefore part of the reviewed change set and of the adoption commit ADR-4 exists to make possible.",
+      "minimal_fix": "Add a `.gitignore` with `__pycache__/` before the adoption commit.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-27",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:25:53",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: README's command block lists `aegis git-hooks install [--force]` and its check list ends `pointers commands`; ARCHITECTURE section 6 line 309 opens \"The hook is not the barrier\"; `test_every_check_name_is_in_the_readme` asserts every `CHECKS` key is in that block.",
+      "first_seen_round": 2,
+      "id": "F-5527a2e0",
+      "line": 262,
+      "message": "`aegis git-hooks install` and `aegis check commands` both exist and run, but README's command list omits `git-hooks` and its check-name list (lines 262-264) omits `commands`, and ARCHITECTURE never mentions the git hooks. EVALUATION section 8 now claims this task \"put the gate in front of every commit in the checkout rather than only the ones Claude Code runs\" - a reader cannot find how to enable that, nor re-run by name the check that failed their bootstrap gate.",
+      "minimal_fix": "Add `git-hooks install` to the command list, `commands` to the check list, and one line on the git hooks in ARCHITECTURE section 6.",
+      "path": "README.md",
+      "raised_digest": "9fb58e7a46f76666",
+      "requirement": "R-28",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:15",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: README Guarantees keeps only \"a gate that fails when nothing ran\"; the test-evidence clause is in Heuristics, and flow.py's blocking hint now says it reads recognised runner summaries only",
+      "first_seen_round": 1,
+      "id": "F-8ce3317e",
+      "line": 218,
+      "message": "The zero-tests gate is listed under Guarantees (\"a gate that fails when ... a package declaring tests did not run them\"), but `flow._test_evidence` decides it from regexes over runner output, and only its non-blocking `unknown` branch says \"this is a heuristic and not a guarantee\" — the blocking `none` branch does not, against the README's own claim that every heuristic finding says so in its output.",
+      "minimal_fix": "Move the zero-tests clause to the Heuristics paragraph and add \"recognised runner summaries only\" to the `none` hint.",
+      "path": "README.md",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-28",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-46344f0a",
+      "line": 312,
+      "message": "ARCHITECTURE section 6 says each git hook \"refuses when that path is gone\" and runs the gate \"for every commit in the checkout\", but the hook falls back to `aegis` on PATH before refusing and exits 0 when the index holds only `.aegis/runs/`. A reader who removes the installing checkout expects a refusal and gets whichever `aegis` is on PATH, and the index-based bookkeeping exemption is stated only inside the hook body.",
+      "minimal_fix": "Say \"refuses when neither that path nor `aegis` on PATH is executable\" and name the run-directory exemption.",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "7942d66a9fd82cf9",
+      "requirement": "R-28",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:25:53",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: spec.md's acceptance list has one R-27 entry, `R-10 as amended, and R-27:` naming four classes; the standalone `- R-27:` line is gone from the diff.",
+      "first_seen_round": 2,
+      "id": "F-abcb2246",
+      "line": 167,
+      "message": "The acceptance list names R-27's tests twice: line 150 as \"R-10 as amended, and R-27\" with all four classes, and line 167 as a leftover \"R-27: `AdoptionIsAttributedByContent`\" with one. A reader checking R-27's coverage from the second entry sees one of the four classes that lock it.",
+      "minimal_fix": "Delete the standalone `- R-27:` line at 167.",
+      "path": ".aegis/specs/unblock-cycle/spec.md",
+      "raised_digest": "9fb58e7a46f76666",
+      "requirement": "R-27",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-c23b0203",
+      "line": 168,
+      "message": "EVALUATION section 8's table gives TASK-UNBLOCK-03 `Rounds | 2`; every lens record on disk is at round 2 and this round's records make it 3, so the count will not be the one the run artefacts hold once this round is recorded (R-28). Correcting it moves the digest with no round left, so the edit belongs to the commit after the records land rather than to this diff.",
+      "minimal_fix": "After this round's records land, write `3 (the cap)`.",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "7942d66a9fd82cf9",
+      "requirement": "R-28",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-17T23:07:15",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: NOTES.md:36-38 now states the content rule - a recorded path belongs to adoption while the repository holds what was recorded, absence is a record, and committing the state retires the baseline",
+      "first_seen_round": 1,
+      "id": "F-c7bd2464",
+      "line": 36,
+      "message": "`.aegis/memory/NOTES.md` still asserts both halves of the rule ADR-4 removed: that the baseline never covers a deletion and that committing a baselined path returns it to scope. The path is outside this task's lease, so it is a follow-up rather than an edit here, but it is the fifth place the old rule survives.",
+      "minimal_fix": "Correct the two clauses as the orchestrator, which owns that file.",
+      "path": ".aegis/memory/NOTES.md",
+      "raised_digest": "2fe31533972304ce",
+      "requirement": "R-28",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "design",
+  "recorded": "2026-09-17T23:25:53",
+  "reopened": [],
+  "report_tokens": 620,
+  "reviewer": "lens-design-r3 (fresh general-purpose subagent, claude-fable-5.1, round 3)",
+  "round": 3,
+  "task": "TASK-UNBLOCK-03",
+  "verdict": "pass-with-notes"
+}
