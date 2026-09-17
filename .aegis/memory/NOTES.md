@@ -70,7 +70,7 @@ Second: mechanical checks passing is not the documents being true. `check comman
    would refuse). Then `git add .aegis/memory && git commit` lands this checkpoint and retro 0002,
    and `main` moves once more. Push and review as a pull request when ready. It changed `skills/`, the protocols and the
    drafted constitution, which rule 4 says a human approves.
-2. Next task: the nine requirements in `retros/0002.md`, found after the round budget was spent.
+2. Next task: retro 0002's list, in the owner's order — friction first, then the nine code findings.
    The first is a regression this cycle introduced in the tests-ran evidence; the sixth retires
    the waiver.
 3. Then TASK-UNIVERSAL-01 (bundle step 4, ADR-3). Step 5 must be rewritten as the remainder: it
@@ -85,7 +85,9 @@ Second: mechanical checks passing is not the documents being true. `check comman
 
 ## Decided by the owner since the merge
 
-- Lens report cap: a warning at 1,500 tokens, not a blocking check (retro 0002, requirement 11).
+- The definition of optimal: stable, little human participation, the agent not over-restricted,
+  no artefact ever rewritten for tokens. The gate blocks on correctness only. Retro 0002 carries
+  the eight requirements this re-orders the next task into; they come before the code findings.
 
 ## How to verify the current state
 
