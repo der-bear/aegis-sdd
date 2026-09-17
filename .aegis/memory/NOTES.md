@@ -82,7 +82,10 @@ Second: mechanical checks passing is not the documents being true. `check comman
 - Project 2: which project of a different kind.
 - Keep the adoption baseline at all? ADR-4 makes it correct; retro 0001 argues for deleting it and
   requiring a commit before the first task.
-- The lens report cap of 1,000 tokens: exceeded in several rounds with nothing redundant in them.
+
+## Decided by the owner since the merge
+
+- Lens report cap: a warning at 1,500 tokens, not a blocking check (retro 0002, requirement 11).
 
 ## How to verify the current state
 
