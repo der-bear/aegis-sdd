@@ -1,0 +1,260 @@
+{
+  "diff_digest": "1d7978df0e5a5110",
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-0113be9f",
+      "line": 585,
+      "message": "`default_base` falls through to the local `main` ref when no remote-tracking ref exists — this checkout has no remote at all — and that ref is the trust root of the new base-agreement rule, so `git branch -f main <payload-commit>`, one Bash command no installed hook sees, makes `at_base == at_root` and also drops the payload out of the merge gate's own scope. The framework states this move is a person's act (`land` only prints it, `next` marks the step `who: human`), and CI recovers it only where a remote exists and the branch is actually pushed.",
+      "minimal_fix": "Prefer a remote-tracking ref, and record the root in the manifest at claim so a later ref move is detectable.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-4",
+      "rounds": [
+        2
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-66b7d183",
+      "line": 1649,
+      "message": "The merge stage now skips every task not in `HOLDING`, so a manifest saying `merged` is asked for no handoff, no lens report and no gate receipt, while `merge_receipt_files` accepts any `.aegis/runs/<T>/merge-receipt.json` whose `sha` is an ancestor of HEAD and `_holds_recorded` then gives its files an owner. Pre-diff a hand-typed `merged` left those files ownerless and `trace` failed \"belongs to no task\"; now `git add -A`, release the focus, write `\"status\": \"merged\"` plus a four-key receipt listing each owned file's `content_key`, and the merge gate is green on unreviewed code — CI reads the same committed file with the same code, so the comment's \"typing `merged` into a manifest buys nothing\" is false after this change.",
+      "minimal_fix": "Require `gate_receipt_valid` or a receipt this run wrote for a task recorded `merged` whose files are in the candidate, as the deleted branch did.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-4",
+      "rounds": [
+        2
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: `checks._unreviewed_at_base` (checks.py:632) fails the named path — payload committed while planned, base fixed at it — on a branch with a mainline ref; the residuals are filed fresh above, not reopened here.",
+      "first_seen_round": 1,
+      "id": "F-a0db7907",
+      "line": 311,
+      "message": "Reproduced: `claim` sets `base_sha` to HEAD, so a commit made on the branch while the task was still planned (no hooks installed, or `git commit --no-verify`) is outside `aegis diff`, the lens digest and the task gate, yet at the merge stage `check_trace` attributes it to the task by glob, the full merge gate goes green, and `_write_merge_receipt` records the file as the task's own. The class existed for a commit before `task new`; this diff moves the window to claim time, which under R-6's backlog is the whole life of the preceding task.",
+      "minimal_fix": "at the merge gate, fail when a file attributed to a holding task by glob is not in `changed_files(ctx, task['base_sha'])`: attributed but never in its reviewed diff",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "ce96eead6c563420",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: `config.set_answer` calls `lease_violation` on `.aegis/answers.json` and refuses under a focused lease (config.py:795), and `waive` reads the delegation from `HEAD:.aegis/answers.json` (flow.py:1788), so the uncommitted write authorises nothing.",
+      "first_seen_round": 1,
+      "id": "F-99e20bdc",
+      "line": 1786,
+      "message": "Reproduced: under a focused lease `aegis lease check --path .aegis/answers.json` refuses the path, but `aegis answer q.core.delegate '{\"owner\": \"Bot Bot\", \"may_waive\": [\"requirements\"]}'` writes it anyway (`set_answer` consults neither the lease nor the question's `always-ask`), and `aegis waive requirements --scope '**'` then downgrades the coverage failure in a made-up owner's name while `check_trace` only warns. The delegation R-5 introduces is data the delegated agent rewrites with one command.",
+      "minimal_fix": "in `set_answer`, refuse when `lease_violation(ctx, answers.json)` returns a reason; fail rather than warn in `check_trace` when the candidate changes the delegation",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "ce96eead6c563420",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-b240674d",
+      "line": 651,
+      "message": "`default_base` returns None on a project whose mainline is named anything but main/master with no `origin/*` ref (trunk, develop), and `_unreviewed_at_base` then returns the empty set with no note, so the base-agreement rule is silently absent on feature branches too — while `flow._default_branch` raises on that same configuration. The handoff states the residual only for work committed on the default branch itself, so a reader of that statement believes the rule is in force where it is not.",
+      "minimal_fix": "Emit a `trace` note when `root` is None or not an ancestor of the base: a check that did not run says so.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-4",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-1253efc8",
+      "line": 38,
+      "message": "The stated reason for not refusing an unreadable payload — \"the barrier for that is `aegis check drift`\" — holds only for `.aegis/generated/`: `.aegis/constitution.md` is outside `core.in_review_scope`, outside every digest and task diff, and skipped by `check_trace`'s `.aegis/` branch, and an `answers.json` edit followed by `aegis compile` leaves no drift either. For two of the three paths this hook guards it is the only barrier, while the comment says the protection does not depend on it.",
+      "minimal_fix": "Refuse an unreadable payload where `.aegis/` exists, as the lease hook does, or put `.aegis/constitution.md` in `in_review_scope`.",
+      "path": "hooks/protect-paths.sh",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-7",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: Ran `is_person_name` on all four cited inputs — 'Claude Fable 5.1', 'Claude Opus 4', 'Gemini 2.5 Pro', 'opus 4' — and every one returns False, as do 'Bot Bot', 'the bot' and 'n/a'.",
+      "first_seen_round": 1,
+      "id": "F-6d42cc13",
+      "line": 94,
+      "message": "Reproduced: `is_person_name` now accepts 'Claude Fable 5.1', 'Claude Opus 4', 'Gemini 2.5 Pro' and 'opus 4' (the pre-diff `claude.*` refused them), so a tier-A two-strike disposition and a waiver owner of that form pass as a person who can be asked. The test's positives carry no digit and no second model word, so the two shapes can be told apart.",
+      "minimal_fix": "after a model word also refuse a following token containing a digit or itself a model word",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "ce96eead6c563420",
+      "requirement": "R-7",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-b55e6711",
+      "line": 135,
+      "message": "Reproduced: a waiver typed into `.aegis/waivers.json` with owner `Alex Derkach`, check `requirements`, scope `['**']` loads and downgrades the failure at every gate; both write hooks pass the file when no task is focused, it is outside the digest, and nothing distinguishes it from an entry the owner wrote. The listed-checks rule therefore binds only the `aegis waive` path.",
+      "minimal_fix": "warn in `check_trace` when `.aegis/waivers.json` is in the candidate, add it to the digest, and say in ARCHITECTURE that a waiver is a record",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-5",
+      "rounds": [
+        1,
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: `land` raises on \"`main` has commits HEAD does not\" before it prints, and print mode runs `gate(ctx, 'merge', run_commands=False)` and refuses when red (flow.py:1755-1770); `next`'s land step is `who: human`.",
+      "first_seen_round": 1,
+      "id": "F-d8b23277",
+      "line": 1764,
+      "message": "Reproduced: with `main` holding a commit HEAD does not, `aegis land` prints `to land: git branch -f main <sha>` while `land --run` correctly refuses with 'main has commits HEAD does not'. The printed command is the forced move the code says it must never make, and a person who runs it as printed drops main's commit.",
+      "minimal_fix": "move the fast-forward check above `if not run`, or print a command that refuses a non-fast-forward by default",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "ce96eead6c563420",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-f3085eb1",
+      "line": 1811,
+      "message": "`may_waive` is a free list with no floor and `aegis waive` refuses only `finding`, so a delegation naming `verify`, `trace` or `drift` lets an agent downgrade a failing test command or \"no command ran\" to a warning at the merge gate. The delegation can itself be agent-authored — this candidate adds `q.core.delegate` with `source: \"human\"` and a rationale citing a conversation, which no lens can verify — so the only barrier to a muted `verify` is which check names someone typed.",
+      "minimal_fix": "Refuse a delegated waiver for the gate's own evidence — `verify`, `trace`, `review`, `drift`, `waiver` — as `finding` is refused.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-5",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: `check_setup` now warns \"the git-level gate is not installed in this checkout\" using `git_hook_installed`, which reads `git rev-parse --git-path hooks` and the installer's marker (checks.py:1507, 1544).",
+      "first_seen_round": 1,
+      "id": "F-100bed49",
+      "line": 1363,
+      "message": "Reasoned from the grep: `install_git_hooks` is called only by `aegis git-hooks install`; `init`, `migrate`, `session-start.sh` and `check_setup` neither install nor verify the hooks, so a fresh clone under Claude Code now has no local gate at all until someone opts in, where before this diff the Bash hook ran the merge gate on every commit. R-3 accepts CI as the barrier, but this is the precondition the severity-4 finding rides on.",
+      "minimal_fix": "in `check_setup`, warn when `.git/hooks/pre-commit` lacks the install mark",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "ce96eead6c563420",
+      "requirement": "R-3",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: `hooks/enforce-lease.sh:34` refuses with exit 2 when `command -v python3` fails, after the `[ -d \"$root/.aegis\" ]` test that keeps it silent where Aegis does not govern.",
+      "first_seen_round": 1,
+      "id": "F-2d97de54",
+      "line": 24,
+      "message": "Reproduced: with python3 absent from PATH the payload parses to an empty path and the hook exits 0, so a write outside a focused task's lease is allowed by the same file whose new hunk says a hook that cannot check refuses; `hooks/protect-paths.sh` has the same shape. Pre-existing line, but the diff's claim now covers it.",
+      "minimal_fix": "exit 2 when python3 is not found or the payload was non-empty and the path is empty",
+      "path": "hooks/enforce-lease.sh",
+      "raised_digest": "ce96eead6c563420",
+      "requirement": "R-3",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-e07f7529",
+      "line": 43,
+      "message": "The comment claims \"Path matching below stays unconditional: compiled output is compiled output in whatever checkout it sits\", but the empty-path `exit 0` above it returns before any matching, so with an unreadable payload and no `$root/.aegis` a write into another checkout's `.aegis/generated/` is not blocked. Code and stated behaviour disagree in exactly the ungoverned-checkout case the new `.aegis` test introduces.",
+      "minimal_fix": "Say matching is unconditional only when the path could be read, or match the raw payload string as a fallback.",
+      "path": "hooks/protect-paths.sh",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-3",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-eeffff27",
+      "line": 143,
+      "message": "`_WORD` drops the underscore, so `claude_opus` tokenises to `claude` and `opus` — neither in `_NAMES_NOBODY` — and `FRAMEWORK_AGENT` needs a hyphen, a digit or whitespace after the model word: `is_person_name('claude_opus')` and `('ClaudeOpus')` both return True when run. A two-strike disposition or a waiver owner can therefore name the builder's own model in a spelling the closed table does not cover.",
+      "minimal_fix": "Treat `_` and `.` as word separators for the model-word test.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-7",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-security round 2: Still confirmed, still not findings: `apply_waivers` fails closed as a `waiver` finding (checks.py:214), neither hook reads an override variable, and the new size warnings hide nothing because `check_reviews` validates each record independently of `check_budget`.",
+      "first_seen_round": 1,
+      "id": "F-414d9b0b",
+      "line": 181,
+      "message": "Confirmed, not findings: `apply_waivers` fails closed on an invalid file, nothing muted; no environment switch returned in any hook; size warnings hide nothing from the mechanical gate because `check_reviews` parses every finding whatever `report_tokens` says; `land --run` refuses a dirty tree and a non-fast-forward. The receipt disclosure matches the exposure: forging a merge receipt needs HEAD's sha and the files' hashes, no harder than forging a gate receipt was before.",
+      "minimal_fix": "none",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "ce96eead6c563420",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    }
+  ],
+  "lens": "security",
+  "recorded": "2026-09-18T21:38:13",
+  "reopened": [],
+  "report_tokens": 2636,
+  "reviewer": "lens-security",
+  "round": 2,
+  "task": "TASK-STABLE-01",
+  "verdict": "fail"
+}

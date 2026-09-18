@@ -1,0 +1,33 @@
+{
+  "acceptance": [
+    "LensStalenessIsScopedByKind",
+    "ASkillEditRestalesEveryLens",
+    "TheDocManagerAttests",
+    "make check green"
+  ],
+  "base_sha": "458eb783d703de410e3316a01f24c60c45244f5e",
+  "change_kinds": [
+    "code",
+    "docs",
+    "test"
+  ],
+  "created": "2026-09-18T03:07:56",
+  "feature": "stable-autonomy",
+  "id": "TASK-STABLE-02",
+  "objective": "Review scope by change kind: a lens record is stale only when the delta touches a file whose kinds trigger it; the doc-manager verifies and attests documents",
+  "owns": [
+    ".agents/skills/doc-sync/**",
+    "agents/aegis-doc-manager.md",
+    "scripts/aegis/aegis_cli/**",
+    "skills/doc-sync/**",
+    "tests/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-10",
+    "R-9"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "planned"
+}

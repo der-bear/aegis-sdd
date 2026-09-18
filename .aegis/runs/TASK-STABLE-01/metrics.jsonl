@@ -1,0 +1,10 @@
+{"at": "2026-09-18T02:20:06", "event": "status", "task": "TASK-STABLE-01", "value": "building"}
+{"at": "2026-09-18T02:20:06", "event": "packet", "risk_tier": "C", "task": "TASK-STABLE-01", "tokens": 1854}
+{"at": "2026-09-18T19:47:47", "blocking": 3, "event": "lens", "findings": 9, "lens": "correctness", "round": 1, "task": "TASK-STABLE-01", "verdict": "fail"}
+{"at": "2026-09-18T20:07:08", "blocking": 2, "event": "lens", "findings": 8, "lens": "security", "round": 1, "task": "TASK-STABLE-01", "verdict": "fail"}
+{"at": "2026-09-18T20:10:10", "blocking": 3, "event": "lens", "findings": 21, "lens": "design", "round": 1, "task": "TASK-STABLE-01", "verdict": "fail"}
+{"at": "2026-09-18T20:25:47", "blocking": 2, "event": "lens", "findings": 4, "lens": "design", "round": 2, "task": "TASK-STABLE-01", "verdict": "fail"}
+{"at": "2026-09-18T21:38:13", "blocking": 1, "event": "lens", "findings": 5, "lens": "correctness", "round": 2, "task": "TASK-STABLE-01", "verdict": "fail"}
+{"at": "2026-09-18T21:38:13", "blocking": 3, "event": "lens", "findings": 7, "lens": "security", "round": 2, "task": "TASK-STABLE-01", "verdict": "fail"}
+{"at": "2026-09-18T21:38:13", "blocking": 1, "event": "lens", "findings": 7, "lens": "design", "round": 3, "task": "TASK-STABLE-01", "verdict": "fail"}
+{"at": "2026-09-18T21:42:00", "event": "status", "task": "TASK-STABLE-01", "value": "abandoned"}

@@ -1,0 +1,62 @@
+{
+  "acceptance": [
+    "SizeBudgetsWarn",
+    "NextEscalatesAtTheCap",
+    "TheGitHookIsTheOnlyBarrier",
+    "AMergedTaskDoesNotBlockTheBranch",
+    "AMergedLeaseIsNotAPermanentExemption",
+    "DelegationIsData",
+    "AnOpenTaskCoversPending",
+    "TheDiffShowsWhatTheDigestCovers",
+    "TheReceiptIsNotExempt",
+    "ANameIsAPerson",
+    "the waiver file no longer holds W-architecture-stale-after-cap",
+    "APlannedTaskOwnsNothing",
+    "ALeaseIsExclusiveWhileHeld",
+    "TheFirstSecurityReviewOfStableAutonomy",
+    "make check green",
+    "TheDocumentsSayWhatTheCodeDoes",
+    "`skills/build/SKILL.md` and its vendored protocol copy state that the tree is not edited between dispatching a round of lenses and the last of them reporting, and say why; the verification pass over each stale document happens before the last round the cap allows (R-16)."
+  ],
+  "base_sha": "458eb783d703de410e3316a01f24c60c45244f5e",
+  "change_kinds": [
+    "code",
+    "docs",
+    "test"
+  ],
+  "created": "2026-09-18T02:20:05",
+  "feature": "stable-autonomy",
+  "id": "TASK-STABLE-01",
+  "objective": "Friction is a defect: size budgets warn, next escalates at the cap, one barrier (git hook + CI), merged does not block the branch (merge receipt), delegation as data, pending coverage, review-integrity fixes, and the documents corrected and attested",
+  "owns": [
+    ".agents/skills/**",
+    ".github/**",
+    "README.md",
+    "agents/**",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "hooks/**",
+    "interview/**",
+    "schemas/**",
+    "scripts/aegis/aegis_cli/**",
+    "skills/**",
+    "tests/**",
+    "workflows/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-1",
+    "R-2",
+    "R-3",
+    "R-4",
+    "R-5",
+    "R-6",
+    "R-7",
+    "R-8",
+    "R-16"
+  ],
+  "risk_tier": "C",
+  "size": "L",
+  "status": "abandoned",
+  "updated": "2026-09-18T21:42:00"
+}

@@ -1,0 +1,250 @@
+{
+  "diff_digest": "1d7978df0e5a5110",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: Receipts are resolved into `owners` first (checks.py:782-790) and the holding loop skips `if rel in owners` (checks.py:803), so a receipted file is no longer also claimed by glob; tests/test_aegis.py:1210 now asserts the gate itself is green.",
+      "first_seen_round": 1,
+      "id": "F-f01015c1",
+      "line": 671,
+      "message": "Reproduced: `check_trace` attributes a file to a merged task by its receipt and, in the same pass, to a holding task by its globs, so on an unlanded branch the second task over the same globs fails the merge gate with `src/orders/a.py claimed by several tasks: T-1, T-2` while T-1's receipt is intact - the backlog scenario R-4/R-6 exist for. Fixing only the holder side is not enough (also reproduced): T-2 then merges and `_write_merge_receipt` records `a.py` at T-1's content in T-2's receipt too, so the trace on the very next bookkeeping commit fails on two receipts.",
+      "minimal_fix": "attribute receipts before holders and let a holder claim by glob only a file no receipt holds; in `_write_merge_receipt` skip files another task's valid receipt already holds at that content",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `validate(candidate, WAIVER_SCHEMA)` runs before any write (flow.py:1861) and the file is restored from `original` when `load_waivers` then raises (flow.py:1868-1875).",
+      "first_seen_round": 1,
+      "id": "F-8cc5dbfb",
+      "line": 1797,
+      "message": "Reproduced: `waive` writes the file and only then calls `load_waivers`, so a colliding id or a delegated check outside the schema enum leaves waivers.json invalid on disk. Every gate stage then fails closed with the `waiver` finding until someone hand-edits the file.",
+      "minimal_fix": "validate the candidate list (schema, duplicates) before `write_json`, and derive the id from the max existing suffix rather than `len+1`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `_refuse_lease_clash` now runs on every `-> building` move inside `task_status` (flow.py:304-309), covered by test_the_status_command_cannot_take_a_held_lease.",
+      "first_seen_round": 1,
+      "id": "F-9917d71a",
+      "line": 301,
+      "message": "Reproduced: `_refuse_lease_clash` runs only inside `task_claim`, so with `parallel_builders` >= 2 (profile M/L) `aegis task status T-2 building` moves T-2 from planned to building while T-1 holds the same globs, and a later `claim T-2` then succeeds because the task is no longer planned. Two builders hold one lease until the gate's `claimed by several tasks` catches it, which is the collision R-6 says claiming must refuse.",
+      "minimal_fix": "call `_refuse_lease_clash` in `task_status` on the planned->building transition (and drop the duplicate call in `task_claim`)",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-b575178f",
+      "line": 651,
+      "message": "`_unreviewed_at_base` measures a holding task's base against `default_base` — where the branch left the mainline — so on a branch that diverged from `main` before Aegis was adopted, every file the task edits that the branch had already changed since that divergence is refused as content \"no review covers\" (it is in `files_between(root, base)`, matches `owns`, and no merge receipt records it). The first task of such a project cannot pass `trace`, and neither remedy in the hint is reachable: `claim` fixes `base_sha` at HEAD, and the commit carrying the content is pre-adoption history. On this branch the check is inert — `root` b430e32 to `base` 458eb78 touches only `.aegis/memory/**`, outside STABLE-01's lease — so the refusal is reasoned from the code, not observed here.",
+      "minimal_fix": "Skip a path whose content at the base is what the adoption baseline recorded, the way a receipt's content is skipped.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-4",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: The acceptance test claims T-2 (tests/test_aegis.py:1204) and asserts `assertFalse(report.failed)` plus no \"claimed by several\", not merely the absence of T-1's name.",
+      "first_seen_round": 1,
+      "id": "F-4f9ea037",
+      "line": 1116,
+      "message": "Reasoned from the visible diff: the acceptance test for 'a second task under the same globs' creates T-2 and leaves it planned, then asserts only that no `trace` finding mentions T-1, so it passes while the gate is red on `src/orders/b.py belongs to no task`. R-4's named test therefore does not lock the claim, which is how the severity-4 finding above reached review.",
+      "minimal_fix": "claim T-2 before writing `b.py` and assert `not report.failed`",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `FRAMEWORK_AGENT` now requires `[-\\d]`, end-of-string or a product/version word after the model token (checks.py:97-103), and test_the_validator asserts \"Claude Monet\" and \"Gemini Ganesan\" pass.",
+      "first_seen_round": 1,
+      "id": "F-7b8752b3",
+      "line": 89,
+      "message": "Reproduced: `FRAMEWORK_AGENT` matches any name beginning `claude`/`gemini`/`opus`/`sonnet`/`haiku`/`codex`, so `is_person_name(\"Claude Monet\")` is False; now that `load_waivers` applies it to every owner, a waiver file owned by a person named Claude is invalid as a whole and every gate is red. The regex predates the diff, but the diff is what gives it a whole-file consequence.",
+      "minimal_fix": "anchor the agent shapes instead of bare word prefixes",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-7",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-f7408a5c",
+      "line": 541,
+      "message": "`task_diff` skips any untracked path where `os.path.isfile` is false, so an untracked symlink that dangles or points at a directory is hashed into `diff_digest` (core.py:534-537 lstats it and hashes the target) but never appears in the diff — the reviewer is bound to a digest covering a change they were not shown. For an untracked symlink to a file the same line inlines the *target's* bytes as an added regular file, hiding that the path is a link at all.",
+      "minimal_fix": "Use `os.path.lexists` and, for a link, emit the readlink target instead of the target's content.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-7",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `base_sha` is refreshed from `head_sha` on the `planned -> building` move only (flow.py:310-322); test_the_base_is_fixed_when_the_lease_starts checks it equals HEAD at claim.",
+      "first_seen_round": 1,
+      "id": "F-186c3975",
+      "line": 577,
+      "message": "Observed in the R-4 probe: `base_sha` is fixed at `task new` and `claim` does not refresh it, so a backlog task planned before the first task built has a task-gate scope, digest and lens packet that cover the earlier task's already-merged files. Reviewers of the second task re-read work that was reviewed under the first.",
+      "minimal_fix": "set `base_sha` to HEAD on the planned->building transition, since that is when the lease starts",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `land --run` re-runs the full gate at HEAD and then refuses if that gate left bookkeeping uncommitted (flow.py:1776-1783), and `next`'s land step is `who: human` (flow.py:1946).",
+      "first_seen_round": 1,
+      "id": "F-282b55cb",
+      "line": 1748,
+      "message": "Reasoned: `land --run` checks the clean tree, then runs the merge gate, which on green sets any still-`gated` task to `merged` and writes its receipt before the ref moves, so `main` lands without that task's status or receipt and the tree is dirty right after 'landed'. Self-healing on the next commit, but the clean-tree guarantee is checked before the one step that dirties it.",
+      "minimal_fix": "after the gate, refuse to move the ref if `git status --porcelain` is non-empty and say what to commit first",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: `date.fromisoformat` is wrapped and re-raised as `AegisError(\"… is not a real date\")` (flow.py:1835-1838), asserted by test_a_refused_waiver_leaves_the_file_valid.",
+      "first_seen_round": 1,
+      "id": "F-73bd8b43",
+      "line": 1781,
+      "message": "Reproduced: `--expires 2099-13-45` passes the `\\d{4}-\\d{2}-\\d{2}` check and `date.fromisoformat` raises ValueError, which the CLI reports as exit 3 'this is a bug in aegis, not in your project'. Fail-closed, but it sends the agent to debug the framework instead of its own argument.",
+      "minimal_fix": "wrap `fromisoformat` in try/except ValueError and raise the AegisError",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-a80ce095",
+      "line": 111,
+      "message": "`_NAMES_NOBODY` holds `an` and `na`, so `is_person_name(\"An Na\")` is False — a real Vietnamese/Korean/Chinese name made only of table words names nobody. Since `load_waivers` now applies the test to every owner, one such contributor makes the whole waivers file invalid and `apply_waivers` fails every gate stage.",
+      "minimal_fix": "Drop the two-letter surnames `an` and `na` from the table; `n/a` is already covered by `n` plus `a`.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-7",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-c3badc9a",
+      "line": 199,
+      "message": "docs/ARCHITECTURE.md states the base-agreement check's edge as \"on the default branch — which has no such point — it is vacuous\", but `default_base` returns None whenever none of `origin/HEAD`, `origin/main`, `main`, `master` resolves, so the check is equally vacuous on a feature branch in a local repository whose mainline is named `trunk` or `develop`. The payload-committed-before-claim sequence is open there with nothing in the documents saying so.",
+      "minimal_fix": "State the edge as \"whenever no mainline ref resolves, the default branch included\".",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-8",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-42a26b98",
+      "line": 1712,
+      "message": "`_write_merge_receipt`, `land` and `_land_pending` take `git rev-parse HEAD` at face value, which is the literal string `HEAD` on an unborn branch — the exact bug `head_sha` was added to fix. A green merge gate before the first commit writes `\"sha\": \"HEAD\"`, which `merge_receipt_files` then rejects for ever, so the task owns nothing once the branch is born.",
+      "minimal_fix": "Call `head_sha(ctx)` in all three places and treat None as \"no commit yet\".",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-4",
+      "rounds": [
+        2
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-correctness round 2: The invariant still holds: the merge stage demands a valid gate receipt and `check_reviews` for every HOLDING task touching the scope (flow.py:1649-1660), and `merged` still requires `gate_receipt_valid` (flow.py:335).",
+      "first_seen_round": 1,
+      "id": "F-c9a77593",
+      "line": 1628,
+      "message": "Invariant answered first (probed in a temp copy, then reasoned over every transition): no sequence of `task new` / `claim` / `task status` reaches a green merge gate unreviewed - `gated` runs the task gate with reviews, `merged` needs `gated` plus a valid gate receipt, a hand-typed `merged` owns nothing without a merge receipt so its files fail trace, and `planned`/`abandoned` own nothing. The one route is a hand-written merge-receipt.json with `sha` = HEAD and the files' sha256s, which the spec and the code both declare a record rather than a signature, and which is no weaker than forging a gate receipt was before this diff.",
+      "minimal_fix": "none - observation",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "bdeda9f972711355",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-18T21:38:13",
+  "reopened": [],
+  "report_tokens": 2014,
+  "reviewer": "lens-correctness",
+  "round": 2,
+  "task": "TASK-STABLE-01",
+  "verdict": "fail"
+}

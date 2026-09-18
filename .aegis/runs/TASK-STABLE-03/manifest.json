@@ -1,0 +1,31 @@
+{
+  "acceptance": [
+    "TheRound3CorrectnessFindings",
+    "make check green"
+  ],
+  "base_sha": "458eb783d703de410e3316a01f24c60c45244f5e",
+  "change_kinds": [
+    "code",
+    "test"
+  ],
+  "created": "2026-09-18T03:07:56",
+  "feature": "stable-autonomy",
+  "id": "TASK-STABLE-03",
+  "objective": "The correctness findings of retro 0002: tests_ran no-tests-to-run, literal pathspec and fsdecode in the adoption key, status by attribution, the exec bit, the push-to-main CI scope",
+  "owns": [
+    ".github/**",
+    "scripts/aegis/aegis_cli/**",
+    "tests/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-11",
+    "R-12",
+    "R-13",
+    "R-14",
+    "R-15"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "planned"
+}

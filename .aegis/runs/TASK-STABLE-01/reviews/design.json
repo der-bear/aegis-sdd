@@ -1,0 +1,570 @@
+{
+  "diff_digest": "1d7978df0e5a5110",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: tests/test_aegis.py:1578 now matches `^aegis <cmd>` per line and diffs against the parser's subparser choices, so a description's tokens can no longer stand in for an entry.",
+      "first_seen_round": 2,
+      "id": "F-1fda20de",
+      "line": 1445,
+      "message": "`words` harvests every `[a-z][a-z-]+` token in the block, descriptions included, so deleting the `aegis compile | scaffold` line leaves `missing == []` because `init`'s description reads 'detect, scaffold, compile, index' (verified); thirteen of twenty-four commands can leave the list without a red test. R-8 names `compile` and `scaffold` explicitly, and its named lock passes on a README that lists neither.",
+      "minimal_fix": "take names only from `^aegis (\\S+...)` at line starts, and assert the flag items R-8 enumerates",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "794288afbd5b8c3f",
+      "requirement": "R-8",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-56c9de24",
+      "line": 169,
+      "message": "The Findings cell for TASK-UNBLOCK-03 now reads '43 across three rounds', but its review records and metrics.jsonl both total 27 (15 + 6 + 6), and 43 is TASK-UNBLOCK-01's own figure in the adjacent column (also at :200). §8 is the evidence the framework offers for itself, so a number copied from the neighbouring cell is a false claim in exactly the table R-8 asked to correct; 'forty-eight belongs to no task findings' five lines below has no artefact on disk either.",
+      "minimal_fix": "Set the cell to 27 (15 + 6 + 6) and extend test_the_evaluation_records_the_rounds_the_artefacts_hold to the Findings row.",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-8",
+      "rounds": [
+        3
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: tests/test_aegis.py:1611 indexes the cell by column header and asserts `cell.split()[0] == str(rounds)`; the pre-fix row no longer passes.",
+      "first_seen_round": 2,
+      "id": "F-57a26577",
+      "line": 1465,
+      "message": "`assertIn(str(rounds), row)` checks that each task's round count appears somewhere in the row, not in that task's column, so the pre-fix row `| Rounds | 3 (the cap) | 3 (the cap) | 2 |` passes for all three tasks (verified: every count is 3 and '3' is in the row). The named lock for R-8's EVALUATION claim passes on the exact text the requirement was written to correct.",
+      "minimal_fix": "split the row on `|`, take the column by the task's position in the header, and assert equality",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "794288afbd5b8c3f",
+      "requirement": "R-8",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: ARCHITECTURE:166-171 says a plan is not a lease and the refusal is at `aegis task claim`; the 'refuses an overlap at creation' sentence is gone",
+      "first_seen_round": 1,
+      "id": "F-6db6cac5",
+      "line": 166,
+      "message": "'`aegis task new` refuses an overlap at creation, not afterwards' is now the opposite of the code - the diff moved that check to the planned->building transition - in the section a reader opens for lease rules and in the document about to be attested. The rule that replaced it sits under 'Three gate stages', so the reader finds the false sentence first.",
+      "minimal_fix": "rewrite to 'refuses an overlap at claim, not at creation' and move 'A plan is not a lease' into section 3",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-8",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: the sentence is gone from all three copies; the test greps five phrases across six files",
+      "first_seen_round": 1,
+      "id": "F-8930b7e3",
+      "line": 58,
+      "message": "Line 58 still says 'keep the blocking ones and drop observations and advisories first', two lines after 'nothing is dropped or reordered to fit', so the protocol contradicts itself and tells a lens exactly what R-1 forbids; the same sentence is in the protocol copy and the .agents mirror. `SizeBudgetsWarn.test_no_protocol_tells_a_lens_to_shorten_for_size` greps only the two phrases that were removed, so R-1's named lock passes on text that violates it.",
+      "minimal_fix": "delete the sentence in all three copies and add 'drop observations' to the test's forbidden phrases",
+      "path": "skills/review-lens/SKILL.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: q.core.delegate is auto-default, optional, default {}",
+      "first_seen_round": 1,
+      "id": "F-eb3f61bf",
+      "line": 152,
+      "message": "`q.core.delegate` is `always-ask`, and a re-run of `aegis init` on an existing project appends every unanswered always-ask question to the ledger and sets `status: provisional`, so a project that never wanted delegation gets a red `setup` check at its next task gate and a `human` step from `next`. That breaks the spec's own edge case and adds the interrupt R-5 exists to remove.",
+      "minimal_fix": "`autonomy: auto-default`, `severity: optional`; a person opts in with `aegis answer`",
+      "path": "interview/core.json",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: skills/build/SKILL.md:91-93 names `aegis waive`, the listed checks and never `finding`",
+      "first_seen_round": 1,
+      "id": "F-3b26d65d",
+      "line": 91,
+      "message": "The build skill says a waiver is a person's decision and never mentions `aegis waive` or `q.core.delegate`; no skill or agent profile does. An agent that hits a delegated `docs` or `env` failure therefore still stops for a person, which is the per-incident interrupt the delegation was built to remove.",
+      "minimal_fix": "one sentence naming `aegis waive` and that a finding waiver never is",
+      "path": "skills/build/SKILL.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-5",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: `TheDocumentsSayWhatTheCodeDoes` exists and spec R-8 names what it locks; the lock's strength is a fresh finding",
+      "first_seen_round": 1,
+      "id": "F-48fbc88c",
+      "line": 112,
+      "message": "R-8 is locked by `TheDocumentsSayWhatTheCodeDoes`, which is not a class in tests/test_aegis.py (the manifest's acceptance list names it too), so 'each requirement is locked by a named test class' is false for the one requirement about documents being true.",
+      "minimal_fix": "either add the class or write 'R-8: the verification pass and docs attest' and fix the manifest",
+      "path": ".aegis/specs/stable-autonomy/spec.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-8",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: README, skills/tasks and agents/aegis-orchestrator all say the lease is held from claim",
+      "first_seen_round": 1,
+      "id": "F-59190bc1",
+      "line": 105,
+      "message": "'overlapping leases are refused at creation' was true before this diff and is false after it, as are `skills/tasks/SKILL.md:35` and `agents/aegis-orchestrator.md:69`. The orchestrator profile builds a decision rule on a refusal it will no longer get, and nothing agent-facing says a planned task owns nothing until claimed.",
+      "minimal_fix": "say 'refused at claim' in all three, and add to the tasks skill that a planned task owns no file until `aegis task claim`",
+      "path": "README.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-8",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: the receipt records every owned file; the earliest-record tie-break is in `check_trace` alone",
+      "first_seen_round": 1,
+      "id": "F-5b958ad0",
+      "line": 1713,
+      "message": "The receipt skips a file an earlier receipt holds at the same content, so it is not 'for every file the task owns in that candidate, the content it saw', and T-2's record is complete only while T-1's stays valid. The receipt-vs-lease tie-break lives in `check_trace` and the receipt-vs-receipt tie-break here - one rule in two places, stated as one in neither document.",
+      "minimal_fix": "record everything the gate saw and let `check_trace` give a file several receipts hold at one content to the earliest",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: the `_land_pending` step now sits at flow.py:1940, before `if not open_tasks:`, so planned TASK-STABLE-02/03 no longer hide it.",
+      "first_seen_round": 2,
+      "id": "F-7719e463",
+      "line": 1916,
+      "message": "`_land_pending` is checked only inside `if not open_tasks:` and `open_tasks` includes `planned`, so with TASK-STABLE-02/03 planned - this repository's state after the merge - `next` says 'build TASK-STABLE-02' and never 'land the branch', the silence retro 0002 item 10 named. No test drives `next` after `_green_merge`, so the step is unexercised.",
+      "minimal_fix": "check `_land_pending` before the `open_tasks` branch and assert `next` after `_green_merge` names `aegis land`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "794288afbd5b8c3f",
+      "requirement": "R-4",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-b3c64195",
+      "line": 632,
+      "message": "This round added `_unreviewed_at_base`, `merge_receipt_files`/`_at`, `_holds_recorded`, `_write_merge_receipt` and three core helpers, so five records can claim one path (adoption baseline, lease-by-glob, base agreement, merge receipt, frozen zone) under a hand-written precedence rule; the CLI went 7,074 to 7,613 lines and ARCHITECTURE 3,705 to 4,811 words, §3+§6 now 41% of it. `core.is_ancestor` was added here and used once while `merge_base(ctx, sha) == sha` is still hand-rolled at checks.py:626, flow.py:1746 and flow.py:1894 — the attribution machinery is growing faster than it consolidates, and the answer is ADR-1's candidate commit, not a sixth record.",
+      "minimal_fix": "Record the ceiling in ADR-1: no sixth attribution record, and the next task re-scopes from the branch point instead of adding one.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-4",
+      "rounds": [
+        3
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: `_holds_recorded` compares the index after the working tree",
+      "first_seen_round": 1,
+      "id": "F-cf1fa7fb",
+      "line": 592,
+      "message": "`_holds_recorded` tests only the working tree, while the adoption record it is modelled on also requires nothing different staged. Concrete input: stage a different `a.py`, restore the working tree to the receipt's bytes, commit - trace attributes it to the merged task and the commit records the staged content under that task's name.",
+      "minimal_fix": "also compare `_digest_in_index(ctx, rel)` to the record",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: the hint opens with `aegis task claim <ID>`",
+      "first_seen_round": 1,
+      "id": "F-d03a2f8b",
+      "line": 690,
+      "message": "For an existing project with a planned task whose globs already cover files it wrote, the hook now refuses with 'changed file belongs to no task' and a hint whose two remedies are both wrong: the globs already match, and creating a second task is the clash. The actual remedy, `aegis task claim`, appears in no hint, README or migration note.",
+      "minimal_fix": "append to the hint: 'or `aegis task claim` the planned task whose globs name it'",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-e247e2e8",
+      "line": 5,
+      "message": "`changed_files` lists 16 of the 21 files `aegis diff` shows, omitting hooks/enforce-lease.sh, hooks/protect-paths.sh, agents/aegis-orchestrator.md, skills/tasks/SKILL.md and skills/build/SKILL.md — the last being the file R-16's acceptance criterion names, the first two the behaviour change the handoff's own deviation calls out as outside R-1..R-8. `check_handoff` only tests that listed paths are inside the lease, never that the list is complete, so the machine-readable record of what moved is 24% short and nothing reports it.",
+      "minimal_fix": "List all 21 paths, and have `check_handoff` warn when `changed_files` misses a file in the task's own diff.",
+      "path": ".aegis/runs/TASK-STABLE-01/handoff.json",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": null,
+      "rounds": [
+        3
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-e70090b1",
+      "line": 72,
+      "message": "R-16 puts 'do not edit the tree between dispatch and the last report' in prose a model must remember, while ARCHITECTURE §1's own rule sends anything that reduces to comparing digests to the script side; `lens_record` still raises and discards an entire report on a digest mismatch (flow.py:907), which is how this task lost two complete reviews and their ids permanently. The digest `aegis lens plan` already prints could be recorded at dispatch so a report bound to it is stored with ids and flagged as not certifying the current change, making the loss recoverable rather than asking each round to be careful.",
+      "minimal_fix": "Record the dispatched digest at `lens plan`; let `lens record` store a report bound to it, marked stale, instead of refusing it.",
+      "path": ".aegis/specs/stable-autonomy/spec.md",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-16",
+      "rounds": [
+        3
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-0c7dda96",
+      "line": 647,
+      "message": "`_unreviewed_at_base`'s docstring justifies the excluded case as 'everything after it is inside the task's own reviewed diff', which is false on the default branch: there the branch point equals the base, so a payload committed while the task was planned sits *at* the base and outside `base..worktree` — the residual ARCHITECTURE §3 and the handoff both state plainly. The function therefore reads as covered where the two documents read as a stated hole, so whoever tightens this next will not learn the hole from the code.",
+      "minimal_fix": "Add ARCHITECTURE §3's default-branch sentence to the docstring's last paragraph.",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-6",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-1f452278",
+      "line": 9,
+      "message": "The feature architecture assigns `_default_base` to flow.py, but it moved to `core.default_base` this round, and the file names none of `core.is_ancestor`, `core.files_between`, `core.in_review_scope` or `checks._unreviewed_at_base` — the largest new mechanism of R-4/R-6. Its Boundaries paragraph then says nothing stores new state except the merge receipt, in the one document the next two tasks read to find where this feature's parts live.",
+      "minimal_fix": "Move the four helpers to the core.py line and add `_unreviewed_at_base` under checks.py.",
+      "path": ".aegis/specs/stable-autonomy/architecture.md",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-4",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: EVALUATION:254 says 'with forty-eight `belongs to no task` findings'",
+      "first_seen_round": 1,
+      "id": "F-27d57dac",
+      "line": 254,
+      "message": "'the next commit was refused by the installed hook forty-eight times' reads as forty-eight refusals; retro 0002 records one refused commit with forty-eight `belongs to no task` findings. A measured number in the record document is off by a factor the reader cannot see.",
+      "minimal_fix": "'refused by the installed hook with forty-eight belongs-to-no-task findings'",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-8",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: skills/tasks describes pending coverage",
+      "first_seen_round": 1,
+      "id": "F-2aa670bc",
+      "line": 59,
+      "message": "'The gate uses the strict form, where only gated and merged tasks count - a plan is not coverage' now describes a merge gate that reports an open task's requirements as `pending` and passes. An orchestrator reading this plans around a block that no longer exists.",
+      "minimal_fix": "'at merge a requirement an open task cites is pending, not uncovered'",
+      "path": "skills/tasks/SKILL.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: the manifest lists the two class names",
+      "first_seen_round": 1,
+      "id": "F-4460cca5",
+      "line": 2,
+      "message": "The manifest's acceptance list predates the R-6 rewrite and lacks `APlannedTaskOwnsNothing` and `ALeaseIsExclusiveWhileHeld`, which the spec now names for R-6.",
+      "minimal_fix": "add the two class names to acceptance",
+      "path": ".aegis/runs/TASK-STABLE-01/manifest.json",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: `next_action` emits `aegis land`; its placement behind a planned backlog is a fresh finding",
+      "first_seen_round": 1,
+      "id": "F-4e156c3d",
+      "line": 139,
+      "message": "Section 6 ends at 'commit with the task id' and `next_action` never emits `aegis land`; after a green merge `next` says 'start the next feature' while the default branch has not moved, which retro 0002 item 10 asked `next` to say out loud.",
+      "minimal_fix": "have `next` emit a cli step `aegis land` when a receipt sits at or before HEAD and the default branch is behind",
+      "path": "skills/build/SKILL.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: ARCHITECTURE.md:172-181 is now the lease paragraph alone; the `check trace` attribution rules moved to the traceability paragraph at 183-190.",
+      "first_seen_round": 2,
+      "id": "F-9f86feb0",
+      "line": 172,
+      "message": "Section 3's lease paragraph now reads as one idea except 'A holding task is attributed only what its own reviewed diff contains...', which is a `check trace` attribution rule wedged between the claim rule and the hook rule. The paragraph below it is where a reader looks for that rule and where it is missing.",
+      "minimal_fix": "move that sentence to the traceability paragraph that follows",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "794288afbd5b8c3f",
+      "requirement": "R-8",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: §6 is retitled 'Gates, the barrier, and authority' with four named subsections, so title and content agree; it is now 1005 words against 448 at base, folded into the complexity finding rather than re-raised.",
+      "first_seen_round": 1,
+      "id": "F-aead4603",
+      "line": 334,
+      "message": "Section 6 is 857 words, a third longer than any other section, and its last three paragraphs are not about gate stages, so a reader looking for lease rules opens section 3 and finds the stale sentence instead. The paragraph is correct; its address is not.",
+      "minimal_fix": "move 'A plan is not a lease' to section 3 and give 'Authority is data' its own heading",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "794288afbd5b8c3f",
+      "requirement": "R-8",
+      "rounds": [
+        1,
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-bd819aae",
+      "line": 1418,
+      "message": "`docs_attest` re-implements `len(by.strip()) < 3` beside `is_person_name`'s own `len(by) < 3`, so R-7's one shared validator is two copies of the same constant that can diverge — the duplication this change removed for the review-scope filter. `is_person_name`'s docstring also says `docs attest` 'asks only for a real name' when the code asks for three characters, so `aaa` attests a document.",
+      "minimal_fix": "Call one helper for the length rule in `docs_attest`, and say 'three characters' in the docstring.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-7",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: observation; both named costs are paid",
+      "first_seen_round": 1,
+      "id": "F-002911b2",
+      "line": 36,
+      "message": "The net-deletion trade holds: a 54-line parser, the Bash hook and its hooks.json entry, seven tests and two waivers are gone against roughly 130 lines of receipt, `land`, `waive` and `HOLDING`, and the receipt earns its place over both rejected designs. The complexity not yet paid for is the delegation question's always-ask and the receipt rule living in two places.",
+      "minimal_fix": "none - observation",
+      "path": ".aegis/specs/stable-autonomy/architecture.md",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: .aegis/waivers.json holds only W-test-fixture-env, and diagrams.json shows `architecture`, `cli-reference` and `usage` verified 2026-09-18; `check docs` is ok.",
+      "first_seen_round": 1,
+      "id": "F-090e4973",
+      "line": 11,
+      "message": "`W-architecture-stale-after-cap` is still on disk and `architecture` is unattested, so two acceptance criteria are open at this digest. The handoff sequences both after this review, so this is the criterion left open, not a defect.",
+      "minimal_fix": "none until the verification pass",
+      "path": ".aegis/waivers.json",
+      "raised_digest": "794288afbd5b8c3f",
+      "requirement": "R-8",
+      "rounds": [
+        1,
+        2
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-0f595128",
+      "line": 4,
+      "message": "The adopting-project template still carries the sentence the repository's own workflow corrected, so the two copies of one claim now differ. Outside this lease.",
+      "minimal_fix": "a lease expansion or a follow-up task for templates/**",
+      "path": "templates/ci/aegis-gate.yml",
+      "raised_digest": "1d7978df0e5a5110",
+      "requirement": "R-8",
+      "rounds": [
+        1,
+        2,
+        3
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: renamed and asserts the severity",
+      "first_seen_round": 1,
+      "id": "F-102e1f87",
+      "line": 1818,
+      "message": "`test_an_oversized_report_still_fails` now passes on a warning - it asserts only that a budget message exists - so the name records the rule R-1 reversed.",
+      "minimal_fix": "rename to `..still_warns` and assert severity == warn",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-1",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: the merge-gate loop is one condition",
+      "first_seen_round": 1,
+      "id": "F-1b91ae4a",
+      "line": 1639,
+      "message": "The merge-gate loop admits HOLDING plus merged and then unconditionally continues on merged, one condition written as two in the reader the architecture cites for 'one tuple, three readers'.",
+      "minimal_fix": "`if task.get('status') not in checks.HOLDING: continue`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-6",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T20:25:47",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 2: `merge_receipt_files` takes a scope and skips the ancestry query",
+      "first_seen_round": 1,
+      "id": "F-1c2db695",
+      "line": 586,
+      "message": "`merge_receipt_files` runs `git merge-base` for every merged task on every `check_trace`, and nothing retires merged manifests, so each pre-commit grows by one subprocess per task ever merged.",
+      "minimal_fix": "test scope-intersects-files before the merge_base call",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "ea7beaa6c48558ca",
+      "requirement": "R-4",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-18T21:38:13",
+      "disposition_by": "lens",
+      "disposition_reason": "lens-design round 3: the handoff's third deviation now states the exit-2 change in both hooks, its rationale and the two tests that lock each half.",
+      "first_seen_round": 1,
+      "id": "F-e85de704",
+      "line": 29,
+      "message": "The write hook now exits 2 when the CLI is absent where it used to pass silently; no requirement asks for it and the handoff's deviations does not list it.",
+      "minimal_fix": "name it in the handoff's deviations, or in R-3's text",
+      "path": "hooks/enforce-lease.sh",
+      "raised_digest": "794288afbd5b8c3f",
+      "requirement": "R-3",
+      "rounds": [
+        1,
+        2
+      ],
+      "severity": 0
+    }
+  ],
+  "lens": "design",
+  "recorded": "2026-09-18T21:38:13",
+  "reopened": [],
+  "report_tokens": 2464,
+  "reviewer": "lens-design",
+  "round": 3,
+  "task": "TASK-STABLE-01",
+  "verdict": "fail"
+}
