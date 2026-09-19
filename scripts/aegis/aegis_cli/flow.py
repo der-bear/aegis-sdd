@@ -1756,6 +1756,13 @@ def next_action(ctx: Ctx) -> dict:
             if docs:
                 return step("write the documentation the profile requires", docs[0].message, None,
                             note=docs[0].hint or "then `aegis docs attest <id> --by <who>`")
+    if gated and not building:
+        # The merge gate refuses a landing over an uncovered requirement; say it here rather
+        # than advising a land the gate will refuse — the loop and the gate must not disagree.
+        uncovered = [f for f in checks.check_requirements(ctx).findings if f.severity == "fail"]
+        if uncovered:
+            return step("cover or retire the requirement", uncovered[0].message, None,
+                        note="cite it in the task that delivered it, or mark it deleted in the spec")
     if gated and not building and _land_pending(ctx):
         on_mainline = git(ctx, "branch", "--show-current").strip() == _default_branch(ctx)
         return step("land the branch", "a gated task is committed on the mainline; the gate "

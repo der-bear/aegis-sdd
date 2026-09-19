@@ -38,7 +38,8 @@ R-2. When the next review round would exceed `policy.refinement_rounds`, `aegis 
 R-3. The Claude Code commit hook shall be deleted — `hooks/pre-commit-gate.sh`, its entry in
      `hooks/hooks.json`, `commit_scope` and its tests, and the workflow's reference — so that
      the git pre-commit hook and CI are the one barrier every runner shares.
-R-4. A green full merge gate shall record a merge receipt holding the commit it ran on and,
+R-4. *(Deleted 2026-09-19, ADR-5 — no merge receipt exists; `merged` is written by `aegis land`.)*
+     ~~A green full merge gate shall record a merge receipt holding the commit it ran on and,~~
      for each file the task owns in that candidate, the content it saw. A merged task shall own
      a scope file only while the file still holds that content, so its own commits stay
      attributed to it before the branch lands and a new edit to the same file belongs to no
