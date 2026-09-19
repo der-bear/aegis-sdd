@@ -5,7 +5,7 @@ not a log. Keep it under the `notes` token budget in `policy.json`.
 
 ## Current milestone
 
-**The framework was over-built, and the owner said so.** Four commits on `stable-01` since
+**The framework was over-built, and the owner said so.** Seven commits on `stable-01` since
 `4c54474` delete more than they add (−2,981/+215 in the deletion alone) and are held by
 **TASK-SIMPLE-01**, claimed after the work so the merge gate can attribute it and the branch can
 land. The owner's brief, verbatim: *simple, reliable, convenient, understandable* — and *do
@@ -27,7 +27,10 @@ docs step and lands as `cli`; `land` on the mainline marks merged in place; the 
 ignores `.aegis/runs/` (a handoff saying "session" made a docs change tier A); a held lease beats
 `**/build/**`.
 
-230 tests on both invocation paths, lint clean, bootstrap gate green. ARCHITECTURE 4,811 →
+228 tests on both invocation paths, lint clean, bootstrap gate green. A final review then
+found two real losses — `land` on the mainline ran no gate, and `task status merged` was a second
+writer of a one-place status — and nine circles in the loop; all closed in `fa30aba`, with the
+`review`/`refine`/`docs` statuses, the dry-run `land` and the minimum review rounds cut on its list. ARCHITECTURE 4,811 →
 4,476 words with §3 and §6 each one rule in one place.
 
 ## Decisions taken (with the ADR they became, if any)
@@ -55,7 +58,7 @@ ignores `.aegis/runs/` (a handoff saying "session" made a docs change tier A); a
 
 ## How to verify the current state
 
-    make check                          # 230 tests + bootstrap gate
-    python3 tests/test_aegis.py         # the same 230
+    make check                          # 228 tests + bootstrap gate
+    python3 tests/test_aegis.py         # the same 228
     scripts/aegis/aegis next
     scripts/aegis/aegis status
