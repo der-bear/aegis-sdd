@@ -143,13 +143,14 @@ class ProjectFixture(unittest.TestCase):
         # correctly refuses to look past either, which is itself covered elsewhere.
         self.clear_human_gates()
 
-    def clear_human_gates(self):
+    def clear_human_gates(self, constitution: bool = True):
         path = os.path.join(self.dir, ".aegis", "answers.json")
         answers = json.load(open(path))
         answers["ledger"] = []
         answers["status"] = "complete"
         json.dump(answers, open(path, "w"), indent=2)
-        self.write(".aegis/constitution.md", "# Constitution\n\n## Purpose\nA fixture.\n")
+        if constitution:
+            self.write(".aegis/constitution.md", "# Constitution\n\n## Purpose\nA fixture.\n")
 
     def write(self, rel, content):
         path = os.path.join(self.dir, rel)
@@ -1302,9 +1303,84 @@ class TheSecondProjectsFirstHour(ProjectFixture):
         self.assertIn("turns orders into invoices", text)
         self.assertNotIn("<one paragraph", text)
         self.assertIn("Drafted by the agent", text)
-        self.clear_human_gates()
+        # On the drafted file itself, not on a fixture that replaced it.
+        self.clear_human_gates(constitution=False)
         step = flow.next_action(core.Ctx(self.dir))
         self.assertNotIn("constitution", step["do"], step)
+        self.assertEqual(step["do"], "specify the first feature", step)
+
+    def test_a_readme_that_predates_utf8_does_not_abort_init(self):
+        # Decoding strictly turned the first command of the first hour into "a bug in aegis".
+        with open(os.path.join(self.dir, "README.md"), "wb") as fh:
+            fh.write("# Виджеты\n\nВиджеты превращают заказы в счета.\n".encode("cp1251"))
+        out = run(["init", "--profile", "S", "--yes", "--force"], self.dir)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertNotIn("<one paragraph", open(os.path.join(self.dir, ".aegis/constitution.md")).read())
+
+    def test_the_purpose_is_prose_not_the_first_thing_in_the_readme(self):
+        from aegis_cli.scaffold import _readme_purpose
+        cases = {
+            '<p align="center"><img src="logo.png"></p>\n\nWidgets turns orders into invoices.\n': "Widgets turns orders into invoices.",
+            "# Widgets\n\n```\npip install widgets\n\nwidgets run\n```\n\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
+            "# Widgets\nWidgets turns orders into invoices.\n\n    pip install widgets\n": "Widgets turns orders into invoices.",
+            "\ufeff# Widgets\n\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
+            "1. install\n2. run\n\n> a quote\n\n<!-- hidden -->\n\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
+            "# Widgets\n\n```\nan unclosed fence\n\nlooks like prose\n": "",
+            "# Widgets\n\n## Install\n": "",
+        }
+        for text, want in cases.items():
+            self.assertEqual(_readme_purpose(text), want, repr(text))
+
+    def test_a_missing_constitution_is_redrafted_not_authored(self):
+        self.clear_human_gates(constitution=False)
+        os.remove(os.path.join(self.dir, ".aegis", "constitution.md"))
+        step = flow.next_action(core.Ctx(self.dir))
+        self.assertEqual((step["do"], step["command"], step["who"]), ("draft the constitution", "aegis init", "cli"), step)
+        self.assertEqual(run(["init"], self.dir).returncode, 0)
+        self.assertTrue(os.path.exists(os.path.join(self.dir, ".aegis", "constitution.md")))
+
+    def test_an_older_template_constitution_warns_and_never_gates(self):
+        # A project initialised before the draft keeps its `<one paragraph` template; the task
+        # gate stopping on it was the wait R-33 forbids, moved after the work.
+        self.clear_human_gates()
+        self.write(".aegis/constitution.md", "# Constitution\n\n## Purpose\n<one paragraph: what this project is for>\n")
+        report = checks.check_setup(core.Ctx(self.dir))
+        self.assertFalse(report.failed, [f.render() for f in report.findings])
+        self.assertTrue(any("placeholder" in f.message and f.severity == "warn" for f in report.findings))
+
+    def test_a_quiet_just_recipe_is_a_target(self):
+        from aegis_cli import detect
+        self.write("justfile", "@test:\n    uv run pytest -q\n\nlint:\n    ruff check .\n")
+        pkg = detect.detect(core.Ctx(self.dir))["packages"]
+        pkg = pkg[detect._default_package(pkg)]
+        self.assertEqual(pkg.get("test"), "just test", pkg)
+
+    def test_a_dot_justfile_is_a_front_door(self):
+        from aegis_cli import detect
+        self.write(".justfile", "test:\n    uv run pytest -q\n")
+        pkg = detect.detect(core.Ctx(self.dir))["packages"]
+        pkg = pkg[detect._default_package(pkg)]
+        self.assertEqual(pkg.get("test"), "just test", pkg)
+
+    def test_a_front_door_without_test_keeps_the_inferred_test_command(self):
+        # A Makefile of `build` and `clean` has said nothing about how the project is verified;
+        # popping `go test ./...` on its account left the gate running only `make build`.
+        from aegis_cli import detect
+        os.remove(os.path.join(self.dir, "package.json"))
+        self.write("go.mod", "module example.com/fx\n\ngo 1.22\n")
+        self.write("Makefile", "build:\n\tgo build ./...\n\nclean:\n\trm -rf bin\n")
+        pkg = detect.detect(core.Ctx(self.dir))["packages"]
+        pkg = pkg[detect._default_package(pkg)]
+        self.assertEqual(pkg.get("build"), "make build", pkg)
+        self.assertEqual(pkg.get("test"), "go test ./...", pkg)
+
+    def test_a_binary_or_directory_with_no_suffix_does_not_crash_the_mandate(self):
+        os.makedirs(os.path.join(self.dir, "bin"))
+        with open(os.path.join(self.dir, "bin", "blob"), "wb") as fh:
+            fh.write(b"\x00\xff\xfe" * 1000)
+        os.makedirs(os.path.join(self.dir, "vendor", "sub"))
+        report = checks.check_testing_mandate(core.Ctx(self.dir), ["bin/blob", "vendor/sub"])
+        self.assertFalse(report.failed, [f.render() for f in report.findings])
 
     def test_init_scaffolds_no_standards_stub(self):
         self.assertFalse(os.path.exists(os.path.join(self.dir, ".aegis", "standards")))

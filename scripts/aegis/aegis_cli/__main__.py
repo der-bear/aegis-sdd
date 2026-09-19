@@ -296,7 +296,7 @@ def main(argv: list[str] | None = None) -> int:
                 emit(f"  {row['question']} = {json.dumps(row['value'], ensure_ascii=False)[:60]}"
                      f"  ({row['note']})")
         emit("\nnext:")
-        emit("  1. write .aegis/constitution.md by hand — it is the one file agents never touch")
+        emit("  1. read .aegis/constitution.md — drafted from the README; amend it whenever you like")
         emit("  2. aegis gate --stage bootstrap")
         emit("  3. aegis next          # tells you the next action at any point")
         return 0
@@ -304,7 +304,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "scaffold":
         created = scaffold.scaffold(ctx, args.profile, args.doc_profile, args.force)
         emit("created:\n" + "\n".join(f"  {c}" for c in created) if created else "nothing to create")
-        emit("\nnext: edit .aegis/constitution.md by hand, then `aegis compile && aegis gate --stage bootstrap`")
+        emit("\nnext: `aegis compile && aegis gate --stage bootstrap`; the constitution is drafted, amend it whenever you like")
         return 0
 
     if args.command == "answer":

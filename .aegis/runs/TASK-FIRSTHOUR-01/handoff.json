@@ -1,0 +1,44 @@
+{
+  "task": "TASK-FIRSTHOUR-01",
+  "agent": "claude-fable-5.1 (orchestrator and builder)",
+  "summary": "The second project's first hour, four frictions as four conditions (R-32..R-36): an adopter's CLAUDE.md and AGENTS.md chain warn past their budgets; init drafts the constitution's purpose from the README and next has no constitution step; a justfile is a front door and a front door that defines `test` replaces the inferred commands; init scaffolds no standards stub; a no-suffix file that starts with #! is code for the testing mandate. Round 1 (Fable, correctness + security) found four blocking defects in the first cut, all fixed: a non-UTF-8 README aborted init, the old template constitution still stopped the task gate, a quiet `@test:` recipe was not a target, and the shebang probe read whole files in text mode. Every finding of round 1, sev 0 to 4, is fixed; R-34's wording was amended for the sev-2 the reviewer left to the owner.",
+  "changed_files": [
+    "scripts/aegis/aegis_cli/checks.py",
+    "scripts/aegis/aegis_cli/detect.py",
+    "scripts/aegis/aegis_cli/flow.py",
+    "scripts/aegis/aegis_cli/scaffold.py",
+    "scripts/aegis/aegis_cli/__main__.py",
+    "tests/test_aegis.py",
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    ".aegis/specs/simple-reliable/spec.md"
+  ],
+  "verification": [
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "python3 tests/test_aegis.py",
+      "result": "pass",
+      "note": "245 tests"
+    },
+    {
+      "command": "R-27 reverse run: the nine tests of TheSecondProjectsFirstHour against a git archive of the pre-fix commit",
+      "result": "pass",
+      "note": "8 of 9 fail there; test_the_loop_never_waits_for_a_constitution passes because the pre-fix commit already deleted the constitution step — the reviewer showed it red on the commit before that"
+    }
+  ],
+  "deviations": [
+    "The lease was widened by hand in the manifest (README.md, docs/ARCHITECTURE.md, the feature spec) after round 1 named two document lines that contradicted R-32 and R-33; the declaration is what `check trace` reads, and there is no CLI for widening one.",
+    "R-34's text was amended (the front door replaces the inferred set only when it defines `test`) rather than escalated to the owner, who has delegated this cycle in words; the reason is recorded in the requirement itself."
+  ],
+  "open_questions": [],
+  "new_dependencies": [],
+  "invalidated_assumptions": [
+    "\"the front door replaces inferred commands\" as an unconditional rule: a Makefile of build and clean would have silenced `go test ./...`"
+  ],
+  "next_safe_action": "round 2 at the new digest, both lenses reconciling round 1 by id; then gate, commit, attest architecture, land, push, CI.",
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}

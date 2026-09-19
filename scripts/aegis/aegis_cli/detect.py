@@ -344,12 +344,17 @@ def _packages(ctx: Ctx, files: list[str], fileset: set[str]) -> tuple[dict[str, 
         # an inferred host `pytest -q` are not two commands to run, they are one command and
         # a wrong guess.
         for spec in packages.values():
-            # Replace, not merge: a `mypy .` inferred from pyproject that the team's `just test`
-            # never runs is a wrong guess the gate would fail on, not a second command.
-            for key in ("test", "lint", "typecheck", "build"):
-                spec.pop(key, None)
+            # A front door that defines `test` has said how the project is verified, and it
+            # replaces the inferred set: a `mypy .` inferred from pyproject that the team's
+            # `just test` never runs is a wrong guess the gate would fail on, not a second
+            # command. A front door of `build` and `clean` alone has said nothing about tests,
+            # so the inferred `go test ./...` stays.
+            if "test" in root_make:
+                for key in ("test", "lint", "typecheck", "build"):
+                    spec.pop(key, None)
             spec.update(root_make)
-        evidence.append({"fact": f"front-door targets replace inferred commands: {', '.join(sorted(root_make))}",
+        verb = "replace" if "test" in root_make else "overlay"
+        evidence.append({"fact": f"front-door targets {verb} inferred commands: {', '.join(sorted(root_make))}",
                          "source": "Makefile/justfile", "confidence": 0.9})
 
     # Last resort, and only for gaps: CI states how the project is really built, but a
@@ -420,7 +425,11 @@ def _has_tests(files: list[str], prefix: str) -> bool:
 MAKE_TARGET = re.compile(r"^([A-Za-z0-9_.-]+):", re.MULTILINE)
 
 
-JUST_RECIPE = re.compile(r"^([A-Za-z_][\w-]*)(?:\s+[^:\n]*)?:(?!=)", re.MULTILINE)
+# `@recipe:` is just's quiet recipe, the common way to silence the echo; it is the same target.
+JUST_RECIPE = re.compile(r"^@?([A-Za-z_][\w-]*)(?:\s+[^:\n]*)?:(?!=)", re.MULTILINE)
+
+
+JUSTFILE_NAMES = ("justfile", "Justfile", ".justfile")
 
 
 def _make_targets(ctx: Ctx, fileset: set[str]) -> dict[str, str]:
@@ -432,8 +441,8 @@ def _make_targets(ctx: Ctx, fileset: set[str]) -> dict[str, str]:
     """
     if "Makefile" in fileset:
         runner, targets = "make", set(MAKE_TARGET.findall(read_text(os.path.join(ctx.root, "Makefile"), default="")))
-    elif "justfile" in fileset or "Justfile" in fileset:
-        name = "justfile" if "justfile" in fileset else "Justfile"
+    elif any(name in fileset for name in JUSTFILE_NAMES):
+        name = next(name for name in JUSTFILE_NAMES if name in fileset)
         runner, targets = "just", set(JUST_RECIPE.findall(read_text(os.path.join(ctx.root, name), default="")))
     else:
         return {}

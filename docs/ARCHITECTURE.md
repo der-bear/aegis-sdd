@@ -51,8 +51,10 @@ Everything moved left became free in tokens and stopped varying between runs.
 A pure function: the same inputs always produce the same bytes. Three consequences.
 
 **The constitution stopped contradicting itself.** It used to be both "only a human changes
-it" and "materialised at init". Now `constitution.md` is written by hand and *references*
-compiled policy; the compiler physically cannot write outside `generated/`.
+it" and "materialised at init". Now `init` drafts `constitution.md` once, from the README's
+first paragraph, and never rewrites it; a person amends it at any time and an agent only
+through a task that leases it. It *references* compiled policy; the compiler physically cannot
+write outside `generated/`.
 
 **Drift became checkable.** `aegis check drift` recompiles and compares. A difference means
 someone hand-edited generated configuration — after which every later review argues against

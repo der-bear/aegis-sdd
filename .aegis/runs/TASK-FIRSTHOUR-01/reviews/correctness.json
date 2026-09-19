@@ -1,0 +1,148 @@
+{
+  "diff_digest": "fd71c976b82012ea",
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-43585f2b",
+      "line": 343,
+      "message": "`read_text` on the README is guarded only against a missing file: a README in cp1251 or latin-1 raises UnicodeDecodeError and `aegis init` exits 3 with \"this is a bug in aegis\", where the previous commit's init succeeded on the same repository. The first command of the first hour aborts on a brownfield project whose README predates UTF-8.",
+      "minimal_fix": "catch UnicodeDecodeError around the read (or decode with errors=\"replace\") and fall through to the no-README text",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-33",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-83ef6f18",
+      "line": 1374,
+      "message": "`check_setup` still fails the task gate on a `<one paragraph` constitution while `next` no longer names it: a project initialised by the previous version keeps its template (`put_text` leaves an existing file without --force), `next` sends it through spec, task and build, and the task gate then stops on \"a human writes its purpose\". That is the wait R-33 forbids, moved after the work, with `next` and the gate disagreeing; with the file deleted outright, `next` likewise says \"specify the first feature\" and `check_structure` fails \"constitution.md is missing\".",
+      "minimal_fix": "drop the template check in check_setup (or make it warn), and have `next` say \"run aegis init\" when constitution.md is absent",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-33",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-871be5af",
+      "line": 423,
+      "message": "JUST_RECIPE requires a letter or underscore at column 0, so a quiet recipe `@test:` (the common `just` idiom for suppressing echo) is not a target; with `lint:` matched, the inferred `pytest -q` is popped and the package has no test command at all. The gate on a code-only task runs `just lint` and verifies nothing.",
+      "minimal_fix": "allow the quiet prefix: `^@?([A-Za-z_][\\w-]*)`",
+      "path": "scripts/aegis/aegis_cli/detect.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-34",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-d3ce5e92",
+      "line": 349,
+      "message": "Popping all four inferred keys whenever the front door defines any of them: a Go project with a Makefile of `build` and `clean` loses the `go test ./...` and `go vet ./...` the previous code kept, so code-only tasks pass with only `make build` run (the \"no command ran\" guard is silent) and tasks touching tests fail \"no package declares a test command\". This is R-34's literal wording, so the owner decides whether \"replace\" means the set or the key.",
+      "minimal_fix": "pop the inferred keys only when the front door defines `test`; a front door with only `build` has said nothing about tests",
+      "path": "scripts/aegis/aegis_cli/detect.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-34",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-ea1a8e7a",
+      "line": 347,
+      "message": "The prose filter is a prefix list, so the purpose becomes `<p align=\"center\"><img …></p>` on an HTML badge block, `widgets run ```` when a fenced block contains a blank line, `pip install widgets` when the heading and the description share a paragraph, and `\\ufeff# Widgets` on a BOM'd README; numbered lists, blockquotes and `<!-- -->` are taken too. The file is labelled a draft, but until a person rewrites it every agent reads that line as the project's purpose.",
+      "minimal_fix": "strip leading `#` lines and a BOM inside a paragraph, skip paragraphs starting with `<`, `>` or a digit, and skip everything until an opened fence closes",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-33",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-012fc91d",
+      "line": 435,
+      "message": "`just` also reads `.justfile`; that spelling is not a front door here, so such a project gets exactly the R-34 friction (`mypy .` proposed from pyproject).",
+      "minimal_fix": "add \".justfile\" to the spellings tried",
+      "path": "scripts/aegis/aegis_cli/detect.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-34",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-15ab23bb",
+      "line": 252,
+      "message": "\"Known limits\" still says the bootstrap budgets — CLAUDE.md, the AGENTS.md chain — fail because they are loaded into every session; since R-32 both warn. The README now promises a gate the code no longer applies.",
+      "minimal_fix": "say CLAUDE.md and the AGENTS.md chain warn, skills and roles still fail",
+      "path": "README.md",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-32",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-ac8a20e6",
+      "line": 299,
+      "message": "`init`'s closing advice still says \"write .aegis/constitution.md by hand — it is the one file agents never touch\" (and `scaffold` says \"edit … by hand\" at 307), while the file it just wrote says it was drafted by the agent and needs no one. The first thing an adopter reads after init contradicts R-33.",
+      "minimal_fix": "\"1. read .aegis/constitution.md — drafted from the README; amend it whenever you like\"",
+      "path": "scripts/aegis/aegis_cli/__main__.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-33",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-cefb0953",
+      "line": 1305,
+      "message": "The `next` assertion runs after `clear_human_gates()` has replaced the constitution with \"A fixture.\", so it passes with the deleted step restored; the test fails on the old code through its earlier assertions, but the \"next has no constitution step\" half of R-33 has no lock.",
+      "minimal_fix": "assert `next` before clear_human_gates, on the init-drafted constitution (or with the file removed)",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "fd71c976b82012ea",
+      "requirement": "R-33",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-20T01:37:37",
+  "reopened": [],
+  "report_tokens": 1802,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-FIRSTHOUR-01",
+  "verdict": "fail"
+}

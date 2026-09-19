@@ -340,13 +340,15 @@ def _constitution_draft(ctx: Ctx) -> str:
     """
     purpose = ""
     for name in ("README.md", "README.rst", "README.txt", "README"):
-        text = read_text(os.path.join(ctx.root, name), default="")
-        if not text:
+        try:
+            with open(os.path.join(ctx.root, name), "rb") as fh:
+                # A README that predates UTF-8 (cp1251, latin-1) is still a README; decoding it
+                # strictly made `init` — the first command of the first hour — exit as a bug.
+                text = fh.read().decode("utf-8", errors="replace")
+        except OSError:
             continue
-        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
-        prose = [p for p in paragraphs if not p.startswith(("#", "```", "|", "-", "*", "[", "!"))]
-        if prose:
-            purpose = " ".join(prose[0].split())
+        purpose = _readme_purpose(text)
+        if purpose:
             break
     if not purpose:
         purpose = (f"{os.path.basename(ctx.root)} — no README paragraph to draft from; state what "
@@ -355,6 +357,31 @@ def _constitution_draft(ctx: Ctx) -> str:
         purpose += " (drafted from the README; what would make it a failure is still to be said)"
     return CONSTITUTION.replace(
         "<one paragraph: what this project is for, and what would make it a failure>", purpose, 1)
+
+
+def _readme_purpose(text: str) -> str:
+    """The first paragraph of prose in a README, or "".
+
+    Not a Markdown parser: fenced blocks and HTML comments are cut out whole (an unclosed fence
+    swallows the rest), a heading sharing a paragraph with its description is dropped line by
+    line, and a paragraph that opens with a badge, a table, a list, a blockquote or an HTML tag
+    is not prose. What survives is the one line every agent will read as the project's purpose
+    until a person rewrites it, so a wrong guess costs more than an empty one.
+    """
+    text = text.lstrip("\ufeff")
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+    text = re.sub(r"(```|~~~).*?\1", "", text, flags=re.S)
+    text = re.split(r"```|~~~", text, maxsplit=1)[0]
+    for paragraph in re.split(r"\n\s*\n", text):
+        lines = [line.strip() for line in paragraph.splitlines()
+                 if line.strip() and not line.lstrip().startswith("#")]
+        if not lines:
+            continue
+        if lines[0].startswith(("|", "-", "*", "+", "[", "!", "<", ">", "`")) \
+                or re.match(r"\d+[.)]\s", lines[0]):
+            continue
+        return " ".join(" ".join(lines).split())
+    return ""
 
 
 def initialise(ctx: Ctx, mode: str = "hybrid", profile: str | None = None,

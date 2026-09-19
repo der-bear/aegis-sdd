@@ -11,7 +11,10 @@
   "objective": "The second project's first hour: budgets warn, no constitution stop, justfile as the front door, no standards stub, shebang scripts are code",
   "owns": [
     "scripts/aegis/aegis_cli/**",
-    "tests/**"
+    "tests/**",
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    ".aegis/specs/simple-reliable/spec.md"
   ],
   "reads": [],
   "requirements": [

@@ -506,8 +506,7 @@ def check_testing_mandate(ctx: Ctx, scope: list[str] | None = None) -> Report:
             and not f.startswith(".aegis/") and not f.endswith((".md", ".json", ".yml", ".yaml", ".toml", ".txt"))
             # A file with no suffix is not source for this mandate: LICENSE, NOTICE, Makefile,
             # justfile, Dockerfile. Adding a licence to a repository asked for a test.
-            and (os.path.splitext(f)[1] != ""
-                 or read_text(os.path.join(ctx.root, f), default="").startswith("#!"))]
+            and (os.path.splitext(f)[1] != "" or _has_shebang(os.path.join(ctx.root, f)))]
     tests = [f for f in scope if matches_any(f, test_globs)
              or matches_any(f.lower(), [g.lower() for g in test_globs])
              or re.search(r"(?i)(^|/)tests?/|_test\.|\.test\.|\.spec\.|test_[^/]+\.py$", f)]
@@ -525,6 +524,18 @@ def check_testing_mandate(ctx: Ctx, scope: list[str] | None = None) -> Report:
                          "changed paths against the test globs — it cannot tell a real test "
                          "from an empty one")
     return report
+
+
+def _has_shebang(path: str) -> bool:
+    """Two bytes, read as bytes. Reading the whole file in text mode turned a binary blob or a
+    submodule directory with no suffix into "a bug in aegis" on the pre-push hook."""
+    try:
+        if not os.path.isfile(path):
+            return False
+        with open(path, "rb") as fh:
+            return fh.read(2) == b"#!"
+    except OSError:
+        return False
 
 
 def _is_binary(path: str) -> bool:
@@ -1372,8 +1383,10 @@ def check_setup(ctx: Ctx) -> Report:
     report = Report()
     constitution = ctx.path("constitution.md")
     if os.path.exists(constitution) and "<one paragraph" in read_text(constitution, default=""):
-        report.fail("setup", "constitution.md is still the scaffolded template",
-                    hint="a human writes its purpose and non-negotiables before work is gated")
+        # A project initialised before `init` drafted the purpose keeps its template. A signal,
+        # not a wall: the loop never waits for a constitution (R-33), so neither does the gate.
+        report.warn("setup", "constitution.md still carries the scaffolded placeholder", ctx.rel(constitution),
+                    hint="state what the project is for whenever you like; nothing waits on it")
     answers = read_json(ctx.path("answers.json"), default={})
     if answers.get("status") == "provisional" and answers.get("ledger"):
         report.fail("setup", f"{len(answers['ledger'])} auto-resolved assumption(s) are unreviewed",
@@ -1421,7 +1434,8 @@ def check_structure(ctx: Ctx) -> Report:
         report.fail("structure", ".aegis/ is absent", hint="run /aegis:init")
         return report
     if not os.path.exists(ctx.path("constitution.md")):
-        report.fail("structure", "constitution.md is missing", hint="run /aegis:init; a human authors it")
+        report.fail("structure", "constitution.md is missing",
+                    hint="`aegis init` drafts one from the README and keeps the answers")
     marker = ctx.gen("materialization.json")
     if not os.path.exists(ctx.path("answers.json")):
         # Without it, `check drift` has nothing to compile and generated policy becomes

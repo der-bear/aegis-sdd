@@ -235,10 +235,12 @@ R-33. **The loop shall never wait for a constitution.** `init` drafts its purpos
       agent only through a task; `next` has no constitution step. The owner: a person should not be
       needed in that equation at all.
 
-R-34. **A `justfile` is a front door like a `Makefile`, and the front door replaces the inferred
-      commands rather than adding to them.** Detection proposed `mypy .` from `pyproject`; the team's
-      `just test` ran pytest alone, and `mypy .` had 338 errors they had never run against — the first
-      task gate would have failed on nothing the task did.
+R-34. **A `justfile` (any of its three spellings, quiet `@recipe:` included) is a front door like a
+      `Makefile`, and a front door that defines `test` replaces the inferred commands rather than adding
+      to them.** Detection proposed `mypy .` from `pyproject`; the team's `just test` ran pytest alone,
+      and `mypy .` had 338 errors they had never run against — the first task gate would have failed
+      on nothing the task did. A front door of `build` and `clean` alone has said nothing about how the
+      project is verified, so there the inferred `go test ./...` stays (round 1 of the review, sev 2).
 
 R-35. **`init` shall not scaffold `.aegis/standards/`** — the placeholder R-26 deleted here was still
       being written into every new project.

@@ -378,7 +378,7 @@ def build_packet(ctx: Ctx, task_id: str) -> tuple[str, dict]:
     parts.append(
         "**Boundaries.**\n"
         "- Do not write outside the lease. A needed change elsewhere stops the task and returns a lease-expansion request.\n"
-        "- Do not edit `.aegis/generated/`, `.aegis/constitution.md`, registries, or any skill.\n"
+        "- Do not edit `.aegis/generated/`, registries, or any skill; `.aegis/constitution.md` only when the lease names it.\n"
         "- Do not weaken, skip or delete a test to reach green.\n"
         "- Do not improve code outside this task's scope.\n"
         f"- Risk tier {tier['id']} as declared: {tier['description']}. The gate judges the "
@@ -1698,6 +1698,11 @@ def next_action(ctx: Ctx) -> dict:
     if not os.path.isdir(ctx.aegis):
         return step("initialise Aegis", "no .aegis/ directory in this project",
                     "aegis init", "human")
+
+    if not os.path.exists(ctx.path("constitution.md")):
+        # Nobody authors it: `init` drafts the purpose from the README and keeps the answers.
+        return step("draft the constitution", "constitution.md is missing", "aegis init", "cli",
+                    note="init writes only what is missing and keeps every answer")
 
     answers = read_json(ctx.path("answers.json"), default={})
     if answers.get("status") == "provisional" and answers.get("ledger"):

@@ -248,9 +248,9 @@ checks drift and structure and nothing that reads the diff; pre-push and CI run 
 and `--no-verify` skips a hook and not CI. Every record under `.aegis/` is a file the agent can
 write, and a lens report is checked for shape and digest, never for content — with no remote
 the agent is trusted, with a remote CI is the barrier. Size budgets on lens reports, the handoff
-and NOTES.md warn and never block; the round count is a signal, not a wall; the bootstrap
-budgets — CLAUDE.md, the AGENTS.md chain, skills, roles — still fail, because those are loaded
-into every session. On an uncommitted repository, what was there at adoption is attributed to
+and NOTES.md warn and never block; the round count is a signal, not a wall; an adopter's own
+CLAUDE.md and AGENTS.md chain warn past their budgets too, and only the framework's own skills
+and roles still fail, because those are ours. On an uncommitted repository, what was there at adoption is attributed to
 adoption for as long as the repository still holds it.
 `docs attest` proves the sources have not moved since someone signed for them, not that
 anyone looked. Token figures are estimates — no tokenizer ships with Python; set
