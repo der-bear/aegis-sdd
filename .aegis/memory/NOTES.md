@@ -5,7 +5,7 @@ not a log. Keep it under the `notes` token budget in `policy.json`.
 
 ## Current milestone
 
-**The framework was over-built, and the owner said so.** Seven commits on `stable-01` since
+**The framework was over-built, and the owner said so.** The commits on `stable-01` since
 `4c54474` delete more than they add (−2,981/+215 in the deletion alone) and are held by
 **TASK-SIMPLE-01**, claimed after the work so the merge gate can attribute it and the branch can
 land. The owner's brief, verbatim: *simple, reliable, convenient, understandable* — and *do
