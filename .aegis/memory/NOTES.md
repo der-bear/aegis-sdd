@@ -54,6 +54,14 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
   agent's concurrent uncommitted work in the same tree and reported it as unowned, with that
   agent's tests red — the two-builders-one-tree collision, shown rather than absorbed. Nothing was
   committed or landed there.
+- TASK-FIRSTHOUR-01 (R-32..R-36): three review rounds by Fable at frozen digests — round 1 four
+  blocking (a non-UTF-8 README aborted init, the old template still stopped the task gate, a quiet
+  `@test:` recipe was missed, the shebang probe read whole files in text mode), round 2 one
+  (re-running `init` for a missing constitution rebuilt the ledger and brought the human step
+  back), round 3 the cap. Re-run read-only on an archive of domain-hunter with the new code: the
+  adopter's CLAUDE.md warns, the constitution carries the README's first paragraph, the gate runs
+  `just test`/`just lint` and no `mypy`, no standards stub, and the first `next` is "specify the
+  first feature [agent]".
 - ADR-3. TASK-STABLE-02 (R-9, R-10) and TASK-STABLE-03 (R-11..R-15) are planned and small.
 - Published: https://github.com/der-bear/aegis-sdd (public, MIT); `main` pushed through the
   pre-push gate on 2026-09-19, and the first CI run of the merge gate was green in 1m12s.
@@ -63,7 +71,7 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
 
 ## How to verify the current state
 
-    make check                          # 232 tests + bootstrap gate
-    python3 tests/test_aegis.py         # the same 232
+    make check                          # 248 tests + bootstrap gate
+    python3 tests/test_aegis.py         # the same 248
     scripts/aegis/aegis next
     scripts/aegis/aegis status
