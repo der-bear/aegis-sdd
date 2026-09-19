@@ -1,5 +1,5 @@
 {
-  "diff_digest": "9c0b73f196de33b9",
+  "diff_digest": "32c3115f81fbf5db",
   "findings": [
     {
       "disposition": "fixed",
@@ -20,7 +20,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T21:03:31",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 4: 43591e7 rewrites the lock: reason 49 chars, lenses re-recorded and task re-gated after the waiver commit, asserts command == aegis land; green at HEAD, red with apply_waivers stripped",
       "first_seen_round": 3,
       "id": "F-59a66c64",
       "line": 1228,
@@ -325,11 +328,11 @@
     }
   ],
   "lens": "design",
-  "recorded": "2026-09-19T20:54:39",
+  "recorded": "2026-09-19T21:03:31",
   "reopened": [],
-  "report_tokens": 1133,
+  "report_tokens": 827,
   "reviewer": "fable-5.1",
-  "round": 3,
+  "round": 4,
   "task": "TASK-SIMPLE-01",
-  "verdict": "pass-with-notes"
+  "verdict": "pass"
 }
