@@ -165,34 +165,41 @@ The task manifest is created **before** the work:
  "requirements": ["R-1"], "change_kinds": ["code", "route"], "acceptance": ["…"]}
 ```
 
-`owns` is an exclusive write lease, and **a plan is not a lease**: a task holds it from
-`claim` to `merge`. Before that it is a row in a backlog — it owns no file, several planned
-tasks may name the same globs, and a backlog neither blocks a merge nor claims a file twice.
-Claiming a lease another task holds is what gets refused, at `aegis task claim` and at the
-`planned → building` move that is the same act; code written under a planned task's globs
-belongs to *no* task until it is claimed, which is stricter than attributing it to a task
-nobody started. A focused task's *file-tool* writes outside the lease are refused by a hook;
-a shell redirect is not, which is why `check trace` is the containment at landing. Frozen zones are
-refused to every agent write, focused or not — the orchestrator and the doc-manager work
-unfocused, and a zone open to them was not frozen.
+`owns` is a **declaration**, read at the merge boundary. Nothing refuses a write mid-task — the
+hook that did was deleted, because with one builder it enforced nothing and with two the
+worktrees already isolate, and what it did do was make the orchestrator release and retake a
+focus for every note it wrote. What the declaration buys is attribution: `aegis check trace`
+requires every changed file to belong to exactly one task, and the glob written in advance is
+what makes that a plan rather than an after-the-fact guess — a commit-message convention cannot
+say who owns a shared helper on a squashed branch.
 
-The same structure solves traceability. A commit-message convention cannot say who owns a
-file: a squashed branch carries two tasks and a shared helper belongs to neither. A glob
-written in advance can, and `aegis check trace` requires every changed file to belong to
-exactly one active task. A holding task is attributed only what its own reviewed diff
-contains — `changed_files` from its `base_sha` — so a commit made before the lease started is
-not silently adopted by it. A merged task is attributed only what its merge receipt recorded,
-and only while the repository still holds that content. Where two records could both claim a
-file, a content record beats a lease, and the earliest record wins.
+**Who owns a changed file — the whole rule, in order.** *Check*, not guarantee: it reads files
+the agent can write, and says so.
 
-Being in the diff is necessary and not sufficient. A task's `base_sha` must also agree, for
-each file it claims, with what the branch inherited — unless a merge receipt on this branch
-records that content, which is what an earlier task of the same branch leaves behind. Without
-that rule a payload committed while the task was still a plan sits *at* the base, outside
-`base..worktree`, so one later comment to the same file put the whole content inside the
-lease and inside the receipt while every lens read a diff containing the comment. The
-comparison is against the point where the branch left the mainline, so on the default branch —
-which has no such point — it is vacuous: a check with a stated edge, not a guarantee.
+1. A path in a **frozen zone** belongs to nobody and fails, whoever changed it.
+2. A path the **adoption baseline** records belongs to adoption while the repository still holds
+   what was recorded (below).
+3. A path a task **holding its lease** names in `owns` belongs to that task. Holding is `claim`
+   to `land`: `building`, `review`, `refine`, `docs`, `gated`. A *planned* task is a row in a
+   backlog and owns nothing, so several may name the same globs and none blocks a merge; an
+   *abandoned* or *merged* task holds nothing either. Two holding tasks naming one path is a
+   failure, and it is refused earlier, at claim.
+4. Anything else belongs to no task and fails — except what the framework itself materialises
+   (`CLAUDE.md`, `AGENTS.md`, `.agents/**`, `.aegis/**`), which is the framework's.
+
+A held lease beats the generated-path exclusion: `**/build/**` is build output only where no
+task claims it, because a source directory named `build` exists and was invisible to this check
+for three cycles.
+
+**The base is where the branch left the mainline.** At `claim`, `base_sha` becomes
+`default_base` — `policy.mainline` if the project named its branch, else `origin/HEAD`,
+`origin/main`, `origin/master`, `main`, `master` — or HEAD when none resolves on a branch with
+no history. So a commit made on the branch before the claim is inside `base..worktree`: in the
+diff, in the digest, in front of every lens. **Reviewed, not refused.** A rule that refused it
+instead failed in both directions at once — it barred the first task of a branch that diverged
+before adoption, and its trust root was a local ref one command could move (ADR-5). The edge:
+two holding tasks on one branch share a base, so the first one's fixes stale the second one's
+reviews; land between tasks and it does not arise.
 
 ### Adopting on an uncommitted tree
 
@@ -309,7 +316,7 @@ source of the diff a reviewer reads, over exactly the files the digest covers: o
 and `.aegis/waivers.json` are inside it, because a change to either invalidates every review —
 and because the review is the control on a waiver, which it cannot be if it never sees one.
 
-## 6. Gates, the barrier, and authority
+## 6. Gates, the barrier, and what a record is
 
 ### Three stages
 
@@ -320,67 +327,61 @@ and because the review is the control on a waiver, which it cannot be if it neve
 | `merge` | a branch lands | everything, plus the full command set, requirement coverage and blocking diagram freshness |
 
 One universal gate cannot serve all three: it either fails on an empty project, runs a
-fifty-minute suite on every commit, or checks nothing before a merge. The split is what makes
-the gate something people actually run.
+fifty-minute suite on every commit, or checks nothing before a merge.
 
-A green task gate — commands included — writes a **receipt** carrying the diff digest; with
-`--no-run` it writes nothing and sets no status. `gated` means that receipt
-exists and still matches; `merged` requires it too, and a green *full* merge gate — commands
-included — writes a **merge receipt**: the commit it ran on and, for every file the task owns in
-that candidate, the content it saw. A merged task keeps ownership of a file only while the file
-still holds that content, which is what lets a branch take its next commit before it lands, and
-what makes a later edit to the same file belong to no task. A receipt whose commit is not
-behind HEAD is ignored. None of this is a signature: `.aegis/runs/` is a versioned file, below
-CI and tests in the hierarchy of trust, and a receipt is the gate's record, not proof against
-someone editing the record. A status anyone can type into a manifest is not a gate; a receipt
-someone could type is a record the gate re-derives from, and says so.
+A green task gate — commands included — writes a **gate receipt** carrying the diff digest, and
+sets `gated`; with `--no-run` it writes nothing. The merge gate **judges and writes nothing**.
+`merged` is written by `aegis land`, when the default branch actually moves, because that is the
+one place it is true; a gated task keeps its lease until then, which is what lets the branch
+take its next commit. There is no merge receipt any more, and no status the gate wrote that a
+hand could also write: a `merged` typed into a manifest means the task holds nothing, so its
+files are orphans and `trace` says so.
 
 ### The barrier
 
-**A git hook and CI, and nothing else.** `aegis git-hooks install`
-writes a `pre-commit` that runs the merge gate without project commands, and a `pre-push` that
-runs it with them, for every commit made in the checkout — another agent, another CLI, a person
-at a terminal. The hook reads the index, which is authoritative for what a commit will contain,
-so the one exemption is exact: a commit whose staged paths all lie under `.aegis/runs/` and
-none of which is a receipt. Each hook bakes in the path of the CLI it was installed from, falls
-back to an `aegis` on `PATH`, and refuses when neither exists — a gate that can be skipped by
-absence is not a gate. Nothing parses shell commands any more: the Claude Code hook that tried
-to decide what an arbitrary `git commit` would record was found a new way through in every
-review round and then deleted, because two barriers running one check are two places to get
-stuck. Where hooks are not installed, CI runs the same command. `git commit --no-verify` skips
-a hook and not CI, which is why CI is the barrier and the hook is the early error.
+**Pre-commit is a checkpoint; pre-push and CI are the gate.** `aegis git-hooks install` writes
+a `pre-commit` that checks drift and structure — a fraction of a second, nothing that reads the
+diff — and a `pre-push` that runs the full merge gate, commands included. A commit the gate could
+refuse is a checkpoint nobody makes, and this repository could not commit the record of its own
+escalation for a day while it was one. Each hook bakes in the path of the CLI it was installed
+from, falls back to `aegis` on `PATH`, and refuses when neither exists. `git push --no-verify`
+skips a hook and not CI, which is why CI is the barrier and the hooks are the early error. There
+is no Claude Code hook in the commit path: the one that tried to parse `git commit` was found a
+new way through in every review round and deleted.
 
-**A backlog is allowed** (§3: a plan is not a lease), so at the merge stage a requirement an
-open task cites is *pending*, not uncovered — one spec becoming several tasks is the ordinary
-case, and only a requirement no live task cites is uncovered.
+**A backlog is allowed** (§3), so at the merge stage a requirement an open task cites is
+*pending*, not uncovered.
 
-**A waiver is a record too.** `.aegis/waivers.json` is an ordinary tracked file: an entry
-typed in by hand with a plausible owner loads like any other. What the framework
-does is put the file in the diff digest — so changing it re-takes every review of that
-candidate — and say out loud at the gate that the candidate changed what may be waived. The
-listed-checks rule binds the command, not the file; the file is bound by review and by CI.
+### What a record is — the trust model, stated once
+
+Every artefact under `.aegis/` is an ordinary tracked file the agent can write: a manifest, a
+handoff, a review record, a waiver, a gate receipt. `lens record` validates a report's schema,
+its lens and its digest and **nothing about its content**, so a green merge gate has always been
+one honest report per lens away — and one dishonest one too. The framework does not pretend
+otherwise. What it does: a change to `answers.json` or `waivers.json` is inside the diff digest
+and re-takes every review of the candidate, and `trace` says out loud that the candidate changed
+what may be waived. **With no remote, every record is self-attested and the agent is trusted**;
+nothing in v1 or v2 can distinguish the agent moving the mainline ref from the owner moving it.
+**With a remote, the remote's mainline ref is the root and CI is the barrier.** Which of the two
+a reader is looking at is decided by `git remote`, not by anything in this document.
+
+Two things stay a person's, and the build protocol states the rule they derive from: dismissing
+a blocking review finding — `--by` may not be the task's builder, the lens that raised it, or a
+framework role name, and `waived` and `deferred` need a `finding` waiver a person owns — and a
+finding marked fixed that came back, which stops the loop until a person closes it. Size budgets
+warn and never fail. The round count is a signal, not a wall: past `policy.refinement_rounds` the
+gate warns and `next` says what the number means, and nothing abandons the work over it.
 
 ### Also in the watched code
 
-**Also in the watched code, briefly.** `hooks/post-edit.sh` runs the path-keyed checks after
-every edit; `hooks/session-start.sh` prints `aegis status` on resume, which is the mechanism
-behind "survives compaction". The adoption baseline is recorded only up to `BASELINE_CAP`
-(5,000) files, and exempts nothing unless `legacy_baseline: ratchet-from-today`; above the cap
-nothing is exempt either, and the answer says so. `task new` is serialised by a lock file;
-`AEGIS_COMMAND_TIMEOUT` bounds a project command.
-
-### Authority is data
-
-**A waiver is a record, and a dismissal is a person's.** `.aegis/waivers.json` holds a check, a
-scope, a reason, an owner and an expiry; it silences a check and proves nothing, and the review
-of the candidate that adds it is the control. A `finding` waiver — the one that defers a
-blocking review finding — is a person's decision, and so is any dismissal: `--by` may not be the
-task's builder, the lens that raised the finding, or a framework role name. Size budgets — lens
-reports, the handoff, `NOTES.md` — warn and never fail: a rewrite to fit a number costs more
-tokens than the overage and loses what was cut. `aegis land` prints the move once the merge
-gate's checks are green at HEAD, and with `--run` re-runs the full gate, commands included,
-moves the ref as a fast-forward on a clean tree, and marks the gated tasks merged — the one
-place `merged` is written, because it is the one place it is true.
+`hooks/post-edit.sh` runs the path-keyed checks after every edit; `hooks/session-start.sh`
+prints `aegis status` on resume, which is the mechanism behind "survives compaction". The
+adoption baseline is recorded only up to `BASELINE_CAP` (5,000) files, and exempts nothing unless
+`legacy_baseline: ratchet-from-today`. `task new` is serialised by a lock file;
+`AEGIS_COMMAND_TIMEOUT` bounds a project command. `aegis land` prints the move once the merge
+gate's checks are green at HEAD; with `--run` it re-runs the full gate, moves the ref as a
+fast-forward on a clean tree, and marks the gated tasks merged — on the mainline itself, it
+marks them merged in place.
 
 
 ## 7. Diagram freshness by content

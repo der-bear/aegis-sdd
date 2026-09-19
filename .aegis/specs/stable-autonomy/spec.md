@@ -115,17 +115,12 @@ R-15. On a push to the default branch, the CI workflow shall diff against the pu
 
 ## Acceptance criteria
 
-Each requirement is locked by a named test class; the list is completed as the tasks build.
-
-- R-1: `SizeBudgetsWarn`. R-2: `NextEscalatesAtTheCap`. R-3: `TheGitHookIsTheOnlyBarrier`.
-- R-4: `AMergedTaskDoesNotBlockTheBranch` (including a receipt from another history and a
-  second task under the same globs), `AMergedLeaseIsNotAPermanentExemption`.
-- R-5: `DelegationIsData`. R-6: `AnOpenTaskCoversPending`, `APlannedTaskOwnsNothing`,
-  `ALeaseIsExclusiveWhileHeld`. R-7: `TheDiffShowsWhatTheDigestCovers`,
-  `TheReceiptIsNotExempt`, `ANameIsAPerson`, `TheFirstSecurityReviewOfStableAutonomy`.
-- R-8: `TheDocumentsSayWhatTheCodeDoes` locks the greppable half — the README command list, the
-  rounds row in EVALUATION, the CI header stating its claim once, and no document promising a
-  refusal at `task new`. The prose half is locked by the read-only verification pass and
-  `docs attest`, and by `W-architecture-stale-after-cap` leaving the waiver file.
-- R-9: `LensStalenessIsScopedByKind`, `ASkillEditRestalesEveryLens`. R-10: `TheDocManagerAttests`.
-- R-11 to R-15: `TheRound3CorrectnessFindings`.
+Superseded on 2026-09-19. R-4 (merge receipts), R-5 (delegation) and R-6's enforcement half were
+deleted rather than finished — see ADR-5 and `.aegis/specs/simple-reliable/`: the merge gate
+writes nothing, `merged` is written by `land`, the lease is a declaration, and a waiver is a
+record. What survives is locked by: R-1 `SizeBudgetsWarn`; R-2 `NextEscalatesAtTheCap` (as a
+signal, not a wall); R-3 `TheGitHookIsTheOnlyBarrier`; R-6 `APlannedTaskOwnsNothing`,
+`ALeaseIsExclusiveWhileHeld`, `AGatedTaskOwnsItsFilesUntilItLands`; R-7
+`TheDiffShowsWhatTheDigestCovers`, `ANameIsAPerson`; R-8 `TheDocumentsSayWhatTheCodeDoes`; R-16
+`skills/build/SKILL.md` §4. R-9 and R-10 (TASK-STABLE-02) and R-11..R-15 (TASK-STABLE-03) are
+still planned.

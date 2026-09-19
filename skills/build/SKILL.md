@@ -108,6 +108,16 @@ id in `scope`, that person as owner and an expiry. `fixed` is what a
 re-review records when the code changed; a human records it by hand only after a reopened
 finding's mechanism was simplified.
 
+**Who a step needs — one rule, and `aegis next` derives every `who` from it.** A person is
+needed for an irreversible outward-facing act (a push, a pull request, a release); for a change
+to what the framework measures work against that a person owns (the constitution, an answer the
+interview marks never-auto, the owner of a `finding` waiver); for a question a `proposed` ADR
+records with a `**Blocks:**` line; for a tool permission the runner refuses; and for an
+escalation — a finding marked fixed that came back. Everything else the agent decides, records
+and continues: merge and land are commands, not permissions. A blocked step does not block other
+ready work, and a report is not an approval gate. Land between tasks — a gated task is committed
+and landed before the next one starts, which is one command and keeps every base at the mainline.
+
 Three rules govern this loop:
 
 - **The builder is not the final judge of its own work.** For risk tier A the reviewer must
@@ -116,8 +126,9 @@ Three rules govern this loop:
 - **A finding that returns after being marked fixed stops the loop.** It stays flagged on
   the finding itself, the gate fails on it, and only a human disposition closes it. It means
   the mechanism is wrong; propose the simpler design instead of a third patch.
-- **Rounds are capped** by `policy.refinement_rounds`. Exhausting them escalates to a human
-  with what was tried — it does not start another round.
+- **The round count is a signal, not a wall.** Past `policy.refinement_rounds` the gate warns
+  and `next` says what the number means: a finding surviving that many rounds usually means the
+  mechanism is wrong. Simplify before patching again; do not abandon the work over a number.
 
 ## 5. Documentation
 

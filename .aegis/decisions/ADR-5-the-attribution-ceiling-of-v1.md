@@ -1,6 +1,6 @@
 # ADR-5. The attribution ceiling of v1
 
-- **Status:** proposed — one binary question in it is the owner's
+- **Status:** accepted 2026-09-19 — the binary question answered toward convenience (D-1 of SPEC-3), and the decision taken further than this file first proposed: not only record 5 but the merge receipt, the write hooks and the delegation machinery were deleted (`df28057`), because each was a record the agent could write guarding a model the framework already stated it could not verify
 - **Date:** 2026-09-18, **revised 2026-09-19** after an independent review overturned part of the
   first version. What the first version claimed and why it was wrong is kept below, under
   *Corrections*, rather than quietly edited out.

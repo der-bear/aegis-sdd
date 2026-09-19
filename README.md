@@ -240,19 +240,16 @@ it cannot tell, and pass. They find `publish("order.created")` and not
 `publish(topic)`. Every such finding says so in its own output, and the patterns are
 extensible through `capabilities`.
 
-**Known limits.** A `Bash` command can still write where an `Edit` would be refused; the
-containment there is the builder's git worktree and the landing review, not the hook. Write
-hooks exist only inside Claude Code; any other builder is contained by attribution at the gate.
-The git pre-commit hook runs the merge gate's *checks* — not the project's commands, and not at
-all for a commit carrying only run bookkeeping; pre-push and CI run the full gate, and
-`--no-verify` skips a hook and not CI, which is why CI is the barrier and the hook the early
-error. Both write hooks are silent in a checkout with no `.aegis/` at all. Size budgets on lens reports, the handoff and NOTES.md
-warn and never block; the bootstrap budgets — CLAUDE.md, the AGENTS.md chain, skills, roles —
-still fail, because those are loaded into every session.
-On an uncommitted repository, what was there at adoption is attributed to adoption for as long
-as the repository still holds it — committing that state as it is keeps it attributed and
-retires the baseline, while a commit that records something else puts the path back in task
-scope.
+**Known limits.** Nothing refuses a write mid-task: the lease is a declaration `check trace`
+reads at the merge boundary, and two builders are kept apart by their worktrees. Pre-commit
+checks drift and structure and nothing that reads the diff; pre-push and CI run the merge gate,
+and `--no-verify` skips a hook and not CI. Every record under `.aegis/` is a file the agent can
+write, and a lens report is checked for shape and digest, never for content — with no remote
+the agent is trusted, with a remote CI is the barrier. Size budgets on lens reports, the handoff
+and NOTES.md warn and never block; the round count is a signal, not a wall; the bootstrap
+budgets — CLAUDE.md, the AGENTS.md chain, skills, roles — still fail, because those are loaded
+into every session. On an uncommitted repository, what was there at adoption is attributed to
+adoption for as long as the repository still holds it.
 `docs attest` proves the sources have not moved since someone signed for them, not that
 anyone looked. Token figures are estimates — no tokenizer ships with Python; set
 `AEGIS_TOKENIZER` for exactness.

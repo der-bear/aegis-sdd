@@ -1,5 +1,13 @@
 # SPEC-3 — Simple, reliable, convenient, understandable
 
+> **Done 2026-09-19, in three commits, and further than written.** The owner then asked whether
+> the whole thing was over-built; the review said yes, and the deletion went past R-17: the merge
+> receipt, the write hooks, `task focus`, `aegis waive` and the delegation answer, and the
+> person-name regex were all removed (`df28057`). R-17's receipt-skip became unnecessary — no
+> receipt, nothing to skip. R-19's cap is a signal in both the gate and `next`. R-21's `docs_attest`
+> clause was dropped on review; R-22's comment went with the block that held it. Task 3's
+> ARCHITECTURE rewrite: 4,811 → 4,476 words, §3 and §6 each one rule in one place.
+
 The owner's instruction, verbatim: *"доведи до нужного состояния и не переусложняй, он должен быть
 простой, надёжный и удобный"*, then *"и понятный"*. Read against the definition of optimal already
 recorded — stable, little human participation, the agent not over-restricted, no artefact rewritten
