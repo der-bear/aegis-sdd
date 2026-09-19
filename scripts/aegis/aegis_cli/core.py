@@ -483,7 +483,7 @@ def _is_task_manifest(rel: str) -> bool:
     return rel.startswith(".aegis/runs/") and rel.endswith("/manifest.json")
 
 
-def in_review_scope(rel: str) -> bool:
+def in_review_scope(rel: str, task_id: str | None = None) -> bool:
     """Is this path part of the change a review is a verdict on?
 
     One answer, used by `diff_digest` and by `task_diff`, because two copies of this rule
@@ -499,12 +499,16 @@ def in_review_scope(rel: str) -> bool:
     if rel in ("CLAUDE.md", "AGENTS.md"):
         return False
     if rel.startswith(".aegis/"):
+        # Only this task's own manifest: its contract is part of its change, another task's
+        # is not. Counting every manifest let `task new` for a backlog row move the digest of
+        # every gated task, invalidating receipts and reviews that had seen no code change.
+        own = task_id is not None and rel == f".aegis/runs/{task_id}/manifest.json"
         return (rel.startswith(".aegis/specs/") or rel == ".aegis/answers.json"
-                or rel == ".aegis/waivers.json" or _is_task_manifest(rel))
+                or rel == ".aegis/waivers.json" or own)
     return True
 
 
-def diff_digest(ctx: Ctx, base: str | None) -> str:
+def diff_digest(ctx: Ctx, base: str | None, task_id: str | None = None) -> str:
     """Identity of the current change set: content, not just file names.
 
     A review is evidence only about the code it read. Binding a lens report to this digest
@@ -512,7 +516,7 @@ def diff_digest(ctx: Ctx, base: str | None) -> str:
     """
     hasher = hashlib.sha256()
     for rel in changed_files(ctx, base):
-        if not in_review_scope(rel):
+        if not in_review_scope(rel, task_id):
             continue
         if _is_task_manifest(rel):
             # The contract half of the manifest only: requirements, acceptance, lease.

@@ -137,7 +137,7 @@ Three properties fall out:
   first task gate, not before) fails when the import line is gone; `aegis migrate` re-appends it
 without touching
   whatever else the file now contains.
-- **Tampering with the rules is tampering with `generated/`** — refused by the write hook,
+- **Tampering with the rules is tampering with `generated/`** — caught by `check drift` at commit, restored by `aegis compile`,
   caught by `check drift`, restored by `aegis compile`.
 
 Considered and rejected:
@@ -193,8 +193,9 @@ for three cycles.
 
 **The base is where the branch left the mainline.** At `claim`, `base_sha` becomes
 `default_base` — `policy.mainline` if the project named its branch, else `origin/HEAD`,
-`origin/main`, `origin/master`, `main`, `master` — or HEAD when none resolves on a branch with
-no history. So a commit made on the branch before the claim is inside `base..worktree`: in the
+`origin/main`, `origin/master`, `main`, `master`. On a branch with history that matches none
+of them, `claim` refuses until `q.core.mainline` names the branch; only an unborn branch falls
+back to HEAD. So a commit made on the branch before the claim is inside `base..worktree`: in the
 diff, in the digest, in front of every lens. **Reviewed, not refused.** A rule that refused it
 instead failed in both directions at once — it barred the first task of a branch that diverged
 before adoption, and its trust root was a local ref one command could move (ADR-5). The edge:
@@ -330,9 +331,9 @@ One universal gate cannot serve all three: it either fails on an empty project, 
 fifty-minute suite on every commit, or checks nothing before a merge.
 
 A green task gate — commands included — writes a **gate receipt** carrying the diff digest, and
-sets `gated`; with `--no-run` it writes nothing. The merge gate **judges and writes nothing**.
-`merged` is written by `aegis land`, when the default branch actually moves, because that is the
-one place it is true; a gated task keeps its lease until then, which is what lets the branch
+sets `gated`; with `--no-run` it writes no receipt and no status. The merge gate **judges and writes nothing**.
+`merged` is written by `aegis land` and by nothing else — `task status` refuses it — because
+that is the one place it is true; a gated task keeps its lease until then, which is what lets the branch
 take its next commit. There is no merge receipt any more, and no status the gate wrote that a
 hand could also write: a `merged` typed into a manifest means the task holds nothing, so its
 files are orphans and `trace` says so.
@@ -368,8 +369,9 @@ a reader is looking at is decided by `git remote`, not by anything in this docum
 Two things stay a person's, and the build protocol states the rule they derive from: dismissing
 a blocking review finding — `--by` may not be the task's builder, the lens that raised it, or a
 framework role name, and `waived` and `deferred` need a `finding` waiver a person owns — and a
-finding marked fixed that came back, which stops the loop until a person closes it. Size budgets
-warn and never fail. The round count is a signal, not a wall: past `policy.refinement_rounds` the
+finding marked fixed that came back, which stops the loop until a person closes it. Size budgets on
+lens reports, the handoff and NOTES.md warn and never fail; the bootstrap budgets — CLAUDE.md,
+the AGENTS.md chain, skills, roles — still fail, because those load into every session. The round count is a signal, not a wall: past `policy.refinement_rounds` the
 gate warns and `next` says what the number means, and nothing abandons the work over it.
 
 ### Also in the watched code
@@ -378,10 +380,10 @@ gate warns and `next` says what the number means, and nothing abandons the work 
 prints `aegis status` on resume, which is the mechanism behind "survives compaction". The
 adoption baseline is recorded only up to `BASELINE_CAP` (5,000) files, and exempts nothing unless
 `legacy_baseline: ratchet-from-today`. `task new` is serialised by a lock file;
-`AEGIS_COMMAND_TIMEOUT` bounds a project command. `aegis land` prints the move once the merge
-gate's checks are green at HEAD; with `--run` it re-runs the full gate, moves the ref as a
-fast-forward on a clean tree, and marks the gated tasks merged — on the mainline itself, it
-marks them merged in place.
+`AEGIS_COMMAND_TIMEOUT` bounds a project command. `aegis land` runs the full merge gate at HEAD — over the
+branch's diff and every holding task's own diff, so on the mainline a committed task is still
+seen — moves the ref as a fast-forward on a clean tree, marks the gated tasks merged, and
+commits that bookkeeping. On the mainline itself nothing moves and the rest is the same.
 
 
 ## 7. Diagram freshness by content

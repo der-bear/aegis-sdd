@@ -47,7 +47,6 @@ await agent(
 
 const built = await agent(
   `${packet}\n\n` +
-  `First run \`${AEGIS} task focus ${task}\` so your write lease is enforced here too; ` +
   `if that fails, stop and report it rather than continuing unprotected.\n\n` +
   `Then carry out that packet exactly. Write \`.aegis/runs/${task}/handoff.json\` before you ` +
   `finish, including "agent": "aegis-builder". Return at most 300 words.`,
@@ -191,7 +190,6 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
 phase('Documentation')
 
 // The lease forbids writes under `.aegis/`; the doc-manager's whole job is there.
-await agent(sh(`${AEGIS} task focus`), { label: 'release', phase: 'Documentation', effort: 'low' })
 
 // Dispatch the doc-manager only when there is documentation work. An agent context per
 // task for a role that usually has nothing to apply was the workflow's largest fixed cost.
@@ -217,7 +215,7 @@ phase('Gate')
 
 // Deterministic. No agent judgement participates in the decision to pass.
 const verdict = await agent(
-  sh(`${AEGIS} gate --stage task --task ${task}; ${AEGIS} task focus; ${AEGIS} next`),
+  sh(`${AEGIS} gate --stage task --task ${task}; ${AEGIS} next`),
   { label: 'gate', phase: 'Gate', effort: 'low' },
 )
 

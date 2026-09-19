@@ -253,7 +253,7 @@ against the code, and correcting them would have moved the digest with no round 
 chose to commit with the document stale under a waiver in his name, the branch landed, and the
 next commit was refused by the installed hook, with forty-eight `belongs to no task` findings —
 a merged task no longer owned its files until `main` moved. Both facts became requirements of the next task (retro 0002), and
-the second became the merge receipt described in ARCHITECTURE §6.
+the second became the merge receipt described then in ARCHITECTURE §6 (since deleted; see ADR-5).
 
 **What this still does not prove.** Nothing here measures whether the framework pays for itself:
 one task, one repository, one day. The lens acceptance rate (0.69–0.73 in the first task) and the

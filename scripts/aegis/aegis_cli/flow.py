@@ -120,7 +120,7 @@ def _task_new_locked(ctx: Ctx, task_id: str, *, feature: str, objective: str, ow
     policy = checks.policy(ctx)
     limit = policy.get("parallel_builders", 1)
     in_flight = [t for t in checks.active_tasks(ctx)
-                 if t.get("status") in ("building", "review", "refine", "docs")]
+                 if t.get("status") == "building"]
     if len(in_flight) >= limit:
         raise AegisError(
             f"profile {policy.get('profile')} allows {limit} task(s) in flight and "
@@ -197,27 +197,29 @@ def gate_receipt_valid(ctx: Ctx, task_id: str) -> bool:
     if receipt.get("task") != task_id:
         return False  # a receipt copied from another run is not this task's evidence
     manifest = checks.load_task(ctx, task_id)
-    return receipt.get("diff_digest") == diff_digest(ctx, manifest.get("base_sha"))
+    return receipt.get("diff_digest") == diff_digest(ctx, manifest.get("base_sha"), task_id)
 
 
 
 
 def task_status(ctx: Ctx, task_id: str, status: str) -> dict:
-    allowed = ["planned", "building", "review", "refine", "docs", "gated", "merged", "abandoned"]
+    allowed = ["planned", "building", "gated", "merged", "abandoned"]
     if status not in allowed:
         raise AegisError(f"unknown status {status!r}; expected one of {', '.join(allowed)}")
 
     current_status = read_json(os.path.join(run_dir(ctx, task_id), "manifest.json")).get("status", "planned")
     allowed_from = {
         "planned": {"building", "abandoned"},
-        "building": {"review", "refine", "docs", "gated", "abandoned", "building"},
-        "review": {"refine", "docs", "gated", "building", "abandoned"},
-        "refine": {"review", "docs", "gated", "building", "abandoned"},
-        "docs": {"gated", "review", "refine", "abandoned"},
-        "gated": {"merged", "refine", "review", "abandoned"},
+        "building": {"abandoned", "building"},
+        "gated": {"building", "abandoned"},
         "merged": set(),
         "abandoned": set(),
     }
+    if status in ("gated", "merged"):
+        # Written by the thing that makes them true — a green task gate, and `aegis land` —
+        # and by nothing else, or "one place" is a sentence rather than a property.
+        raise AegisError(f"{task_id} cannot become {status!r} by hand: `aegis gate --stage task` "
+                         f"writes gated, `aegis land` writes merged")
     if status != current_status and status not in allowed_from.get(current_status, set()):
         # The disk state is what a resumed session reads to decide what to do next; letting
         # it move backwards or sideways makes that decision meaningless.
@@ -240,14 +242,14 @@ def task_status(ctx: Ctx, task_id: str, status: str) -> dict:
             # a rule that refused it instead failed in both directions at once (ADR-5). With
             # no mainline ref the base is HEAD; on an unborn branch `head_sha` is None and the
             # base is left alone rather than set to the literal string `HEAD`.
-            base = default_base(ctx) or head_sha(ctx)
+            base = require_base(ctx) or head_sha(ctx)
             if base and manifest.get("base_sha") != base:
                 manifest["base_sha"] = base
                 write_json(os.path.join(run_dir(ctx, task_id), "manifest.json"), manifest)
         policy = checks.policy(ctx)
         limit = policy.get("parallel_builders", 1)
         in_flight = [t for t in checks.active_tasks(ctx)
-                     if t["id"] != task_id and t.get("status") in ("building", "review", "refine", "docs")]
+                     if t["id"] != task_id and t.get("status") == "building"]
         if len(in_flight) >= limit:
             # Checked at creation only, the limit was bypassed by creating several tasks
             # first and starting them afterwards.
@@ -459,7 +461,7 @@ def task_diff(ctx: Ctx, task_id: str) -> str:
     untracked = untracked_files(ctx)
     parts: list[str] = []
     for rel in files:
-        if not in_review_scope(rel):
+        if not in_review_scope(rel, task_id):
             continue
         if rel in untracked:
             full = os.path.join(ctx.root, rel)
@@ -711,7 +713,7 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
     return {
         "task": task_id,
         # The reviewer quotes this back in its report; that is what proves what it read.
-        "diff_digest": diff_digest(ctx, manifest.get("base_sha")),
+        "diff_digest": diff_digest(ctx, manifest.get("base_sha"), task_id),
         "declared_kinds": manifest.get("change_kinds") or [],
         "detected_kinds": detected,
         "effective_kinds": kinds,
@@ -721,7 +723,6 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
         # gate counted against `policy.refinement_rounds`. The policy is the cap; the tier
         # only says how many rounds a change of this kind needs at minimum.
         "refinement_rounds": policy.get("refinement_rounds", 3),
-        "min_review_rounds": tier.get("review_rounds", 1),
         "independent_reviewer": tier.get("independent_reviewer", False),
         "lenses": selected,
         "why": {lens: sorted(set(why)) for lens, why in reasons.items()},
@@ -826,7 +827,7 @@ def lens_record(ctx: Ctx, task_id: str, payload: dict, lens: str | None = None) 
     prior_findings = {f["id"]: f for f in previous.get("findings", [])}
 
     manifest = checks.load_task(ctx, task_id)
-    current = diff_digest(ctx, manifest.get("base_sha"))
+    current = diff_digest(ctx, manifest.get("base_sha"), task_id)
     if payload["diff_digest"] != current:
         # The reviewer quotes the digest it was handed. Stamping whatever the digest happens
         # to be at record time let an old report be replayed against changed code and pass as
@@ -1079,7 +1080,7 @@ def disposition(ctx: Ctx, task_id: str, fid: str, value: str, reason: str = "", 
     if not os.path.isdir(directory):
         raise AegisError(f"no lens reports recorded for {task_id}")
     manifest = checks.load_task(ctx, task_id)
-    current = diff_digest(ctx, manifest.get("base_sha"))
+    current = diff_digest(ctx, manifest.get("base_sha"), task_id)
     for name in sorted(os.listdir(directory)):
         path = os.path.join(directory, name)
         record = read_json(path)
@@ -1121,7 +1122,7 @@ def check_reviews(ctx: Ctx, task_id: str) -> Report:
 
     max_rounds = policy.get("refinement_rounds", 3)
     manifest = checks.load_task(ctx, task_id)
-    current_digest = diff_digest(ctx, manifest.get("base_sha"))
+    current_digest = diff_digest(ctx, manifest.get("base_sha"), task_id)
     # Effective kinds, not declared ones: declaring `code` while adding an authorisation
     # route would otherwise duck the independent-review requirement the change earns.
     scope = changed_files(ctx, manifest.get("base_sha"))
@@ -1155,11 +1156,6 @@ def check_reviews(ctx: Ctx, task_id: str) -> Report:
             report.fail("reviews", f"{lens}: findings marked fixed came back: {', '.join(came_back)}",
                         hint="the mechanism is wrong, not the patch; simplify it, then a person records "
                              "`aegis lens disposition <TASK> <id> <value> --reason … --by <name>`")
-        minimum = plan.get("min_review_rounds", 1)
-        if record.get("round", 0) < minimum:
-            report.fail("reviews", f"{lens}: risk tier {plan['risk_tier']} requires {minimum} review "
-                                   f"rounds; {record.get('round', 0)} recorded",
-                        hint=f"re-run lens-{lens} against the current diff and record it again")
         if tier.get("independent_reviewer"):
             # Whoever built it does not get to certify it. On an irreversible surface that
             # is the whole point of reviewing at all, so it is checked rather than requested.
@@ -1540,7 +1536,7 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
             manifest_now = checks.load_task(ctx, task_id)
             write_json(os.path.join(run_dir(ctx, task_id), "gate-receipt.json"), {
                 "task": task_id, "at": now(),
-                "diff_digest": diff_digest(ctx, manifest_now.get("base_sha")),
+                "diff_digest": diff_digest(ctx, manifest_now.get("base_sha"), task_id),
                 "note": "written by a passing task gate; `gated` without this is not gated",
             })
             _set_status(ctx, task_id, "gated")
@@ -1550,7 +1546,14 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
     if stage == "merge":
         # Union, not preference: staging one file made every other candidate change
         # invisible to trace, requirements, documentation and review checks.
-        scope = sorted(set(staged_files(ctx)) | set(changed_files(ctx, require_base(ctx))))
+        # The branch's diff, plus every holding task's own diff: on the mainline the branch
+        # point is HEAD, so a task committed before this gate ran had a candidate of 0 files
+        # and passed on nothing.
+        scope = set(staged_files(ctx)) | set(changed_files(ctx, require_base(ctx)))
+        for task in checks.active_tasks(ctx):
+            if task.get("status") in checks.HOLDING and task.get("base_sha"):
+                scope |= set(changed_files(ctx, task["base_sha"]))
+        scope = sorted(scope)
         report.note(f"{len(scope)} files in the candidate diff")
         report.extend(checks.check_structure(ctx))
         report.extend(checks.check_pointers(ctx))
@@ -1628,63 +1631,60 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
 
 
 def _default_branch(ctx: Ctx) -> str:
+    """The mainline's name: `policy.mainline` if the project named it, else origin/HEAD, main, master."""
+    named = checks.policy(ctx).get("mainline")
+    if named and git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{named}").strip():
+        return str(named)
     head = git(ctx, "symbolic-ref", "-q", "--short", "refs/remotes/origin/HEAD").strip()
     if head.startswith("origin/"):
         return head[len("origin/"):]
     for name in ("main", "master"):
         if git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{name}").strip():
             return name
-    raise AegisError("no default branch found (origin/HEAD, main or master)")
+    raise AegisError("no mainline branch found: tried policy.mainline, origin/HEAD, main, master — "
+                     "`aegis answer q.core.mainline '\"<branch>\"'` names it")
 
 
-def land(ctx: Ctx, run: bool = False) -> list[str]:
-    """Move the default branch to HEAD and mark the gated tasks merged.
+def land(ctx: Ctx) -> list[str]:
+    """Run the full merge gate at HEAD, move the mainline to it, mark the gated tasks merged,
+    and commit that bookkeeping.
 
-    Printing the command is the default; `--run` moves the ref, after the full merge gate —
-    commands included — passes at HEAD on a clean tree. Landing is the one place `merged` is
-    written, because it is the one place it is true: the work is reachable from the default
-    branch. With no remote this moves a local ref, not a deployment.
+    The one place `merged` is written, because it is the one place it is true. On the mainline
+    itself nothing moves; the gate still runs, over every gated task's own diff, and the tasks
+    are marked merged in place. With no remote this moves a local ref, not a deployment.
     """
     from .core import is_ancestor
     head = head_sha(ctx)
     if not head:
         raise AegisError("nothing to land: no commit yet")
-    gated = [t["id"] for t in checks.active_tasks(ctx) if t.get("status") == "gated"]
+    gated = [t["id"] for t in checks.active_tasks(ctx)
+             if t.get("status") == "gated" and gate_receipt_valid(ctx, t["id"])]
     if not gated:
-        raise AegisError("nothing to land: no task is gated; `aegis gate --stage task --task <ID>` first")
-    default = _default_branch(ctx)
-    current = git(ctx, "branch", "--show-current").strip()
-    if current == default:
-        # Working on the mainline itself: the work is already where landing would put it.
-        # Without this a task committed here stayed `gated` and `next` said "merge" for ever.
-        if git(ctx, "status", "--porcelain").strip():
-            raise AegisError("the working tree is not clean; commit before landing")
-        for task_id in gated:
-            _set_status(ctx, task_id, "merged")
-        return [f"on {default} already: {', '.join(gated)} marked merged — commit .aegis/runs to record it"]
-    tip = git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{default}").strip()
-    if tip and not is_ancestor(ctx, tip, head):
-        raise AegisError(f"{default} has commits HEAD does not; rebase or merge them first")
-    command = f"git branch -f {default} {head[:12]}"
-    lines = [f"gated: {', '.join(gated)}"]
-    if not run:
-        if gate(ctx, "merge", run_commands=False).failed:
-            raise AegisError("the merge gate's checks are red at HEAD; `aegis gate --stage "
-                             "merge` says why")
-        return lines + [f"to land: {command}", "or: aegis land --run"]
+        raise AegisError("nothing to land: no task is gated with a receipt for the current code; "
+                         "`aegis gate --stage task --task <ID>` first")
     if git(ctx, "status", "--porcelain").strip():
         raise AegisError("the working tree is not clean; commit before landing")
-    if gate(ctx, "merge", run_commands=True).failed:
-        raise AegisError("the full merge gate is red at HEAD; fix it before landing")
-    git(ctx, "branch", "-f", default, head, check=True)
+    default = _default_branch(ctx)
+    current = git(ctx, "branch", "--show-current").strip()
+    tip = git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{default}").strip()
+    if current != default and tip and not is_ancestor(ctx, tip, head):
+        raise AegisError(f"{default} has commits HEAD does not; rebase or merge them first")
+    report = gate(ctx, "merge", run_commands=True)
+    if report.failed:
+        failing = [f.render() for f in report.findings if f.severity == "fail"]
+        raise AegisError("the full merge gate is red at HEAD:\n" + "\n".join(failing[:12]))
+    lines = [f"gated: {', '.join(gated)}"]
+    if current != default:
+        git(ctx, "branch", "-f", default, head, check=True)
+        lines.append(f"landed: {default} -> {head[:12]}")
+    else:
+        lines.append(f"on {default} already; nothing to move")
     for task_id in gated:
         _set_status(ctx, task_id, "merged")
-    return lines + [f"landed: {default} -> {head[:12]}",
-                    f"merged: {', '.join(gated)} — commit .aegis/runs to record it"]
-
-
-
-
+    git(ctx, "add", "--", ".aegis/runs", check=True)
+    git(ctx, "commit", "-q", "-m", f"chore: land {', '.join(gated)}", check=True)
+    lines.append(f"merged: {', '.join(gated)} — recorded in {head_sha(ctx)[:12]}")
+    return lines
 
 
 
@@ -1750,8 +1750,14 @@ def next_action(ctx: Ctx) -> dict:
 
     tasks = checks.active_tasks(ctx)
     open_tasks = [t for t in tasks if t.get("status") not in ("merged", "abandoned")]
-    gated = [t for t in tasks if t.get("status") == "gated"]
-    building = [t for t in open_tasks if t.get("status") not in ("planned", "gated")]
+    gated = [t for t in tasks if t.get("status") == "gated" and gate_receipt_valid(ctx, t["id"])]
+    building = [t for t in open_tasks if t.get("status") == "building"]
+    try:
+        require_base(ctx)
+    except AegisError as exc:
+        return step("name the mainline branch", str(exc).split(":")[0],
+                    "aegis answer q.core.mainline '\"<branch>\"'",
+                    note="a fact about the repository, not a policy; answer it and continue")
 
     # Land between tasks: a gated task is committed and landed before the next one starts,
     # and only when nothing is mid-build — a building task's uncommitted work is not a
@@ -1767,9 +1773,9 @@ def next_action(ctx: Ctx) -> dict:
 
     if gated and not building and _land_pending(ctx):
         return step("land the branch", "a gated task is committed and the default branch is "
-                    "behind it", "aegis land --run", "cli",
-                    note="re-runs the full merge gate at HEAD, moves the ref as a fast-forward, "
-                         "and marks the gated tasks merged")
+                    "behind it", "aegis land", "cli",
+                    note="runs the full merge gate at HEAD, moves the ref as a fast-forward, marks "
+                         "the gated tasks merged and commits that")
 
     if not open_tasks:
         specs = ctx.path("specs")
@@ -1809,9 +1815,11 @@ def next_action(ctx: Ctx) -> dict:
                 if os.path.isdir(reviews) else set())
 
     if not has_handoff:
+        claimed = task.get("status") == "building"
         return step(f"build {task_id}", "no handoff recorded yet",
-                    f"aegis task claim {task_id}",
-                    note=f"`aegis packet {task_id}`, and dispatch aegis-builder with that text")
+                    f"aegis packet {task_id}" if claimed else f"aegis task claim {task_id}",
+                    note="dispatch aegis-builder with that text" if claimed else
+                         f"then `aegis packet {task_id}`, and dispatch aegis-builder with that text")
 
     handoff_report = check_handoff(ctx, task_id)
     if handoff_report.failed:
@@ -1864,15 +1872,6 @@ def next_action(ctx: Ctx) -> dict:
                 return step(f"a person decides {finding['id']}", problems[0][0], None, "human",
                             note=f"{problems[0][1]}; or fix the code and re-run lens-{lens}")
 
-    for lens in sorted(recorded):
-        record = read_json(os.path.join(reviews, f"{lens}.json"))
-        minimum = plan.get("min_review_rounds", 1)
-        if record.get("round", 0) < minimum:
-            return step(f"re-run lens-{lens}",
-                        f"risk tier {plan['risk_tier']} requires {minimum} review rounds; "
-                        f"{record.get('round', 0)} recorded",
-                        f"aegis lens plan {task_id}", note=f"dispatch lens-{lens} again, with its prior ids")
-
     if task.get("status") != "gated" or not gate_receipt_valid(ctx, task_id):
         return step(f"gate {task_id}",
                     "work and review are complete"
@@ -1882,14 +1881,15 @@ def next_action(ctx: Ctx) -> dict:
 
     # The doc profile fails the merge gate once code is in scope; say so here rather than
     # letting the hook say it on push with a reason this loop never mentioned.
-    scope = changed_files(ctx, require_base(ctx))
-    docs = [f for f in checks.check_docs(ctx, scope).findings if f.severity == "fail"]
+    scope = changed_files(ctx, task.get("base_sha"))
+    docs = [f for f in checks.check_docs(ctx, scope, closing_feature=True).findings
+            if f.severity == "fail"]
     if docs:
         return step("write the documentation the profile requires", docs[0].message, None,
                     note=docs[0].hint or "then `aegis docs attest <id> --by <who>`")
 
     return step("merge the branch", f"{task_id} is gated", "aegis gate --stage merge", "cli",
-                note="a check; it writes nothing. Then commit, then `aegis land --run`")
+                note="a check; it writes nothing. Then commit, then `aegis land`")
 
 
 def _open_adr_question(ctx: Ctx) -> tuple[str, str] | None:
@@ -1995,13 +1995,16 @@ def status(ctx: Ctx) -> str:
     baseline = (checks.capabilities(ctx).get("baseline") or {})
     baselined = baseline.get("files")
     if baselined:
-        pending = [rel for rel in baselined
-                   if rel in set(changed_files(ctx, baseline.get("head"))) | set(working_tree_files(ctx))]
-        if pending:
-            lines.append(f"  baseline: {len(baselined)} path(s) recorded at adoption, "
-                         f"{len(pending)} still uncommitted and attributed to adoption "
-                         f"(recorded {baseline.get('recorded', '?')}; committing them as they are "
-                         "keeps them attributed and retires the baseline)")
+        from .core import _pre_adoption_files
+        attributed = _pre_adoption_files(ctx, set(baselined))
+        uncommitted = attributed & set(working_tree_files(ctx))
+        changed = len(baselined) - len(attributed)
+        if uncommitted or changed:
+            lines.append(f"  baseline: {len(baselined)} path(s) recorded at adoption — "
+                         f"{len(attributed)} still attributed, {len(uncommitted)} of them uncommitted, "
+                         f"{changed} changed under a task since "
+                         f"(recorded {baseline.get('recorded', '?')}; committing the attributed ones "
+                         "as they are keeps them attributed and retires the baseline)")
         else:
             lines.append(f"  baseline: retired — the {len(baselined)} path(s) recorded at adoption "
                          f"on {baseline.get('recorded', '?')} are committed as they were")

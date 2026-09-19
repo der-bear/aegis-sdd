@@ -270,14 +270,10 @@ class NextNeverContradictsTheGate(ProjectFixture):
         manifest = json.load(open(path))
         manifest["status"] = "gated"
         json.dump(manifest, open(path, "w"))
-        # Land between tasks: with T-A gated and nothing building, the loop commits and lands
-        # before it starts T-B — two fast steps, not a stall. With T-B building, T-B comes
-        # first: its uncommitted work is not a candidate, and the gate would refuse it.
+        # A `gated` typed into a manifest with no receipt is not gated: the loop neither lands
+        # it nor stalls on it, and goes to the work that exists.
         advice = run(["next"], self.dir).stdout
-        self.assertIn("commit", advice)
-        flow.task_status(core.Ctx(self.dir), "T-B", "building")
-        advice = run(["next"], self.dir).stdout
-        self.assertIn("T-B", advice, "a gated task must not stall a building one")
+        self.assertIn("T-B", advice, "a status without a receipt must not stall an unbuilt task")
 
 
 class ChosenPoliciesAreEnforced(ProjectFixture):
@@ -567,7 +563,7 @@ class TheGateReceiptSurvivesItsOwnWrite(ProjectFixture):
         json.dump(manifest, open(path, "w"))
         result = run(["task", "status", "T-1", "merged"], self.dir)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("receipt", result.stderr)
+        self.assertIn("aegis land", result.stderr)  # the one writer of merged
 
 
 class DetectionSeesWhatWasRemoved(ProjectFixture):
@@ -1081,19 +1077,19 @@ class AGatedTaskOwnsItsFilesUntilItLands(ProjectFixture):
                                  capture_output=True, text=True).stdout.strip()
         subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
         out = run(["land"], self.dir)
-        self.assertEqual(out.returncode, 0, out.stderr)
-        self.assertIn(f"git branch -f {default}", out.stdout)
-        out = run(["land", "--run"], self.dir)
         self.assertNotEqual(out.returncode, 0)
         self.assertIn("not clean", out.stderr)
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "everything"], check=True)
-        out = run(["land", "--run"], self.dir)
-        self.assertEqual(out.returncode, 0, out.stderr)
         head = subprocess.run(["git", "-C", self.dir, "rev-parse", "HEAD"], capture_output=True, text=True).stdout
+        out = run(["land"], self.dir)
+        self.assertEqual(out.returncode, 0, out.stderr)
         landed = subprocess.run(["git", "-C", self.dir, "rev-parse", default], capture_output=True, text=True).stdout
-        self.assertEqual(head, landed)
+        self.assertEqual(head, landed)  # the ref moved to the gated commit
         self.assertEqual(checks.load_task(core.Ctx(self.dir), "T-1")["status"], "merged")
+        # and land committed its own bookkeeping, so the tree is clean
+        self.assertEqual(subprocess.run(["git", "-C", self.dir, "status", "--porcelain"],
+                                        capture_output=True, text=True).stdout.strip(), "")
         # Landed, the task holds nothing: a new edit under its old globs belongs to no task.
         self.write("src/orders/a.py", "A = 2\n")
         report = checks.check_trace(core.Ctx(self.dir), ["src/orders/a.py"], None)
@@ -1122,7 +1118,7 @@ class AGatedTaskOwnsItsFilesUntilItLands(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "backlog"], check=True)
         step = flow.next_action(core.Ctx(self.dir))
-        self.assertEqual(step["command"], "aegis land --run", step)
+        self.assertEqual(step["command"], "aegis land", step)
         self.assertEqual(step["who"], "cli", step)
 
 
@@ -1183,10 +1179,10 @@ class TheFirstHour(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "on main"], check=True)
         step = flow.next_action(core.Ctx(self.dir))
-        self.assertEqual(step["command"], "aegis land --run", step)
-        out = run(["land", "--run"], self.dir)
+        self.assertEqual(step["command"], "aegis land", step)
+        out = run(["land"], self.dir)  # on the mainline: the gate still runs, nothing moves
         self.assertEqual(out.returncode, 0, out.stderr)
-        self.assertIn("marked merged", out.stdout)
+        self.assertIn("nothing to move", out.stdout)
         self.assertEqual(checks.load_task(core.Ctx(self.dir), "T-1")["status"], "merged")
 
 class ACommitBeforeTheClaimIsReviewedNotRefused(ProjectFixture):
@@ -1786,33 +1782,6 @@ class ReviewFindingsCannotBeClosedCheaply(ProjectFixture):
         report = flow.check_reviews(core.Ctx(self.dir), "T-1")
         self.assertFalse(any("came back" in f.message for f in report.findings))
 
-    def test_a_tier_a_change_needs_its_minimum_review_rounds(self):
-        run(["task", "new", "T-1", "--feature", "orders", "--objective", "login",
-             "--owns", "src/orders/**", "--requirements", "R-1", "--kinds", "auth"], self.dir)
-        self.write(".aegis/specs/orders/spec.md", "# SPEC-1\n## Requirements\nR-1. The system shall charge once.\n")
-        self.write("src/orders/a.py", "A = 1\n")
-        _handoff(self)
-        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
-        self.assertEqual((plan["risk_tier"], plan["min_review_rounds"]), ("A", 2))
-
-        def one_round():
-            for lens in plan["lenses"]:
-                self.record("T-1", {"lens": lens, "reviewer": f"lens-{lens}", "verdict": "pass", "findings": []})
-
-        one_round()
-        report = flow.check_reviews(core.Ctx(self.dir), "T-1")
-        self.assertTrue(any("requires 2 review rounds" in f.message for f in report.findings))
-        one_round()
-        report = flow.check_reviews(core.Ctx(self.dir), "T-1")
-        self.assertFalse(any("review rounds" in f.message for f in report.findings))
-
-    def test_claim_reports_the_status_the_task_is_actually_in(self):
-        self.make_task()
-        run(["task", "claim", "T-1"], self.dir)
-        flow.task_status(core.Ctx(self.dir), "T-1", "review")
-        self.assertIn("status review", run(["task", "claim", "T-1"], self.dir).stdout)
-
-
 class ProtocolsSayWhatTheCodeDoes(unittest.TestCase):
     def read(self, rel):
         with open(os.path.join(ROOT, rel), encoding="utf-8") as fh:
@@ -2249,7 +2218,7 @@ class AdoptionIsAttributedByContent(unittest.TestCase):
         self.assertIn("legacy/untracked.py", core.staged_files(core.Ctx(self.dir)))
 
     def test_status_reports_the_baseline_retired_once_it_is_committed(self):
-        self.assertIn("still uncommitted", run(["status"], self.dir).stdout)
+        self.assertIn("still attributed", run(["status"], self.dir).stdout)
         self.git("add", "-A")
         self.git("commit", "-qm", "chore(adopt): the repository as it was")
         self.assertIn("baseline: retired", run(["status"], self.dir).stdout)

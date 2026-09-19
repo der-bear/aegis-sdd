@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash, Agent, Edit, Write, TodoWrite
 # Build one task
 
 ```
-packet → build → verify → review → refine → docs → gate
+packet → build → verify → review → refine → docs → gate → commit → land
 ```
 
 Every step's inputs and outputs are files, so a crashed session resumes from them. If you
@@ -28,10 +28,9 @@ aegis task claim <TASK-ID>
 aegis packet <TASK-ID>
 ```
 
-`claim` starts the task: it focuses it, so the write hook refuses any edit outside its
-`owns` globs; moves it to `building` under the parallel-builder limit; and records what the
-packet costs. Without focus the lease is a sentence in a prompt, and a prompt is not an
-invariant. `packet` is pure and safe to repeat.
+`claim` starts the task: it fixes the base at the branch point, moves the task to `building`
+under the parallel-builder limit, and records what the packet costs. The lease is a declaration
+`check trace` reads at the merge boundary. `packet` is pure and safe to repeat.
 
 Do not write the brief yourself. The command emits the objective, the requirement text, the
 acceptance criteria, the lease, the verification commands, the boundaries and the handoff
@@ -108,7 +107,7 @@ id in `scope`, that person as owner and an expiry. `fixed` is what a
 re-review records when the code changed; a human records it by hand only after a reopened
 finding's mechanism was simplified.
 
-**Who a step needs — one rule, and `aegis next` derives every `who` from it.** A person is
+**Who a step needs — one rule, and `aegis next` derives every `who` in the task loop from it.** A person is
 needed for an irreversible outward-facing act (a push, a pull request, a release); for a change
 to what the framework measures work against that a person owns (the constitution, an answer the
 interview marks never-auto, the owner of a `finding` waiver); for a question a `proposed` ADR
@@ -116,7 +115,8 @@ records with a `**Blocks:**` line; for a tool permission the runner refuses; and
 escalation — a finding marked fixed that came back. Everything else the agent decides, records
 and continues: merge and land are commands, not permissions. A blocked step does not block other
 ready work, and a report is not an approval gate. Land between tasks — a gated task is committed
-and landed before the next one starts, which is one command and keeps every base at the mainline.
+and landed before the next one starts — `git commit`, then `aegis land` — which keeps every base
+at the mainline.
 
 Three rules govern this loop:
 
@@ -139,21 +139,20 @@ Dispatch `aegis-doc-manager` with the handoff. It is the only writer of registri
 diagrams and central documents, and it runs alone, which is why parallel builders never
 collide there.
 
-## 6. Gate
+## 6. Gate, commit, land
 
 ```bash
 aegis gate --stage task --task <TASK-ID>
 ```
 
-A green gate sets the task to `gated` itself — running the status command afterwards would
-re-run every check for nothing.
-
-The gate runs only the checks and package commands this diff affects, so it is cheap enough
-to run every time. The full suite runs once, at merge:
+A green gate writes the receipt and sets `gated` itself. It runs only the checks and package
+commands this diff affects, so it is cheap enough to run every time. Then:
 
 ```bash
-aegis gate --stage merge
+git add -A && git commit           # a checkpoint; pre-commit checks drift and structure only
+aegis land                         # the full merge gate at HEAD, the ref moved, merged written
 ```
 
-Then commit with the task id in the message and start the next task in a fresh context.
-Carrying the previous task's history costs tokens and imports its assumptions.
+`land` is the one place `merged` is written and the one place the full suite runs. It commits
+its own bookkeeping. Then start the next task in a fresh context: carrying the previous task's
+history costs tokens and imports its assumptions.

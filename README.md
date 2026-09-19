@@ -62,7 +62,7 @@ Batch 1:
 Answer with `aegis answer <question> <value>` — values are validated against the question,
 so a typo is refused rather than compiled into configuration that means nothing.
 
-Then write `.aegis/constitution.md` yourself. The write hook refuses an `Edit` or `Write` to
+Then write `.aegis/constitution.md` yourself. `check drift` catches an edit to
 it, and `aegis check setup` fails while it is still the template — but nothing verifies who
 wrote the prose, so a signature at the end is the only record that a human did.
 
@@ -273,16 +273,15 @@ aegis migrate                          after a framework upgrade; records a miss
 aegis compile | scaffold [--profile --doc-profile --force]
                                        recompile .aegis/generated from answers;
                                        re-materialise files
-aegis git-hooks install [--force]      pre-commit (the merge gate's checks, no project
-                                       commands) and pre-push (the full gate): the early error
-                                       every runner shares — CI is the barrier
+aegis git-hooks install [--force]      pre-commit (drift and structure, a checkpoint) and
+                                       pre-push (the full merge gate): the early error every
+                                       runner shares — CI is the barrier
 aegis task new <ID> --feature --objective --owns [--requirements --kinds]
 aegis task claim <ID> | status <ID> <value> | list
                                        manifests and the write lease — a declaration `check
                                        trace` reads at the merge boundary
-aegis land [--run]                     prints the move once the merge gate's checks are green
-                                       at HEAD; --run re-runs the full gate, commands
-                                       included, and moves the ref
+aegis land                             runs the full merge gate at HEAD, moves the mainline to
+                                       it, marks the gated tasks merged and commits that
 aegis packet <TASK> [--json]           the task packet
 aegis diff <TASK>                      the diff a reviewer reads — exactly what the digest covers
 aegis lens plan <ID> [--closing] | record <ID> --lens [--reviewer --digest]

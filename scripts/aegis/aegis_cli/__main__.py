@@ -87,8 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--rationale", default="")
     sub.add_parser("index", help="regenerate derived indexes")
     sub.add_parser("migrate", help="bring a project up to this version of the framework")
-    p = sub.add_parser("land", help="move the default branch to HEAD once it has passed the full merge gate")
-    p.add_argument("--run", action="store_true", help="move the ref; default prints the command")
+    p = sub.add_parser("land", help="run the full merge gate at HEAD, move the mainline to it, mark gated tasks merged")
     p = sub.add_parser("git-hooks", help="install the git-level gate: every commit in this "
                                         "checkout, not only the ones Claude Code runs")
     p.add_argument("action", choices=["install"])
@@ -325,7 +324,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "land":
-        for line in flow.land(ctx, run=args.run):
+        for line in flow.land(ctx):
             emit(line)
         return 0
     if args.command == "git-hooks":

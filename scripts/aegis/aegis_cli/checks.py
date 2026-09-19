@@ -552,7 +552,7 @@ def active_tasks(ctx: Ctx) -> list[dict]:
     return out
 
 
-HOLDING = ("building", "review", "refine", "docs", "gated")
+HOLDING = ("building", "gated")
 """The statuses in which a task holds its write lease: from claim to merge.
 
 A `planned` task is a plan. It owns nothing, so a backlog of them neither blocks a merge nor

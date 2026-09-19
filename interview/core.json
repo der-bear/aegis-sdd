@@ -141,7 +141,7 @@
       "writes": "standards.frozen_zones",
       "autonomy": "always-ask",
       "severity": "blocking",
-      "rationale": "Copied into the constitution and enforced by the write-lease check. Empty is a valid answer for a greenfield project."
+      "rationale": "Copied into the constitution; `check trace` fails a change under a frozen zone whoever made it. Empty is a valid answer for a greenfield project."
     },
     {
       "id": "q.core.mainline",

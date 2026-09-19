@@ -43,8 +43,8 @@ started. Use it instead of reconstructing where you were from the transcript.
 ```
 aegis task new <ID> --feature F --objective "..." --owns "<globs>" \
     --requirements R-1,R-3 --kinds code,route --acceptance "...; ..."
-aegis task claim <ID>             # focus (the write hook now refuses edits outside the
-                                  # lease), status building, packet cost recorded
+aegis task claim <ID>             # base fixed at the branch point, status building,
+                                  # packet cost recorded
 aegis packet <ID>                 # -> the builder's entire brief; pure, safe to repeat
                                   # dispatch aegis-builder with that text
 aegis lens plan <ID>              # -> exactly which lenses, and why
