@@ -45,7 +45,8 @@
     "This task was created after the work, not before: the four commits were made as an engineer would, then a task was claimed so the merge gate could attribute them and the branch could land. The base at claim is the branch point, so the task's diff is everything since adopt-aegis — TASK-STABLE-01's reviewed work included — which is what the final review reads.",
     "One reviewer, three lens names: the final review is a single Fable 5.1 session briefed with all three focuses; its report is recorded under correctness, security and design with --reviewer fable-5.1. The tier is C as declared; the gate judges the effective tier from the diff.",
     "R-11..R-15 (TASK-STABLE-03) and R-9/R-10 (TASK-STABLE-02) are left planned: small correctness items and a per-lens staleness mechanism, neither needed for the first hour.",
-    "The framework's own process was not followed for this task — no three lens rounds, no spec-first task — because the owner said not to spend tokens on ceremony, and because the process as it stood had abandoned three of four tasks."
+    "The framework's own process was not followed for this task — no three lens rounds, no spec-first task — because the owner said not to spend tokens on ceremony, and because the process as it stood had abandoned three of four tasks.",
+    "Six review rounds, one reviewer (Fable 5.1) under three lens names, each round at a frozen digest. Rounds 1-5 each found something real — the mainline never carrying land's record, land writing merged before git could refuse the move, a test that passed on the code it forbids, a stale receipt ranked as finished — and every finding is reconciled by id. One severity-1 is left open on purpose: SPEC-2's architecture.md describes deleted contracts without a preamble; a spec edit moves the digest and would cost a seventh round for one sentence, so it is the first commit of TASK-STABLE-02."
   ],
   "open_questions": [
     "Project 2: which project of a different kind. Until one runs, universality is a claim, not a measurement.",
@@ -57,7 +58,7 @@
     "'The framework escalated at the cap' — it did not; a person did, and the cap is now a signal.",
     "'A merge receipt is needed for a branch to take its next commit' — a gated task holding its lease until land does the same with no file to forge."
   ],
-  "next_safe_action": "Record the final review under the three lens names, attest the four documents, gate, commit, gate --stage merge, commit, land --run.",
+  "next_safe_action": "Landed. Next: TASK-STABLE-02 (R-9, R-10), whose first commit adds the preamble to .aegis/specs/stable-autonomy/architecture.md; then TASK-STABLE-03 (R-11..R-15); then project 2.",
   "registry_drafts": [],
   "lease_expansion_request": []
 }

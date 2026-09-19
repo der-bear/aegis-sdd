@@ -1,5 +1,5 @@
 {
-  "diff_digest": "61dbce3e684f97d4",
+  "diff_digest": "5839f4c8082b20d0",
   "findings": [
     {
       "disposition": "fixed",
@@ -38,7 +38,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T21:49:30",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 6: confirmed resolved on re-review at this digest, with file:line cited in the round-6 report",
       "first_seen_round": 5,
       "id": "F-13f44b57",
       "line": 47,
@@ -53,7 +56,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T21:49:30",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 6: confirmed resolved on re-review at this digest, with file:line cited in the round-6 report",
       "first_seen_round": 5,
       "id": "F-306efe4a",
       "line": 1797,
@@ -194,7 +200,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T21:49:30",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 6: confirmed resolved on re-review at this digest, with file:line cited in the round-6 report",
       "first_seen_round": 5,
       "id": "F-390b5735",
       "line": 1762,
@@ -210,11 +219,11 @@
     }
   ],
   "lens": "correctness",
-  "recorded": "2026-09-19T21:27:22",
+  "recorded": "2026-09-19T21:49:30",
   "reopened": [],
-  "report_tokens": 936,
+  "report_tokens": 711,
   "reviewer": "fable-5.1",
-  "round": 5,
+  "round": 6,
   "task": "TASK-SIMPLE-01",
-  "verdict": "pass-with-notes"
+  "verdict": "pass"
 }

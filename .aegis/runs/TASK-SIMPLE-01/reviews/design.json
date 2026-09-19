@@ -1,5 +1,5 @@
 {
-  "diff_digest": "61dbce3e684f97d4",
+  "diff_digest": "5839f4c8082b20d0",
   "findings": [
     {
       "disposition": "fixed",
@@ -110,6 +110,21 @@
       "severity": 1
     },
     {
+      "disposition": "open",
+      "first_seen_round": 6,
+      "id": "F-1afba26e",
+      "line": 22,
+      "message": "`.aegis/specs/stable-autonomy/architecture.md` describes the merge receipt, `policy.delegation` and `aegis waive` as present contracts with no preamble, while its companion spec.md says they were deleted; a reader of this file believes `merge-receipt.json` is written by a green merge gate and `aegis waive` exists.",
+      "minimal_fix": "one preamble line as .aegis/specs/simple-reliable/architecture.md:3-5 has, naming the three deleted contracts",
+      "path": ".aegis/specs/stable-autonomy/architecture.md",
+      "raised_digest": "5839f4c8082b20d0",
+      "requirement": "R-4",
+      "rounds": [
+        6
+      ],
+      "severity": 1
+    },
+    {
       "disposition": "fixed",
       "disposition_at": "2026-09-19T20:39:37",
       "disposition_by": "lens-design",
@@ -164,7 +179,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T21:49:31",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 6: confirmed resolved on re-review at this digest, with file:line cited in the round-6 report",
       "first_seen_round": 5,
       "id": "F-36914497",
       "line": 124,
@@ -252,7 +270,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T21:49:31",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 6: confirmed resolved on re-review at this digest, with file:line cited in the round-6 report",
       "first_seen_round": 5,
       "id": "F-92954ebe",
       "line": 1764,
@@ -358,11 +379,11 @@
     }
   ],
   "lens": "design",
-  "recorded": "2026-09-19T21:27:22",
+  "recorded": "2026-09-19T21:49:31",
   "reopened": [],
-  "report_tokens": 1082,
+  "report_tokens": 1373,
   "reviewer": "fable-5.1",
-  "round": 5,
+  "round": 6,
   "task": "TASK-SIMPLE-01",
   "verdict": "pass-with-notes"
 }
