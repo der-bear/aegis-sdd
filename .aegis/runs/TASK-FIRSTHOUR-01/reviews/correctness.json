@@ -1,5 +1,5 @@
 {
-  "diff_digest": "72f1d4a5e713638f",
+  "diff_digest": "63642a8f074b4254",
   "findings": [
     {
       "disposition": "fixed",
@@ -20,7 +20,10 @@
       "severity": 4
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:19:54",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: flow.py:1708-1712 advises `aegis scaffold --profile <P>` [cli]; on an M fixture answers.json is byte-identical after it and `next` goes to \"specify the first feature\" [agent]; the lock is red on 448ed98",
       "first_seen_round": 2,
       "id": "F-2dd0b1d1",
       "line": 1704,
@@ -71,7 +74,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:19:54",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: scaffold.py:41-43, flow.py:381, ARCHITECTURE.md:55-57 and R-33 (spec.md:235-237) all say outside any lease, `task new` refuses one — consistent with flow.py:142-148 and trace's `.aegis/**` exemption",
       "first_seen_round": 2,
       "id": "F-286c3fff",
       "line": 41,
@@ -122,7 +128,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:19:54",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: scaffold.py:389-392 drops the title over a rule, the rule and `.. ` lines; the setext and rst cases fail on 448ed98 with 'Widgets ======='",
       "first_seen_round": 2,
       "id": "F-f7d5dea7",
       "line": 378,
@@ -174,6 +183,39 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-3160af1b",
+      "line": 389,
+      "message": "The rule regex names only `=`, `-` and `~`, so a `***` or `___` thematic break as its own paragraph — a README shape right after a badge block — is returned as the purpose: `# W\\n\\n***\\n\\nWidgets turns…` drafts \"***\" (verified). The file every agent reads then says the project's purpose is three asterisks.",
+      "minimal_fix": "extend the rule to `(=+|-+|~+|\\*{3,}|_{3,})`, or skip a first line with no letter or digit",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "63642a8f074b4254",
+      "requirement": "R-33",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-56c1c10f",
+      "line": 71,
+      "message": "The header now says an agent amends the constitution when a task's objective calls for it and says so in the handoff, but the same template's `## Amendment` section still says \"in its own pull request, reviewed by a human, never bundled with feature work\" — the human review R-33's owner said is not needed. One file gives the agent two rules for one act; the old header (\"they may not edit it\") agreed with this section, the new one does not.",
+      "minimal_fix": "reword to \"in the task whose objective calls for it, recorded in its handoff; a change that implies configuration goes through `aegis answer` and `aegis compile` in the same change\"",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "63642a8f074b4254",
+      "requirement": "R-33",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:19:54",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: scaffold.py:397 skips a list only on `([-*+]|\\d+[.)])\\s`; `**Widgets** turns orders into invoices.` is the purpose (locked)",
       "first_seen_round": 2,
       "id": "F-aacacb0a",
       "line": 380,
@@ -206,6 +248,21 @@
       "severity": 1
     },
     {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-c500f3bb",
+      "line": 606,
+      "message": "`\"aegis\" not in current.lower()` skips the pointer for any CLAUDE.md that mentions the word in any case — \"encryption uses the aegis crate\" gets none (verified) where the old test skipped only the capitalised form; `check pointers` then fails the bootstrap gate with \"no longer imports the compiled rules … an agent likely rewrote the file\", a wrong diagnosis in the adopter's first hour (`aegis migrate` repairs it, via the marker test at __main__.py:357). No requirement covers the append directly; R-32 is the nearest.",
+      "minimal_fix": "test the marker as migrate does: `if \"@.aegis/generated/rules.md\" not in current` (AGENTS.md: `.aegis/generated/rules.md`)",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "63642a8f074b4254",
+      "requirement": "R-32",
+      "rounds": [
+        3
+      ],
+      "severity": 1
+    },
+    {
       "disposition": "fixed",
       "disposition_at": "2026-09-20T02:02:28",
       "disposition_by": "lens-correctness",
@@ -224,7 +281,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:19:54",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: scaffold.py:359 empties a purpose containing U+FFFD; the cp1251 lock asserts no U+FFFD and is red on 448ed98",
       "first_seen_round": 2,
       "id": "F-dca8d969",
       "line": 347,
@@ -237,14 +297,29 @@
         2
       ],
       "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-ed6ec194",
+      "line": 347,
+      "message": "`os.path.islink(path)` refuses every symlinked README, including one that resolves inside the checkout (`README.md -> docs/README.md`, verified: the no-README fallback is used), while the realpath test alone already refuses the outside case and a chained link (verified). A conservative miss, not a wrong guess.",
+      "minimal_fix": "drop the `islink` test and keep the realpath test",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "63642a8f074b4254",
+      "requirement": "R-33",
+      "rounds": [
+        3
+      ],
+      "severity": 0
     }
   ],
   "lens": "correctness",
-  "recorded": "2026-09-20T02:02:28",
+  "recorded": "2026-09-20T02:19:54",
   "reopened": [],
-  "report_tokens": 1750,
+  "report_tokens": 1301,
   "reviewer": "fable-5.1",
-  "round": 2,
+  "round": 3,
   "task": "TASK-FIRSTHOUR-01",
-  "verdict": "fail"
+  "verdict": "pass"
 }

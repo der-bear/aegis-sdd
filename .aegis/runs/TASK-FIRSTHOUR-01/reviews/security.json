@@ -1,5 +1,5 @@
 {
-  "diff_digest": "72f1d4a5e713638f",
+  "diff_digest": "63642a8f074b4254",
   "findings": [
     {
       "disposition": "fixed",
@@ -38,7 +38,10 @@
       "severity": 0
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:19:54",
+      "disposition_by": "lens-security",
+      "disposition_reason": "lens-security round 3: scaffold.py:347 skips a symlink or a realpath outside `realpath(ctx.root) + os.sep`; verified a chained link to /etc/hosts is refused and a regular README under a symlinked /tmp path is accepted; the lock is red on 448ed98",
       "first_seen_round": 2,
       "id": "F-ebc603e1",
       "line": 345,
@@ -54,11 +57,11 @@
     }
   ],
   "lens": "security",
-  "recorded": "2026-09-20T02:02:29",
+  "recorded": "2026-09-20T02:19:54",
   "reopened": [],
-  "report_tokens": 399,
+  "report_tokens": 115,
   "reviewer": "fable-5.1",
-  "round": 2,
+  "round": 3,
   "task": "TASK-FIRSTHOUR-01",
   "verdict": "pass"
 }
