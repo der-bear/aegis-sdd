@@ -1,12 +1,28 @@
 {
-  "diff_digest": "288f10f4884b091e",
-  "findings": [],
+  "diff_digest": "bf01375be49bc2ad",
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-0e022715",
+      "line": 509,
+      "message": "`os.path.splitext(f)[1] != \"\"` also drops shebang scripts with no suffix — `scripts/aegis/aegis` here, adopters' `bin/*`. A diff touching only such a file passes the testing mandate with no test change; exposure is low because every fixture test execs that entrypoint and the gate runs `make test`.",
+      "minimal_fix": "keep a no-suffix file as code when it starts with `#!`",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "bf01375be49bc2ad",
+      "requirement": "R-28",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    }
+  ],
   "lens": "security",
-  "recorded": "2026-09-19T22:16:31",
+  "recorded": "2026-09-19T22:52:28",
   "reopened": [],
-  "report_tokens": 13,
+  "report_tokens": 185,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-PUBLISH-01",
-  "verdict": "pass"
+  "verdict": "pass-with-notes"
 }
