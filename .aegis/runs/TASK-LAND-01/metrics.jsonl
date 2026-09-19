@@ -4,3 +4,4 @@
 {"at": "2026-09-20T02:44:15", "blocking": 0, "event": "lens", "findings": 0, "lens": "correctness", "round": 2, "task": "TASK-LAND-01", "verdict": "pass"}
 {"at": "2026-09-20T02:46:36", "event": "status", "task": "TASK-LAND-01", "value": "gated"}
 {"at": "2026-09-20T02:46:36", "event": "gate", "failing_checks": [], "passed": true, "seconds": 141.3, "stage": "task", "task": "TASK-LAND-01"}
+{"at": "2026-09-20T02:49:16", "event": "status", "task": "TASK-LAND-01", "value": "merged"}
