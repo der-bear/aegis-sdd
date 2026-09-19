@@ -503,7 +503,10 @@ def check_testing_mandate(ctx: Ctx, scope: list[str] | None = None) -> Report:
     generated = caps.get("generated_paths") or []
     code = [f for f in scope
             if not matches_any(f, test_globs) and not matches_any(f, generated)
-            and not f.startswith(".aegis/") and not f.endswith((".md", ".json", ".yml", ".yaml", ".toml", ".txt"))]
+            and not f.startswith(".aegis/") and not f.endswith((".md", ".json", ".yml", ".yaml", ".toml", ".txt"))
+            # A file with no suffix is not source for this mandate: LICENSE, NOTICE, Makefile,
+            # justfile, Dockerfile. Adding a licence to a repository asked for a test.
+            and os.path.splitext(f)[1] != ""]
     tests = [f for f in scope if matches_any(f, test_globs)
              or matches_any(f.lower(), [g.lower() for g in test_globs])
              or re.search(r"(?i)(^|/)tests?/|_test\.|\.test\.|\.spec\.|test_[^/]+\.py$", f)]

@@ -292,6 +292,16 @@ class ChosenPoliciesAreEnforced(ProjectFixture):
         report = checks.check_testing_mandate(ctx, ["src/orders/a.py", "test/orders.test.js"])
         self.assertFalse(report.failed)
 
+    def test_a_file_with_no_suffix_is_not_code_for_the_mandate(self):
+        # Adding an MIT licence to this repository failed its own task gate with "1 code
+        # file(s) changed and no test did". A licence, a Makefile or a Dockerfile is not
+        # behaviour that arrives with a test.
+        ctx = core.Ctx(self.dir)
+        report = checks.check_testing_mandate(ctx, ["LICENSE", "Makefile", "Dockerfile"])
+        self.assertFalse(report.failed, [f.render() for f in report.findings])
+        report = checks.check_testing_mandate(ctx, ["LICENSE", "src/orders/a.py"])
+        self.assertTrue(report.failed)
+
     def test_an_unregistered_flag_is_caught_in_the_diff(self):
         self.write(".aegis/registry/flags.json", "[]")
         self.write("src/orders/a.js", 'if (isEnabled("new-checkout")) { go(); }\n')

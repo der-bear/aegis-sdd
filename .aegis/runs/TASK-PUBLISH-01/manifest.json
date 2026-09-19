@@ -2,7 +2,9 @@
   "acceptance": [],
   "base_sha": "3c965afb697b3cdb4f502b335e240d1d67f22fbc",
   "change_kinds": [
-    "docs"
+    "docs",
+    "code",
+    "test"
   ],
   "created": "2026-09-19T22:16:24",
   "feature": "simple-reliable",
@@ -11,7 +13,9 @@
   "owns": [
     ".github/**",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "scripts/aegis/aegis_cli/**",
+    "tests/**"
   ],
   "reads": [],
   "requirements": [
