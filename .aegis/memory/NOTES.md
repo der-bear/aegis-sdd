@@ -5,10 +5,10 @@ not a log. Keep it under the `notes` token budget in `policy.json`.
 
 ## Current milestone
 
-**The framework was over-built, and the owner said so.** The commits on `stable-01` since
-`4c54474` delete more than they add (−2,981/+215 in the deletion alone) and are held by
-**TASK-SIMPLE-01**, claimed after the work so the merge gate can attribute it and the branch can
-land. The owner's brief, verbatim: *simple, reliable, convenient, understandable* — and *do
+**The framework was over-built, and the owner said so. It is simpler now, and landed.** The
+commits on `stable-01` since `4c54474` delete more than they add (−2,981/+215 in the deletion
+alone); **TASK-SIMPLE-01** holds them, passed six review rounds at frozen digests, and `aegis land`
+moved `main` to `a9d4097` and marked it merged. The owner's brief, verbatim: *simple, reliable, convenient, understandable* — and *do
 what is needed to 100%, do not spend tokens on ceremony*.
 
 What went: the write hooks and everything behind them (`lease_violation`, `task focus`, `aegis
