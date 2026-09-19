@@ -56,11 +56,7 @@ compiled policy; the compiler physically cannot write outside `generated/`.
 
 **Drift became checkable.** `aegis check drift` recompiles and compares. A difference means
 someone hand-edited generated configuration — after which every later review argues against
-the wrong baseline. The `protect-paths` hook blocks that write; `aegis answer` is the way in.
-That hook matches by path — `generated/`, `answers.json`, `constitution.md`, after resolving
-`..` and folding case — in whatever checkout the path lies in. Both write hooks are otherwise
-silent where there is no `.aegis/` at all: a hook that cannot check refuses, but only where
-there is something to check.
+the wrong baseline. The pre-commit hook refuses that commit; `aegis answer` is the way in.
 
 **A question with no consequence is forbidden.** Every question declares a `writes` target
 from a closed table; an unknown target fails bank-lint rather than doing nothing quietly.
@@ -233,18 +229,12 @@ later run can never record newer files as if they predated adoption.
 The baseline is configuration the kernel reads, like the package commands; onboarding produces
 it. Recording one while tasks are open changes their digests once, and their reviews re-run.
 
-### Worktrees and the lease hook
+### Worktrees
 
-The builder is declared `isolation: worktree`. The hook reads `.aegis/runs/ACTIVE` and the
-task manifest, and in a worktree the manifest does not exist until committed. The shipped
-workflow therefore commits the task's run directory before dispatch — and the marker is never
-committed, so the workflow also makes the builder's first instruction `aegis task focus
-<TASK>`. With both, the hook works there exactly as it does in the main checkout.
-
-Running a builder by hand without the commit, or without that first `focus`, leaves no
-write-time protection in the worktree: with no marker, `lease_violation` returns nothing for
-every path outside a frozen zone. The containment is then the worktree itself plus `check
-trace` at landing. Worth knowing rather than discovering.
+The builder is declared `isolation: worktree`. The lease is a declaration read at the merge
+boundary, so a worktree needs nothing beyond the task's run directory, which the workflow commits
+before dispatch. Two builders on one branch are kept apart by their worktrees and by
+`_refuse_lease_clash` at claim, not by a hook.
 
 ## 4. Lens selection: declared ∪ detected
 
@@ -365,7 +355,7 @@ open task cites is *pending*, not uncovered — one spec becoming several tasks 
 case, and only a requirement no live task cites is uncovered.
 
 **A waiver is a record too.** `.aegis/waivers.json` is an ordinary tracked file: an entry
-typed in by hand with a plausible owner loads like one `aegis waive` wrote. What the framework
+typed in by hand with a plausible owner loads like any other. What the framework
 does is put the file in the diff digest — so changing it re-takes every review of that
 candidate — and say out loud at the gate that the candidate changed what may be waived. The
 listed-checks rule binds the command, not the file; the file is bound by review and by CI.
@@ -376,28 +366,21 @@ listed-checks rule binds the command, not the file; the file is bound by review 
 every edit; `hooks/session-start.sh` prints `aegis status` on resume, which is the mechanism
 behind "survives compaction". The adoption baseline is recorded only up to `BASELINE_CAP`
 (5,000) files, and exempts nothing unless `legacy_baseline: ratchet-from-today`; above the cap
-nothing is exempt either, and the answer says so. A green full merge gate clears the focused
-task, and the pre-push hook runs that gate, so a push can write merge receipts as a side effect.
-`task new` is serialised by a lock file; `AEGIS_COMMAND_TIMEOUT` bounds a project command.
+nothing is exempt either, and the answer says so. `task new` is serialised by a lock file;
+`AEGIS_COMMAND_TIMEOUT` bounds a project command.
 
 ### Authority is data
 
-**Not the agent's to widen.** `aegis answer` is refused while a task is focused, because the
-write hook refuses `.aegis/answers.json` under a lease and the command must not be a way around
-its own rule. A person answers `q.core.delegate` once *and commits it* — their name and the
-checks they delegate, read from `HEAD:.aegis/answers.json`, because an uncommitted answer is
-writable by the agent it would authorise — and `aegis waive <check> --scope <paths> --reason
-<why> --expires <date>` then records a waiver in that name, for those checks only. A `finding`
-waiver is never delegated; a waiver owned by an agent makes the file invalid, and an invalid
-file is a gate finding that applies nothing — reachable by a hand edit and not by the command,
-which validates its candidate list first and restores the file if the result would be rejected.
-Size budgets — lens reports, the handoff, `NOTES.md` — warn and never fail: a rewrite to fit a
-number costs more tokens than the overage and loses what was cut. `aegis land` refuses to print
-anything while the merge gate's checks — commands excluded — are red at HEAD; green, it prints
-the command that moves the default branch to a HEAD a merge receipt stands behind, and moves it
-only with `--run`, on a clean tree, as a fast-forward, after re-running the full gate — commands
-included — at HEAD, since the receipt was earned on a working tree HEAD need not match. A
-printed command is the path most people take, so it is checked before it is printed.
+**A waiver is a record, and a dismissal is a person's.** `.aegis/waivers.json` holds a check, a
+scope, a reason, an owner and an expiry; it silences a check and proves nothing, and the review
+of the candidate that adds it is the control. A `finding` waiver — the one that defers a
+blocking review finding — is a person's decision, and so is any dismissal: `--by` may not be the
+task's builder, the lens that raised the finding, or a framework role name. Size budgets — lens
+reports, the handoff, `NOTES.md` — warn and never fail: a rewrite to fit a number costs more
+tokens than the overage and loses what was cut. `aegis land` prints the move once the merge
+gate's checks are green at HEAD, and with `--run` re-runs the full gate, commands included,
+moves the ref as a fast-forward on a clean tree, and marks the gated tasks merged — the one
+place `merged` is written, because it is the one place it is true.
 
 
 ## 7. Diagram freshness by content

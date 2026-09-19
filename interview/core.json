@@ -142,16 +142,6 @@
       "autonomy": "always-ask",
       "severity": "blocking",
       "rationale": "Copied into the constitution and enforced by the write-lease check. Empty is a valid answer for a greenfield project."
-    },
-    {
-      "id": "q.core.delegate",
-      "ask": "Who owns exemptions, and which checks may an agent waive in their name?",
-      "kind": "free",
-      "default": {},
-      "writes": "policy.delegation",
-      "autonomy": "auto-default",
-      "severity": "optional",
-      "rationale": "A waiver is owned by a person who can be asked. Naming that person once, with the checks they delegate (for example docs and env), lets an agent record a routine waiver without a call; a finding waiver is never delegated. The default is empty, which changes nothing: every waiver is then recorded by hand. A person opts in with `aegis answer q.core.delegate` and the shape {\"owner\": \"<name>\", \"may_waive\": [\"docs\"]}."
     }
   ]
 }

@@ -56,7 +56,6 @@ TARGETS: dict[str, dict[str, str]] = {
         "refinement_rounds": "maximum lens/fix rounds before escalation",
         "pii": "whether the system carries personal data",
         "legacy_baseline": "ratchet-from-today | fix-before-adopting",
-        "delegation": "who owns exemptions, and which checks an agent may waive in that name",
     },
     "doc_profile": {
         "kind": "web-saas | api-service | data-etl | library | stateful",
@@ -532,7 +531,6 @@ def compile_config(ctx: Ctx, answers: dict) -> dict[str, Any]:
         "autonomy_limits": [],
         "testing_mandate": "tests-with-code",
         "nfr_priorities": [],
-        "delegation": {},
     }
     doc_profile: dict[str, Any] = {"kind": None, "required": [], "generated": [], "diagram_tool": "mermaid"}
     capabilities: dict[str, Any] = {"packages": {}, "default_package": None}
@@ -788,17 +786,6 @@ def set_answer(ctx: Ctx, qid: str, value: Any, source: str = "human", rationale:
     a configuration change goes through answers.json, which is what makes the drift check
     a real invariant instead of a suggestion.
     """
-    from .flow import lease_violation
-    # Authority is data, and the data is not writable by the agent it authorises. The write
-    # hook refuses `.aegis/answers.json` under a focused lease; `aegis answer` wrote it
-    # anyway, so a delegated builder could widen its own delegation with one command.
-    refused = lease_violation(ctx, ctx.path("answers.json"))
-    if refused:
-        raise AegisError(
-            f"a focused task does not answer the interview: {refused}\n"
-            "Release the lease (`aegis task focus`) and answer as the orchestrator, or have "
-            "a person answer — configuration is what the gate measures work against."
-        )
     banks = load_banks(ctx)
     known = {q["id"] for bank in banks.values() for q in bank.get("questions", [])}
     if known and qid not in known:

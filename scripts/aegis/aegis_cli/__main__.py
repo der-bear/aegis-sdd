@@ -89,12 +89,6 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("migrate", help="bring a project up to this version of the framework")
     p = sub.add_parser("land", help="move the default branch to HEAD once it has passed the full merge gate")
     p.add_argument("--run", action="store_true", help="move the ref; default prints the command")
-    p = sub.add_parser("waive", help="record a waiver in the delegated owner's name (policy.delegation)")
-    p.add_argument("check")
-    p.add_argument("--scope", required=True, help="comma-separated paths or globs")
-    p.add_argument("--reason", required=True)
-    p.add_argument("--expires", required=True, help="ISO date")
-    p.add_argument("--ticket", default="")
     p = sub.add_parser("git-hooks", help="install the git-level gate: every commit in this "
                                         "checkout, not only the ones Claude Code runs")
     p.add_argument("action", choices=["install"])
@@ -137,16 +131,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("id")
     s.add_argument("value")
     tsub.add_parser("list")
-    f = tsub.add_parser("focus", help="declare the task being worked on, so the lease is enforced")
-    f.add_argument("id", nargs="?", help="omit to clear the focus")
-    c = tsub.add_parser("claim", help="start a task: focus it, mark it building, record the packet cost")
+    c = tsub.add_parser("claim", help="start a task: mark it building, fix its base, record the packet cost")
     c.add_argument("id")
 
-    p = sub.add_parser("lease", help="write-lease enforcement")
-    p.add_argument("action", choices=["check", "show"])
-    p.add_argument("--path", help="path a tool is about to write")
-
-    p = sub.add_parser("packet", help="emit the delegation packet for a task")
+    p = sub.add_parser("packet", help="emit the task packet")
     p.add_argument("id")
     p.add_argument("--json", action="store_true", help="emit metadata instead of the packet text")
 
@@ -340,11 +328,6 @@ def main(argv: list[str] | None = None) -> int:
         for line in flow.land(ctx, run=args.run):
             emit(line)
         return 0
-    if args.command == "waive":
-        scope = [s.strip() for s in args.scope.split(",") if s.strip()]
-        wid = flow.waive(ctx, args.check, scope, args.reason, args.expires, args.ticket)
-        emit(f"recorded {wid} in the delegated owner's name")
-        return 0
     if args.command == "git-hooks":
         results = scaffold.install_git_hooks(ctx, force=args.force)
         if not results:
@@ -472,11 +455,6 @@ def main(argv: list[str] | None = None) -> int:
             emit(f"created .aegis/runs/{args.id}/manifest.json")
             emit(f"  lease: {', '.join(manifest['owns'])}")
             return 0
-        if args.task_command == "focus":
-            focused = flow.task_focus(ctx, args.id)
-            emit(f"focused on {focused}; writes outside its lease are now refused"
-                 if focused else "focus cleared")
-            return 0
         if args.task_command == "claim":
             claimed = flow.task_claim(ctx, args.id)
             emit(f"claimed {args.id}: lease enforced, status {claimed['status']}, "
@@ -491,23 +469,6 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         for task in checks.active_tasks(ctx):
             emit(f"{task['id']:<20} {task.get('status', '?'):<10} {task.get('objective', '')[:60]}")
-        return 0
-
-    if args.command == "lease":
-        focused = flow.active_task(ctx)
-        if args.action == "show":
-            if not focused:
-                emit("no focused task; writes are unrestricted")
-                return 0
-            manifest = checks.load_task(ctx, focused)
-            emit(f"{focused}: {', '.join(manifest.get('owns') or [])}")
-            return 0
-        if not args.path:
-            raise AegisError("`aegis lease check` needs --path")
-        reason = flow.lease_violation(ctx, args.path)
-        if reason:
-            sys.stderr.write(reason + "\n")
-            return 2
         return 0
 
     if args.command == "packet":

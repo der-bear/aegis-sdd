@@ -109,7 +109,7 @@ delegate — it silently degrades into a builder holding the wrong prompt.
 | Problem | Mechanism |
 |---|---|
 | Agents edit the same files and collide | An exclusive **write lease** per task, held from `claim` to `merge`; claiming a lease another task holds is refused, and a write outside one is refused by a hook |
-| Every builder gets a differently worded brief | `aegis packet` **generates** the delegation contract from the spec and the manifest |
+| Every builder gets a differently worded brief | `aegis packet` **generates** the task packet from the spec and the manifest |
 | "Which reviews should run" is a judgement call | `aegis lens plan` computes it from declared **and** detected change kinds |
 | Review findings get lost between rounds | Stable finding ids, carried dispositions, and detection of a "fixed" finding that came back |
 | A review stops describing the code | The report quotes the digest it was given; an edit afterwards invalidates it |
@@ -229,9 +229,8 @@ A gate that fails when nothing ran.
 **Checks — deterministic, but only as true as the artifacts they read.**
 Requirement coverage per feature, file-to-task attribution, diagram freshness by source
 digest, artifact token budgets, registry schemas, waivers with an owner and an expiry — and a
-blocking review finding is deferred only by a `finding` waiver that names its id — and that one
-is never delegated: a person writes it into `.aegis/waivers.json`, which is what the gate's own
-hint says to do.
+blocking review finding is deferred only by a `finding` waiver that names its id, and a person
+writes that one.
 
 **Heuristics — they catch the typical case and say so.**
 Diff scans for unregistered environment variables, events, flags, integrations and routes;
@@ -270,9 +269,7 @@ aegis init [--yes] [--profile S|M|L] [--mode interactive|hybrid|autonomous] [--f
 aegis interview [--json] [--all]       what is left to ask, batched and ordered; --all
                                        includes the phase-2 questions
 aegis answer <question> <value> [--source --rationale]
-                                       record an answer and recompile. `q.core.delegate`
-                                       takes {"owner": "<name>", "may_waive": ["docs"]} and
-                                       must be committed before `aegis waive` will use it
+                                       record an answer and recompile
 aegis next [--run]                     the next action; --run executes CLI steps
 aegis detect                           what the repository says about itself; writes nothing
 aegis migrate                          after a framework upgrade; records a missing adoption baseline
@@ -283,22 +280,13 @@ aegis git-hooks install [--force]      pre-commit (the merge gate's checks, no p
                                        commands) and pre-push (the full gate): the early error
                                        every runner shares — CI is the barrier
 aegis task new <ID> --feature --objective --owns [--requirements --kinds]
-aegis task claim <ID> | status <ID> <value> | list | focus [<ID>]
-                                       manifests and the write lease; `focus` with no id
-                                       releases it, which is how you answer the interview
-                                       again — `aegis answer` is refused under a lease
-aegis lease check --path <p>           may this path be written (the write hook calls this;
-                                       without --path it refuses)
-aegis lease show                       the focused task's globs
+aegis task claim <ID> | status <ID> <value> | list
+                                       manifests and the write lease — a declaration `check
+                                       trace` reads at the merge boundary
 aegis land [--run]                     prints the move once the merge gate's checks are green
                                        at HEAD; --run re-runs the full gate, commands
                                        included, and moves the ref
-aegis waive <check> --scope --reason --expires [--ticket]
-                                       a waiver for one of the checks the *committed*
-                                       q.core.delegate delegates, in that owner's name; an
-                                       uncommitted delegation authorises nothing, and
-                                       `finding` is never delegated
-aegis packet <TASK> [--json]           the delegation contract
+aegis packet <TASK> [--json]           the task packet
 aegis diff <TASK>                      the diff a reviewer reads — exactly what the digest covers
 aegis lens plan <ID> [--closing] | record <ID> --lens [--reviewer --digest]
 aegis lens disposition <ID> <F-id> fixed|false-positive|waived|deferred --reason --by

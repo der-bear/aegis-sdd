@@ -102,18 +102,6 @@
         }
       }
     },
-    "q.core.delegate": {
-      "confidence": 1.0,
-      "rationale": "Given in conversation on 2026-09-18: the owner delegated routine exemptions and named himself",
-      "source": "human",
-      "value": {
-        "may_waive": [
-          "docs",
-          "env"
-        ],
-        "owner": "Alex Derkach"
-      }
-    },
     "q.core.frozen": {
       "confidence": 1.0,
       "source": "human",

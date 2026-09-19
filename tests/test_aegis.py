@@ -274,21 +274,6 @@ class NextNeverContradictsTheGate(ProjectFixture):
         self.assertIn("T-B", advice, "a gated task must not stall an unbuilt one")
 
 
-class TheLeaseIsEnforcedNotRequested(ProjectFixture):
-    def test_a_focused_task_cannot_write_outside_its_lease(self):
-        self.make_task(owns="src/orders/**")
-        run(["task", "focus", "T-1"], self.dir)
-        ctx = core.Ctx(self.dir)
-        self.assertIsNone(flow.lease_violation(ctx, os.path.join(self.dir, "src/orders/a.py")))
-        self.assertIsNone(flow.lease_violation(ctx, os.path.join(self.dir, ".aegis/runs/T-1/handoff.json")))
-        self.assertIsNotNone(flow.lease_violation(ctx, os.path.join(self.dir, "src/other/a.py")))
-        self.assertIsNotNone(flow.lease_violation(ctx, "/etc/passwd"))
-
-    def test_without_a_focus_nothing_is_restricted(self):
-        self.make_task()
-        self.assertIsNone(flow.lease_violation(core.Ctx(self.dir), os.path.join(self.dir, "anywhere.py")))
-
-
 class ChosenPoliciesAreEnforced(ProjectFixture):
     def test_the_parallel_limit_is_a_limit(self):
         self.make_task(task_id="T-1", owns="src/orders/a/**")
@@ -342,18 +327,6 @@ class StateCannotBeAsserted(ProjectFixture):
                         ["lens", "plan", "../../escape"]):
             result = run(command, self.dir)
             self.assertNotEqual(result.returncode, 0, f"{command} must refuse a traversing id")
-
-    def test_a_builder_cannot_widen_its_own_lease(self):
-        self.make_task(owns="src/orders/**")
-        run(["task", "focus", "T-1"], self.dir)
-        ctx = core.Ctx(self.dir)
-        manifest = os.path.join(self.dir, ".aegis/runs/T-1/manifest.json")
-        review = os.path.join(self.dir, ".aegis/runs/T-1/reviews/security.json")
-        handoff = os.path.join(self.dir, ".aegis/runs/T-1/handoff.json")
-        # A lease its holder can edit is not a lease; the same goes for authoring its reviews.
-        self.assertIsNotNone(flow.lease_violation(ctx, manifest))
-        self.assertIsNotNone(flow.lease_violation(ctx, review))
-        self.assertIsNone(flow.lease_violation(ctx, handoff))
 
     def test_a_project_with_no_commands_cannot_pass_its_task_gate(self):
         # Otherwise the gate runs nothing, finds nothing, and reports success.
@@ -516,17 +489,6 @@ class FrameworkStateIsNotLeasable(ProjectFixture):
 
 
 class GuaranteesSurviveTraversalAndDeletion(ProjectFixture):
-    def test_a_traversing_path_cannot_reach_a_protected_file(self):
-        import subprocess as sp
-        for target in (".aegis/registry/../constitution.md",
-                       ".aegis/registry/../generated/policy.json"):
-            with self.subTest(target=target):
-                proc = sp.run([os.path.join(ROOT, "hooks", "protect-paths.sh")],
-                              input=json.dumps({"tool_input": {"file_path": target}}),
-                              capture_output=True, text=True,
-                              env={**os.environ, "CLAUDE_PROJECT_DIR": self.dir})
-                self.assertEqual(proc.returncode, 2, "traversal must not reach a protected path")
-
     def test_deleting_a_registry_schema_does_not_disable_validation(self):
         # The schemas ship with the framework; a project-local deletion is what this guards.
         self.write(".aegis/schemas/env.schema.json", json.dumps({"type": "array", "items": {
@@ -566,20 +528,6 @@ class StatusMustBeEarned(ProjectFixture):
              "--owns", "src/typo/**", "--requirements", "R-999"], self.dir)
         report = checks.check_requirements(core.Ctx(self.dir))
         self.assertTrue(any("has no spec" in f.message for f in report.findings))
-
-    def test_the_write_hooks_have_no_environment_override(self):
-        # An unauthenticated variable that disables enforcement is the absence of enforcement.
-        for name in ("protect-paths.sh", "enforce-lease.sh"):
-            with self.subTest(hook=name):
-                source = open(os.path.join(ROOT, "hooks", name)).read()
-                self.assertNotIn("AEGIS_ALLOW_PROTECTED:-", source)
-
-    def test_a_symlink_cannot_smuggle_a_write_past_the_lease(self):
-        self.make_task(owns="src/orders/**")
-        run(["task", "focus", "T-1"], self.dir)
-        link = os.path.join(self.dir, "src", "orders", "policy")
-        os.symlink(os.path.join(self.dir, ".aegis", "constitution.md"), link)
-        self.assertIsNotNone(flow.lease_violation(core.Ctx(self.dir), link))
 
     def test_critical_paths_only_still_requires_tests_where_it_matters(self):
         run(["answer", "q.core.testing", "critical-paths-only"], self.dir)
@@ -952,16 +900,6 @@ class TheSecondReviewOfTheThirdIssue(ProjectFixture):
         self.assertEqual(checks.tests_ran(cached), "ran")
         self.assertEqual(checks.tests_ran(cached + "?   \texample.com/c\t[no test files]\n"), "ran")
 
-    def test_the_gate_folds_a_frozen_zone_the_way_the_lease_does(self):
-        run(["answer", "q.core.frozen", '["Vendor/**"]'], self.dir)
-        ctx = core.Ctx(self.dir)
-        # One rule, two implementations: the lease already folded case, so a zone spelled
-        # differently from the path git reports was refused to an agent and passed by the gate.
-        self.assertIsNotNone(flow.lease_violation(ctx, os.path.join(self.dir, "vendor", "lib.py")))
-        report = checks.check_trace(ctx, ["vendor/lib.py"], None)
-        self.assertTrue(any(f.path == "vendor/lib.py" and f.severity == "fail"
-                            for f in report.findings))
-
     def test_every_check_name_is_in_the_readme(self):
         # `aegis check commands` existed and the README's list of check names did not name it,
         # so the check that failed a reader's bootstrap gate could not be re-run by name.
@@ -1049,55 +987,12 @@ class TheGitHookIsTheOnlyBarrier(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(ROOT, "hooks", "pre-commit-gate.sh")))
         hooks = json.load(open(os.path.join(ROOT, "hooks", "hooks.json")))
         events = hooks.get("hooks", hooks)
-        self.assertEqual([e for e in events.get("PreToolUse", []) if e.get("matcher") == "Bash"], [])
+        # No write hook either: the lease is a declaration `check trace` reads at the merge
+        # boundary, and the hook that enforced it mid-work bought nothing with one builder and
+        # cost the orchestrator a focus/unfocus dance for every note it wrote.
+        self.assertEqual(events.get("PreToolUse", []), [])
         self.assertFalse(hasattr(core, "commit_scope"))
-
-    def test_the_lease_hook_refuses_when_it_cannot_check(self):
-        # The pattern the git hooks already refuse: a check skippable by absence is not a check.
-        project = tempfile.mkdtemp(prefix="aegis-hook-")
-        os.makedirs(os.path.join(project, ".aegis"))
-        env = dict(os.environ, CLAUDE_PLUGIN_ROOT=project, CLAUDE_PROJECT_DIR=project)
-        proc = subprocess.run(["bash", os.path.join(ROOT, "hooks", "enforce-lease.sh")],
-                              input=json.dumps({"tool_input": {"file_path": "src/x.py"}}),
-                              capture_output=True, text=True, env=env, cwd=project)
-        self.assertEqual(proc.returncode, 2, proc.stderr)
-        self.assertIn("cannot check", proc.stderr)
-
-    def test_a_hook_is_silent_where_aegis_does_not_govern(self):
-        # "A hook that cannot check refuses" is right inside an Aegis project and wrong outside
-        # one: the payload was read first, so on a machine without python3 both hooks refused
-        # every write in every checkout, in the name of a framework that was not there.
-        project = tempfile.mkdtemp(prefix="aegis-nogov-")  # no .aegis/ here
-        env = dict(os.environ, CLAUDE_PROJECT_DIR=project)
-        for name in ("enforce-lease.sh", "protect-paths.sh"):
-            with self.subTest(hook=name):
-                proc = subprocess.run(["bash", os.path.join(ROOT, "hooks", name)],
-                                      input="not json at all", capture_output=True, text=True,
-                                      env=env, cwd=project)
-                self.assertEqual(proc.returncode, 0, proc.stderr)
-                self.assertEqual(proc.stderr.strip(), "")
-        # Inside a governed project the lease hook refuses an unreadable payload — but only
-        # while a task holds a lease, which is the only time there is one to enforce. Refusing
-        # unconditionally would turn any change in the tool payload into "no agent may write".
-        gov = tempfile.mkdtemp(prefix="aegis-gov-")
-        os.makedirs(os.path.join(gov, ".aegis", "runs"))
-        genv = dict(os.environ, CLAUDE_PROJECT_DIR=gov, CLAUDE_PLUGIN_ROOT=gov)
-        def lease_hook():
-            return subprocess.run(["bash", os.path.join(ROOT, "hooks", "enforce-lease.sh")],
-                                  input="not json at all", capture_output=True, text=True,
-                                  env=genv, cwd=gov)
-        self.assertEqual(lease_hook().returncode, 0)
-        with open(os.path.join(gov, ".aegis", "runs", "ACTIVE"), "w") as fh:
-            fh.write("T-1\n")
-        refused = lease_hook()
-        self.assertEqual(refused.returncode, 2, refused.stdout)
-        self.assertIn("holds a write lease", refused.stderr)
-        # And path protection is not project-scoped: compiled output is compiled output.
-        proc = subprocess.run(["bash", os.path.join(ROOT, "hooks", "protect-paths.sh")],
-                              input=json.dumps({"tool_input": {
-                                  "file_path": f"{project}/.aegis/generated/policy.json"}}),
-                              capture_output=True, text=True, env=env, cwd=project)
-        self.assertEqual(proc.returncode, 2, proc.stdout)
+        self.assertFalse(hasattr(flow, "lease_violation"))
 
     def test_the_installed_git_hook_runs_the_merge_gate_and_has_no_switch(self):
         from aegis_cli import scaffold
@@ -1131,226 +1026,8 @@ def _green_merge(fixture):
     fixture.assertFalse(report.failed, [f.render() for f in report.findings])
     report = flow.gate(ctx, "merge", run_commands=True)
     fixture.assertFalse(report.failed, [f.render() for f in report.findings])
-    fixture.assertIn("merged: T-1", " ".join(report.notes))
+    fixture.assertEqual(checks.load_task(ctx, "T-1")["status"], "gated")  # the gate writes nothing
     return ctx
-
-
-class ALeaseDoesNotLaunderWhatWasAlreadyThere(ProjectFixture):
-    """R-4, third receipt. The security lens's sequence: commit a payload while the task is
-    still a plan, claim — which fixes the base at that commit — then add one comment to the
-    same file. `aegis diff` showed `+# touched`, both gates passed, and the merge receipt
-    recorded the whole file as the task's reviewed work."""
-
-    def _on_a_branch(self):
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "adoption"], check=True)
-        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
-
-    def test_a_payload_committed_before_the_claim_is_refused(self):
-        self._on_a_branch()
-        self.write("src/orders/a.py", "A = 1\n# payload\n")
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "before any lease"], check=True)
-        self.make_task()
-        run(["task", "claim", "T-1"], self.dir)
-        self.write("src/orders/a.py", "A = 1\n# payload\n# touched\n")
-        report = checks.check_trace(core.Ctx(self.dir), ["src/orders/a.py"], "T-1")
-        self.assertTrue(any("no review covers" in f.message and f.severity == "fail"
-                            for f in report.findings), [f.render() for f in report.findings])
-
-    def test_work_that_starts_at_the_branch_point_is_attributed(self):
-        # The control. Without it the check above would pass by refusing everything.
-        self._on_a_branch()
-        self.make_task()
-        run(["task", "claim", "T-1"], self.dir)
-        self.write("src/orders/a.py", "A = 1\n")
-        report = checks.check_trace(core.Ctx(self.dir), ["src/orders/a.py"], "T-1")
-        self.assertFalse(report.failed, [f.render() for f in report.findings])
-
-    def test_a_receipt_on_the_branch_accounts_for_the_difference(self):
-        # The regression this check invites: the second task of a branch has a base that
-        # carries the first task's merged work, which is the legitimate case it must allow.
-        ctx = _green_merge(self)
-        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "T-1, committed"], check=True)
-        out = run(["task", "new", "T-2", "--feature", "orders", "--objective", "more", "--owns",
-                   "src/orders/**,tests/**,docs/**", "--requirements", "R-1", "--kinds", "code"],
-                  self.dir)
-        self.assertEqual(out.returncode, 0, out.stderr)
-        self.assertEqual(run(["task", "claim", "T-2"], self.dir).returncode, 0)
-        self.write("src/orders/b.py", "B = 1\n")
-        report = checks.check_trace(ctx, ["src/orders/a.py", "src/orders/b.py"], "T-2")
-        self.assertFalse(report.failed, [f.render() for f in report.findings])
-
-
-class AMergedTaskDoesNotBlockTheBranch(ProjectFixture):
-    """R-4: after the full merge gate, the branch takes its next commit without landing. The
-    first dogfood merge refused the very next commit, 48 times, until a person moved main."""
-
-    def test_the_merge_gate_records_what_it_saw(self):
-        _green_merge(self)
-        receipt = json.load(open(os.path.join(self.dir, ".aegis/runs/T-1/merge-receipt.json")))
-        self.assertEqual(receipt["task"], "T-1")
-        self.assertEqual(len(receipt["sha"]), 40)
-        self.assertEqual(receipt["files"]["src/orders/a.py"], core.file_sha256(os.path.join(self.dir, "src/orders/a.py")))
-
-    def test_another_task_under_the_same_globs_is_not_blocked_by_the_merged_one(self):
-        # The verifier's finding: the merge gate matched a merged task by its `owns` globs and
-        # demanded a gate receipt whose digest can never recur, so anyone's later change under
-        # those globs failed `trace`. Evidence: this repository's own gate, red on UNBLOCK-03.
-        ctx = _green_merge(self)
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "the task, committed"], check=True)
-        out = run(["task", "new", "T-2", "--feature", "orders", "--objective", "more", "--owns",
-                   "src/orders/**,tests/**,docs/**", "--requirements", "R-1", "--kinds", "code"], self.dir)
-        self.assertEqual(out.returncode, 0, out.stderr)
-        out = run(["task", "claim", "T-2"], self.dir)  # the lease is taken here, not at `new`
-        self.assertEqual(out.returncode, 0, out.stderr)
-        self.write("src/orders/b.py", "B = 1\n")
-        # The whole point: T-1's merged files are still on the branch, unchanged. They belong
-        # to T-1's receipt; T-2 owns only what it touched. Asserting on T-1's name alone let
-        # a severity-4 defect through, so this asserts the gate itself.
-        report = checks.check_trace(ctx, ["src/orders/a.py", "src/orders/b.py"], None)
-        self.assertFalse(report.failed, [f.render() for f in report.findings])
-        # And each to exactly one: a.py to the receipt that recorded it, b.py to the lease.
-        self.assertFalse(any("claimed by several" in f.message for f in report.findings))
-
-    def test_the_next_commit_is_not_refused(self):
-        ctx = _green_merge(self)
-        report = checks.check_trace(ctx, ["src/orders/a.py"], None)
-        self.assertFalse(report.failed, [f.render() for f in report.findings])
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "the task, committed"], check=True)
-        report = flow.gate(ctx, "merge", run_commands=False)
-        self.assertFalse(any(f.check == "trace" and f.severity == "fail" for f in report.findings),
-                         [f.render() for f in report.findings])
-
-
-class AMergedLeaseIsNotAPermanentExemption(ProjectFixture):
-    """R-4, the other half: a new edit to a file a merged task owned belongs to no task."""
-
-    def test_a_new_edit_after_the_merge_belongs_to_no_task(self):
-        ctx = _green_merge(self)
-        self.write("src/orders/a.py", "A = 2\n")
-        report = checks.check_trace(ctx, ["src/orders/a.py"], None)
-        self.assertTrue(any("belongs to no task" in f.message for f in report.findings),
-                        [f.render() for f in report.findings])
-
-    def test_a_receipt_from_another_history_exempts_nothing(self):
-        ctx = _green_merge(self)
-        path = os.path.join(self.dir, ".aegis/runs/T-1/merge-receipt.json")
-        receipt = json.load(open(path))
-        receipt["sha"] = "0" * 40  # not behind HEAD: a rebase, or a file copied in by hand
-        json.dump(receipt, open(path, "w"))
-        report = checks.check_trace(ctx, ["src/orders/a.py"], None)
-        self.assertTrue(any("belongs to no task" in f.message for f in report.findings))
-
-    def test_next_says_to_land_even_with_a_backlog_waiting(self):
-        # The step existed but sat behind `if not open_tasks`, and a planned task counts as
-        # open — so in the repository's own state after a merge, `next` never said it.
-        _green_merge(self)
-        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "landed work"], check=True)
-        run(["task", "new", "T-LATER", "--feature", "orders", "--objective", "later",
-             "--owns", "src/later/**", "--requirements", "R-1", "--kinds", "code"], self.dir)
-        step = flow.next_action(core.Ctx(self.dir))
-        self.assertEqual(step["command"], "aegis land", step)
-        # `human`, not `cli`: the step used to claim the full merge gate had passed, when all
-        # that exists is a receipt earned on an earlier commit, and `cli` let `aegis next --run`
-        # take a move the code itself calls destructive. The person who owns the branch lands it.
-        self.assertEqual(step["who"], "human", step)
-        self.assertIn("full gate", step["note"], step)
-
-    def test_land_prints_the_command_and_moves_the_ref_only_on_a_clean_tree(self):
-        _green_merge(self)
-        default = subprocess.run(["git", "-C", self.dir, "branch", "--show-current"],
-                                 capture_output=True, text=True).stdout.strip()
-        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
-        out = run(["land"], self.dir)
-        self.assertEqual(out.returncode, 0, out.stderr)
-        self.assertIn(f"git branch -f {default}", out.stdout)
-        out = run(["land", "--run"], self.dir)
-        self.assertNotEqual(out.returncode, 0)
-        self.assertIn("not clean", out.stderr)
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "everything"], check=True)
-        out = run(["land", "--run"], self.dir)
-        self.assertEqual(out.returncode, 0, out.stderr)
-        head = subprocess.run(["git", "-C", self.dir, "rev-parse", "HEAD"], capture_output=True, text=True).stdout
-        landed = subprocess.run(["git", "-C", self.dir, "rev-parse", default], capture_output=True, text=True).stdout
-        self.assertEqual(head, landed)
-
-
-class DelegationIsData(ProjectFixture):
-    """R-5: authority is data. A person names the checks once; an agent records a routine
-    waiver in that name; a finding is never delegated; an agent cannot own a waiver."""
-
-    def _delegate(self, commit=True):
-        out = run(["answer", "q.core.delegate",
-                   '{"owner": "Test Owner", "may_waive": ["docs", "env"]}'], self.dir)
-        if commit and out.returncode == 0:
-            subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-            subprocess.run(["git", "-C", self.dir, "commit", "-qm", "a person delegates"],
-                           check=True)
-        return out
-
-    def _waive(self, check, **kw):
-        return run(["waive", check, "--scope", kw.get("scope", "docs/x.md"),
-                    "--reason", kw.get("reason", "the document is known stale for now"),
-                    "--expires", kw.get("expires", "2099-01-01")], self.dir)
-
-    def test_without_a_delegation_an_agent_records_nothing(self):
-        out = self._waive("docs")
-        self.assertNotEqual(out.returncode, 0)
-        self.assertIn("no delegation", out.stderr)
-
-    def test_an_uncommitted_delegation_authorises_nothing(self):
-        # `aegis answer` refuses a focused lease, but releasing the focus, answering and
-        # focusing again is three commands — so the working tree's delegation is writable by
-        # the agent it would authorise. HEAD's is not.
-        self.assertEqual(self._delegate(commit=False).returncode, 0)
-        out = self._waive("docs")
-        self.assertNotEqual(out.returncode, 0, out.stdout)
-        self.assertIn("no delegation at HEAD", out.stderr)
-
-    def test_a_delegated_check_is_waived_in_the_owners_name(self):
-        self.assertEqual(self._delegate().returncode, 0)
-        out = self._waive("docs")
-        self.assertEqual(out.returncode, 0, out.stderr)
-        waivers = json.load(open(os.path.join(self.dir, ".aegis/waivers.json")))
-        self.assertEqual(waivers[-1]["owner"], "Test Owner")
-        self.assertEqual(waivers[-1]["check"], "docs")
-        self.assertIn("recorded by an agent", waivers[-1]["reason"])
-        self.assertFalse(checks.load_waivers(core.Ctx(self.dir)) == [])
-
-    def test_an_unlisted_check_a_finding_and_a_past_expiry_are_refused(self):
-        self._delegate()
-        self.assertNotEqual(self._waive("budget").returncode, 0)
-        self.assertNotEqual(self._waive("finding", scope="F-12345678").returncode, 0)
-        self.assertNotEqual(self._waive("docs", expires="2020-01-01").returncode, 0)
-
-    def test_a_refused_waiver_leaves_the_file_valid(self):
-        # Writing first and validating after left an invalid waivers.json behind, and an
-        # invalid file applies no waiver at all — one bad command turned every gate red.
-        self._delegate()
-        out = self._waive("docs", expires="2099-13-45")
-        self.assertNotEqual(out.returncode, 0)
-        self.assertIn("not a real date", out.stderr)
-        self.assertEqual(self._waive("docs").returncode, 0)
-        self.assertEqual(self._waive("docs", scope="docs/y.md").returncode, 0)  # same day, no id clash
-        checks.load_waivers(core.Ctx(self.dir))
-        ids = [w["id"] for w in json.load(open(os.path.join(self.dir, ".aegis/waivers.json")))]
-        self.assertEqual(len(ids), len(set(ids)), ids)
-
-    def test_an_agent_cannot_own_a_waiver(self):
-        self.write(".aegis/waivers.json", json.dumps([{
-            "id": "W-x", "check": "env", "scope": ["**"], "reason": "an agent muting a check",
-            "owner": "claude-session", "expires": "2099-01-01"}]))
-        with self.assertRaises(core.AegisError) as caught:
-            checks.load_waivers(core.Ctx(self.dir))
-        self.assertIn("not a person's name", str(caught.exception))
 
 
 class AnOpenTaskCoversPending(ProjectFixture):
@@ -1373,6 +1050,104 @@ class AnOpenTaskCoversPending(ProjectFixture):
         self._two_requirements()
         report = checks.check_requirements(core.Ctx(self.dir))
         self.assertTrue(any("not covered by any task: R-2" in f.message for f in report.findings))
+
+
+class AGatedTaskOwnsItsFilesUntilItLands(ProjectFixture):
+    """The merge gate judges and writes nothing; `land` is where `merged` is true and where it
+    is written. Until then a gated task keeps its lease, so the branch takes its next commit —
+    the second cycle refused that commit 48 times because a status the gate wrote unowned the
+    files it had just passed."""
+
+    def test_the_next_commit_is_not_refused(self):
+        ctx = _green_merge(self)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "the task, committed"], check=True)
+        report = flow.gate(ctx, "merge", run_commands=False)
+        self.assertFalse(any(f.check == "trace" and f.severity == "fail" for f in report.findings),
+                         [f.render() for f in report.findings])
+
+    def test_land_moves_the_ref_and_marks_the_task_merged(self):
+        _green_merge(self)
+        default = subprocess.run(["git", "-C", self.dir, "branch", "--show-current"],
+                                 capture_output=True, text=True).stdout.strip()
+        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
+        out = run(["land"], self.dir)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn(f"git branch -f {default}", out.stdout)
+        out = run(["land", "--run"], self.dir)
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("not clean", out.stderr)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "everything"], check=True)
+        out = run(["land", "--run"], self.dir)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        head = subprocess.run(["git", "-C", self.dir, "rev-parse", "HEAD"], capture_output=True, text=True).stdout
+        landed = subprocess.run(["git", "-C", self.dir, "rev-parse", default], capture_output=True, text=True).stdout
+        self.assertEqual(head, landed)
+        self.assertEqual(checks.load_task(core.Ctx(self.dir), "T-1")["status"], "merged")
+        # Landed, the task holds nothing: a new edit under its old globs belongs to no task.
+        self.write("src/orders/a.py", "A = 2\n")
+        report = checks.check_trace(core.Ctx(self.dir), ["src/orders/a.py"], None)
+        self.assertTrue(any("belongs to no task" in f.message for f in report.findings))
+
+    def test_a_typed_merged_status_buys_nothing(self):
+        # Without a receipt to forge there is nothing to forge: `merged` typed into a manifest
+        # means the task holds no lease, so its files are orphans and `trace` says so.
+        ctx = _green_merge(self)
+        path = os.path.join(self.dir, ".aegis/runs/T-1/manifest.json")
+        m = json.load(open(path)); m["status"] = "merged"; json.dump(m, open(path, "w"))
+        report = checks.check_trace(ctx, ["src/orders/a.py"], None)
+        self.assertTrue(any("belongs to no task" in f.message for f in report.findings))
+
+    def test_next_says_to_land_even_with_a_backlog_waiting(self):
+        _green_merge(self)
+        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "landed work"], check=True)
+        run(["task", "new", "T-LATER", "--feature", "orders", "--objective", "later",
+             "--owns", "src/later/**", "--requirements", "R-1", "--kinds", "code"], self.dir)
+        step = flow.next_action(core.Ctx(self.dir))
+        self.assertEqual(step["command"], "aegis land", step)
+
+
+class ACommitBeforeTheClaimIsReviewedNotRefused(ProjectFixture):
+    """A task's base is where the branch left the mainline, so anything committed on the branch
+    before the claim is inside its diff, digest and packet: reviewed, not refused. The rule that
+    refused it instead failed in both directions at once (ADR-5)."""
+
+    def _on_a_branch(self):
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "adoption"], check=True)
+        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
+
+    def test_the_payload_is_in_the_diff_and_owned(self):
+        self._on_a_branch()
+        self.write("src/orders/a.py", "A = 1\n# payload\n")
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "before any lease"], check=True)
+        self.make_task()
+        run(["task", "claim", "T-1"], self.dir)
+        ctx = core.Ctx(self.dir)
+        manifest = checks.load_task(ctx, "T-1")
+        self.assertEqual(manifest["base_sha"], core.default_base(ctx))
+        self.assertIn("# payload", run(["diff", "T-1"], self.dir).stdout)
+        report = checks.check_trace(ctx, ["src/orders/a.py"], "T-1")
+        self.assertFalse(report.failed, [f.render() for f in report.findings])
+
+    def test_a_pre_adoption_branch_can_run_its_first_task(self):
+        # The brownfield case the deleted rule made impossible: the branch diverged before Aegis
+        # existed, and its first task edits a file the branch had already changed.
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "before aegis"], check=True)
+        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "old-feature"], check=True)
+        self.write("src/orders/a.py", "A = 0\n")
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "diverged long ago"], check=True)
+        self.make_task()
+        run(["task", "claim", "T-1"], self.dir)
+        self.write("src/orders/a.py", "A = 1\n")
+        report = checks.check_trace(core.Ctx(self.dir), ["src/orders/a.py"], "T-1")
+        self.assertFalse(report.failed, [f.render() for f in report.findings])
 
 
 class APlannedTaskOwnsNothing(ProjectFixture):
@@ -1463,35 +1238,19 @@ class TheDiffShowsWhatTheDigestCovers(ProjectFixture):
 class TheFirstSecurityReviewOfStableAutonomy(ProjectFixture):
     """Round 1, security lens. Each is a route to a green gate that the code had to close."""
 
-    def test_a_commit_made_before_the_lease_is_not_the_tasks_work(self):
-        # F-a0db7907, severity 4. A commit made while the task was planned — or before it
-        # existed — is outside `aegis diff`, the digest and the task gate, yet a glob match
-        # attributed it to the task at the merge stage and the merge receipt recorded it as
-        # the task's own. Fixing `base_sha` at claim time widened the window to the whole
-        # life of the preceding task, which is what made this severity 4.
+    def test_a_commit_made_before_the_lease_is_the_tasks_work_now(self):
+        # F-a0db7907 was closed first by refusing this, and that rule failed both ways (ADR-5).
+        # It is closed now by inclusion: the base is the branch point, so the commit is in the
+        # diff every lens reads, and the task owns it.
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "adoption"], check=True)
+        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
         self.write("src/orders/sneaked.py", "SECRET = 1\n")
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "ungated"], check=True)
         self.make_task()
         run(["task", "claim", "T-1"], self.dir)
-        self.write("src/orders/honest.py", "A = 1\n")
-        report = checks.check_trace(core.Ctx(self.dir),
-                                    ["src/orders/sneaked.py", "src/orders/honest.py"], None)
-        self.assertTrue(any(f.path == "src/orders/sneaked.py" and f.severity == "fail"
-                            for f in report.findings), [f.render() for f in report.findings])
-        self.assertFalse(any(f.path == "src/orders/honest.py" and f.severity == "fail"
-                             for f in report.findings), [f.render() for f in report.findings])
-
-    def test_a_focused_task_cannot_widen_its_own_delegation(self):
-        # F-99e20bdc, severity 3. The write hook refuses answers.json under a lease; the
-        # command must not be the way around its own rule.
-        self.make_task()
-        run(["task", "claim", "T-1"], self.dir)
-        out = run(["answer", "q.core.delegate", '{"owner": "Bot Bot", "may_waive": ["requirements"]}'], self.dir)
-        self.assertNotEqual(out.returncode, 0, out.stdout)
-        self.assertIn("focused task", out.stderr)
-        run(["task", "focus"], self.dir)
-        self.assertEqual(run(["answer", "q.core.delegate", '{"owner": "Alex Derkach", "may_waive": ["docs"]}'], self.dir).returncode, 0)
+        self.assertIn("SECRET", run(["diff", "T-1"], self.dir).stdout)
 
     def test_changing_the_waivers_file_is_visible_and_re_takes_the_reviews(self):
         self.make_task()
@@ -1551,8 +1310,8 @@ class TheDocumentsSayWhatTheCodeDoes(unittest.TestCase):
         self.assertEqual(sorted(actions - listed), [],
                          f"commands the README does not offer: {sorted(actions - listed)}")
         # The flags R-8 enumerates, each one a thing a hook or the workflow depends on.
-        for flag in ("lease check --path", "lease show", "check <name>|all", "--root",
-                     "[--task <ID>]", "[--no-run]", "--base", "--feature"):
+        for flag in ("check <name>|all", "--root", "[--task <ID>]", "[--no-run]", "--base",
+                     "--feature"):
             self.assertIn(flag, block, flag)
 
     def test_no_document_promises_a_refusal_at_task_new(self):
@@ -1593,14 +1352,12 @@ class ANameIsAPerson(ProjectFixture):
     """R-7: one validator for a person's name, shared by dispositions, attestations and waivers."""
 
     def test_the_validator(self):
-        for name in ("", "A", "ab", "lens-design", "aegis-builder", "claude-opus-5 session agent",
-                     "codex", "x:y", "claude", "opus-4", "gpt-4",
-                     # A model's name is a word plus a version; these passed after the first fix.
-                     "Claude Fable 5.1", "Claude Opus 4", "Gemini 2.5 Pro", "opus 4"):
+        # What it refuses: nothing, one character, the framework's own role names, the task's
+        # builder and the lens in question. What it does not try: telling a model from a person
+        # — three rounds of a widening regex lost every round, and a waiver is a record.
+        for name in ("", "A", "ab", "lens-design", "aegis-builder", "aegis-orchestrator"):
             self.assertFalse(checks.is_person_name(name), name)
-        # A person whose name merely starts with a model's word. Since a waiver's owner is
-        # checked, refusing these made one contributor's whole waivers file invalid.
-        for name in ("Alex", "Claude Monet", "Gemini Ganesan", "Opus Dei"):
+        for name in ("Alex", "Claude Monet", "An Na", "Test Owner", "Claude Opus 5"):
             self.assertTrue(checks.is_person_name(name), name)
         self.assertFalse(checks.is_person_name("Alex", builder="alex"))
         self.assertFalse(checks.is_person_name("security", lens="security"))
@@ -1609,17 +1366,6 @@ class ANameIsAPerson(ProjectFixture):
         out = run(["docs", "attest", "--by", "A"], self.dir)
         self.assertNotEqual(out.returncode, 0)
         self.assertIn("names nobody", out.stderr)
-
-    def test_a_name_that_names_nobody(self):
-        # `Bot Bot` — the spelling the security lens used in its own reproduction — and `the bot`
-        # begin with no model word, so the model-name test passed them both. So did `n/a`, whose
-        # punctuation the tokeniser turned into a token no table contains.
-        for name in ("the bot", "Bot Bot", "n/a", "N/A", "system", "none", "unknown", "AI",
-                     "the agent", "GPT 5", "grok 3", "Llama 4"):
-            self.assertFalse(checks.is_person_name(name), name)
-        # The table is closed, and a person keeps whatever is not in it.
-        for name in ("Test Owner", "Anna Bot", "Jo Ng", "Zoë Müller"):
-            self.assertTrue(checks.is_person_name(name), name)
 
     def test_the_suite_has_one_entry_point(self):
         # A `unittest.main()` sat in the middle of this file. Under `make check` it is inert,
@@ -1744,7 +1490,6 @@ class RefinementRoundsWork(ProjectFixture):
         self.assertEqual(result.returncode, 0, result.stderr)
         manifest = json.load(open(os.path.join(self.dir, ".aegis/runs/T-1/manifest.json")))
         self.assertEqual(manifest["status"], "building")
-        self.assertEqual(open(os.path.join(self.dir, ".aegis/runs/ACTIVE")).read().strip(), "T-1")
         metrics = os.path.join(self.dir, ".aegis/runs/T-1/metrics.jsonl")
         events = [json.loads(line)["event"] for line in open(metrics)]
         self.assertEqual(events.count("packet"), 1)
@@ -1982,16 +1727,6 @@ class ReviewFindingsCannotBeClosedCheaply(ProjectFixture):
         report = flow.check_reviews(core.Ctx(self.dir), "T-1")
         self.assertFalse(any("review rounds" in f.message for f in report.findings))
 
-    def test_a_refused_claim_leaves_the_running_task_focused(self):
-        self.make_task(task_id="T-1", owns="src/orders/a/**")
-        self.make_task(task_id="T-2", owns="src/orders/b/**")
-        self.assertEqual(run(["task", "claim", "T-1"], self.dir).returncode, 0)
-        refused = run(["task", "claim", "T-2"], self.dir)  # profile S: one task in flight
-        self.assertNotEqual(refused.returncode, 0)
-        self.assertEqual(open(os.path.join(self.dir, ".aegis/runs/ACTIVE")).read().strip(), "T-1")
-        manifest = json.load(open(os.path.join(self.dir, ".aegis/runs/T-2/manifest.json")))
-        self.assertEqual(manifest["status"], "planned")
-
     def test_claim_reports_the_status_the_task_is_actually_in(self):
         self.make_task()
         run(["task", "claim", "T-1"], self.dir)
@@ -2095,17 +1830,6 @@ class TheSecondReviewRoundFindings(ProjectFixture):
         caps = json.load(open(os.path.join(self.dir, ".aegis", "generated", "capabilities.json")))
         self.assertNotIn("lib/after.py", (caps.get("baseline") or {}).get("files") or {})
         self.assertIn("lib/after.py", core.changed_files(core.Ctx(self.dir), None))
-
-    def test_a_frozen_zone_is_refused_to_an_unfocused_agent_and_trace_sees_it(self):
-        run(["answer", "q.core.frozen", '["vendor/**"]'], self.dir)
-        ctx = core.Ctx(self.dir)
-        self.assertIsNone(flow.active_task(ctx))
-        self.assertIsNotNone(flow.lease_violation(ctx, os.path.join(self.dir, "vendor", "lib.py")))
-        self.assertIsNotNone(flow.lease_violation(ctx, os.path.join(self.dir, "Vendor", "lib.py")))
-        self.make_task()
-        self.write("vendor/lib.py", "X = 1\n")
-        report = checks.check_trace(ctx, ["vendor/lib.py"], None)
-        self.assertTrue(any(f.path == "vendor/lib.py" for f in report.findings))
 
     def test_a_report_cannot_choose_which_lens_it_counts_as(self):
         self.make_task()
@@ -2228,15 +1952,6 @@ class TheThirdReviewRoundFindings(ProjectFixture):
                               text=True, check=True).stdout.strip()
         self.assertIn("src/auth.py", core.changed_files(ctx, head))
 
-    def test_answers_json_is_not_edited_by_an_agent(self):
-        proc = subprocess.run(["bash", os.path.join(ROOT, "hooks", "protect-paths.sh")],
-                              input=json.dumps({"tool_input": {"file_path": ".aegis/answers.json"}}),
-                              capture_output=True, text=True,
-                              env=dict(os.environ, CLAUDE_PROJECT_DIR=self.dir))
-        self.assertEqual(proc.returncode, 2)
-        self.assertIn("aegis answer", proc.stderr)
-
-
 class ABlockingFindingIsDeferredOnlyByAFindingWaiver(ProjectFixture):
     """TASK-UNBLOCK-01 escalated with blocking findings the gate told it to waive, and no
     waiver kind could hold one. A deferral is now a `finding` waiver naming the id."""
@@ -2279,9 +1994,10 @@ class ABlockingFindingIsDeferredOnlyByAFindingWaiver(ProjectFixture):
 
     def test_an_agent_cannot_defer_its_own_blocking_finding(self):
         fid = self._deferred()
-        self._waive(scope=[fid], owner="claude-opus-5")
+        self._waive(scope=[fid], owner="aegis-builder")  # the task's own builder
         report = flow.check_reviews(core.Ctx(self.dir), "T-1")
-        self.assertTrue(any("not a person" in f.message for f in report.findings))
+        self.assertTrue(any("not a person" in f.message for f in report.findings),
+                        [f.render() for f in report.findings])
         self._waive(scope=[fid])
         run(["lens", "disposition", "T-1", fid, "deferred", "--reason", "W-retry",
              "--by", "aegis-orchestrator"], self.dir)
@@ -2355,14 +2071,6 @@ class TheFirstReviewOfTheReissue(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "r"], check=True)
         self.assertIn("src/orders/résumé.py", core.changed_files(core.Ctx(self.dir), base))
-
-    def test_a_differently_cased_answers_path_is_refused(self):
-        proc = subprocess.run(["bash", os.path.join(ROOT, "hooks", "protect-paths.sh")],
-                              input=json.dumps({"tool_input": {"file_path": ".aegis/Answers.json"}}),
-                              capture_output=True, text=True,
-                              env=dict(os.environ, CLAUDE_PROJECT_DIR=self.dir))
-        self.assertEqual(proc.returncode, 2)
-
 
 class ANonAsciiBaselinedFileLeavesTheBaselineOnceCommitted(unittest.TestCase):
     write = AdoptionRatchetsFromToday.write
@@ -2725,21 +2433,18 @@ class TheGitLevelGateCoversEveryRunner(ProjectFixture):
         proc = subprocess.run(["sh", path], cwd=self.dir, capture_output=True, text=True,
                               env={k: v for k, v in os.environ.items() if k != "PATH"})
         self.assertEqual(proc.returncode, 1)
-        self.assertIn("not a gate", proc.stderr)
+        self.assertIn("cannot run", proc.stderr)
 
-    def test_a_bookkeeping_only_index_is_exempt(self):
-        scaffold.install_git_hooks(core.Ctx(self.dir))
-        self.make_task()
-        subprocess.run(["git", "-C", self.dir, "add", "-f", ".aegis/runs/T-1"], check=True)
-        proc = subprocess.run(["sh", os.path.join(self.hooks_dir(), "pre-commit")],
-                              cwd=self.dir, capture_output=True, text=True)
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-
-    def test_unowned_code_is_refused(self):
+    def test_a_commit_is_a_checkpoint_and_the_push_is_the_gate(self):
+        # Unowned code commits — pre-commit checks drift and structure and nothing that reads
+        # the diff. It does not push: pre-push runs the merge gate, and `trace` refuses it.
         scaffold.install_git_hooks(core.Ctx(self.dir))
         self.write("lib/orphan.py", "X = 1\n")
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         proc = subprocess.run(["sh", os.path.join(self.hooks_dir(), "pre-commit")],
+                              cwd=self.dir, capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        proc = subprocess.run(["sh", os.path.join(self.hooks_dir(), "pre-push")],
                               cwd=self.dir, capture_output=True, text=True)
         self.assertEqual(proc.returncode, 1)
         self.assertIn("no task", proc.stderr)
@@ -2833,12 +2538,6 @@ class TheDigestCoversOnlyTaskContracts(ProjectFixture):
 class NothingWritesInsideGit(ProjectFixture):
     """One `.git/config` edit installs `alias.ci = commit`, a spelling no command-text parser
     can see. No agent needs a write in there."""
-
-    def test_a_focused_task_cannot_write_git_config(self):
-        self.make_task()
-        run(["task", "focus", "T-1"], self.dir)
-        reason = flow.lease_violation(core.Ctx(self.dir), os.path.join(self.dir, ".git", "config"))
-        self.assertIsNotNone(reason)
 
 class TheAnswersAreInTheDigest(ProjectFixture):
     """`answers.json` carries the frozen zones and the autonomy limits. A shell write plus

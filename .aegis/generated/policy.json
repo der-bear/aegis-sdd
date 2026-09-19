@@ -14,13 +14,6 @@
     "skill_body": 2500,
     "skill_metadata_total": 3000
   },
-  "delegation": {
-    "may_waive": [
-      "docs",
-      "env"
-    ],
-    "owner": "Alex Derkach"
-  },
   "legacy_baseline": "ratchet-from-today",
   "lens_matrix": {
     "always": [

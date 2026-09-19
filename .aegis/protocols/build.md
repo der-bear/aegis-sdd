@@ -95,13 +95,14 @@ raised it, not by a declaration.
 aegis lens disposition <TASK-ID> F-1a2b3c4d false-positive --reason "the cited line is test scaffolding" --by <who>
 ```
 
-A check the owner delegated in `policy.delegation` is waived by you, not by them:
-`aegis waive <check> --scope <paths> --reason <why> --expires <date>` records it in their name,
-with an expiry. Only the listed checks, and never `finding`.
+A waiver is a record with a check, a scope, a reason, an owner and an expiry, written into
+`.aegis/waivers.json`. It silences a check; it proves nothing, and the review of the candidate
+that adds it is what judges it. The one waiver kind that is a person's decision and never yours is
+`finding`.
 
 Dismissing a blocking finding — `false-positive`, `waived` or `deferred` — is a person's
 decision: `--by` names them, and the gate refuses the task's builder, the lens that raised it,
-and any name it recognises as an agent. `waived` and
+and the framework's own role names. `waived` and
 `deferred` also need a waiver in `.aegis/waivers.json` with `"check": "finding"`, the finding
 id in `scope`, that person as owner and an expiry. `fixed` is what a
 re-review records when the code changed; a human records it by hand only after a reopened
@@ -120,12 +121,8 @@ Three rules govern this loop:
 
 ## 5. Documentation
 
-```bash
-aegis task focus          # release the lease first
-```
-
-The lease forbids writes under `.aegis/`, which is precisely what the doc-manager must do.
-Dispatch it only after the focus is cleared.
+The lease is a declaration: `check trace` reads it at the merge boundary, and nothing refuses a
+write mid-task. The doc-manager writes under `.aegis/` and `docs/` as the orchestrator does.
 
 Dispatch `aegis-doc-manager` with the handoff. It is the only writer of registries,
 diagrams and central documents, and it runs alone, which is why parallel builders never

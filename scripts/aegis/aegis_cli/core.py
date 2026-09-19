@@ -600,10 +600,6 @@ def is_ancestor(ctx: Ctx, older: str, newer: str) -> bool:
     return bool(older) and git(ctx, "merge-base", older, newer).strip() == older
 
 
-def files_between(ctx: Ctx, a: str, b: str) -> list[str]:
-    """Paths whose content differs between two revisions, renames split into both sides."""
-    out = git(ctx, "diff", "--name-only", "--no-renames", a, b)
-    return [line for line in out.splitlines() if line.strip()]
 
 
 # ---------------------------------------------------------------------------- globs
