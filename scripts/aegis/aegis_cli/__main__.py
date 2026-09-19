@@ -457,7 +457,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.task_command == "claim":
             claimed = flow.task_claim(ctx, args.id)
-            emit(f"claimed {args.id}: lease enforced, status {claimed['status']}, "
+            emit(f"claimed {args.id}: lease declared, status {claimed['status']}, "
                  f"packet ≈{claimed['packet_tokens']} tokens (budget {claimed['budget']})")
             if claimed["over_budget"]:
                 emit("  OVER BUDGET — narrow the task or trim the spec excerpt")

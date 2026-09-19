@@ -1,0 +1,63 @@
+{
+  "task": "TASK-SIMPLE-01",
+  "agent": "claude-fable-5.1 (orchestrator and builder)",
+  "summary": "Owner's brief, verbatim: simple, reliable, convenient, understandable — and, after a review that said the framework was over-built, 'do what is needed to 100%'. Four commits on stable-01: (1) the tree TASK-STABLE-01's three lens rounds reviewed, plus a pre-commit that checks drift and structure only; (2) −2,981/+215 — the write hooks, task focus, aegis lease, merge receipts and the merge gate's writes, the base-agreement rule, aegis waive and delegation, the person-name regex, .aegis/standards and the universal-01 bundle deleted; the lease is a declaration read at the merge boundary, `merged` is written by land, a task's base is the branch point so a pre-claim commit is reviewed not refused; (3) the first hour — policy.mainline and an error naming the refs when none resolves, next gains commit and docs steps and lands as cli, the round cap is a signal, one autonomy rule replaces ten human marks, the kind scan reads the change and not .aegis/runs, a held lease beats the generated-path default, symlinks in the diff, EVALUATION's count, the CI template; (4) ARCHITECTURE §3/§6 and README's limits rewritten so one rule lives in one place and the trust model is stated once. 230 tests, both invocation paths.",
+  "changed_files": [
+    ".agents/skills/review-lens/SKILL.md",
+    ".github/workflows/aegis-gate.yml",
+    "README.md",
+    "agents/aegis-orchestrator.md",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "hooks/enforce-lease.sh",
+    "hooks/hooks.json",
+    "hooks/pre-commit-gate.sh",
+    "hooks/protect-paths.sh",
+    "interview/core.json",
+    "scripts/aegis/aegis_cli/__main__.py",
+    "scripts/aegis/aegis_cli/checks.py",
+    "scripts/aegis/aegis_cli/config.py",
+    "scripts/aegis/aegis_cli/core.py",
+    "scripts/aegis/aegis_cli/flow.py",
+    "scripts/aegis/aegis_cli/scaffold.py",
+    "skills/build/SKILL.md",
+    "skills/review-lens/SKILL.md",
+    "skills/tasks/SKILL.md",
+    "templates/ci/aegis-gate.yml",
+    "tests/test_aegis.py"
+  ],
+  "verification": [
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "python3 -m unittest discover -s tests",
+      "result": "pass",
+      "note": "230 tests"
+    },
+    {
+      "command": "aegis gate --stage bootstrap --no-run",
+      "result": "pass"
+    }
+  ],
+  "deviations": [
+    "This task was created after the work, not before: the four commits were made as an engineer would, then a task was claimed so the merge gate could attribute them and the branch could land. The base at claim is the branch point, so the task's diff is everything since adopt-aegis — TASK-STABLE-01's reviewed work included — which is what the final review reads.",
+    "One reviewer, three lens names: the final review is a single Fable 5.1 session briefed with all three focuses; its report is recorded under correctness, security and design with --reviewer fable-5.1. The tier is C as declared; the gate judges the effective tier from the diff.",
+    "R-11..R-15 (TASK-STABLE-03) and R-9/R-10 (TASK-STABLE-02) are left planned: small correctness items and a per-lens staleness mechanism, neither needed for the first hour.",
+    "The framework's own process was not followed for this task — no three lens rounds, no spec-first task — because the owner said not to spend tokens on ceremony, and because the process as it stood had abandoned three of four tasks."
+  ],
+  "open_questions": [
+    "Project 2: which project of a different kind. Until one runs, universality is a claim, not a measurement.",
+    "Push and pull request for adopt-aegis and stable-01: not done, and not without the owner.",
+    "Constitution: confirm or rewrite .aegis/constitution.md#Signature. An agent must not sign it."
+  ],
+  "new_dependencies": [],
+  "invalidated_assumptions": [
+    "'The framework escalated at the cap' — it did not; a person did, and the cap is now a signal.",
+    "'A merge receipt is needed for a branch to take its next commit' — a gated task holding its lease until land does the same with no file to forge."
+  ],
+  "next_safe_action": "Record the final review under the three lens names, attest the four documents, gate, commit, gate --stage merge, commit, land --run.",
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}

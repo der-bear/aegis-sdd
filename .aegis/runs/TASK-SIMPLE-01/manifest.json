@@ -1,0 +1,50 @@
+{
+  "acceptance": [],
+  "base_sha": "b430e32e31ea38fbe6dc04063b8d0d3ec32c90c1",
+  "change_kinds": [
+    "code",
+    "docs",
+    "test"
+  ],
+  "created": "2026-09-19T14:30:08",
+  "feature": "simple-reliable",
+  "id": "TASK-SIMPLE-01",
+  "objective": "Simple, reliable, convenient, understandable: delete the guardrails that fought the agent, fix the first hour, state the trust model once",
+  "owns": [
+    ".agents/skills/**",
+    ".github/**",
+    "README.md",
+    "agents/**",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "hooks/**",
+    "interview/**",
+    "schemas/**",
+    "scripts/aegis/aegis_cli/**",
+    "skills/**",
+    "templates/**",
+    "tests/**",
+    "workflows/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-17",
+    "R-18",
+    "R-19",
+    "R-20",
+    "R-21",
+    "R-22",
+    "R-23",
+    "R-24",
+    "R-25",
+    "R-26",
+    "R-27",
+    "R-28",
+    "R-30",
+    "R-31"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "building",
+  "updated": "2026-09-19T14:30:09"
+}
