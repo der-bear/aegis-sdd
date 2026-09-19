@@ -13,8 +13,7 @@
     "scripts/aegis/aegis_cli/**",
     "tests/**",
     "README.md",
-    "docs/ARCHITECTURE.md",
-    ".aegis/specs/simple-reliable/spec.md"
+    "docs/ARCHITECTURE.md"
   ],
   "reads": [],
   "requirements": [

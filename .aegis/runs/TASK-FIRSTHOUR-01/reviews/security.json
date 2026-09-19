@@ -1,8 +1,11 @@
 {
-  "diff_digest": "fd71c976b82012ea",
+  "diff_digest": "72f1d4a5e713638f",
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:29",
+      "disposition_by": "lens-security",
+      "disposition_reason": "lens-security round 2: checks.py:529-537 reads two bytes as bytes, refuses non-files, catches OSError; dangling symlink, directory symlink, mode-0 file and FIFO all return False without raising",
       "first_seen_round": 1,
       "id": "F-6f86b9a8",
       "line": 510,
@@ -17,7 +20,10 @@
       "severity": 4
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:29",
+      "disposition_by": "lens-security",
+      "disposition_reason": "lens-security round 2: flow.py:381 now agrees with the header; the path both promise is refused by task_new — recorded as the correctness sev-2 at scaffold.py:41",
       "first_seen_round": 1,
       "id": "F-24462ad5",
       "line": 381,
@@ -30,14 +36,29 @@
         1
       ],
       "severity": 0
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-ebc603e1",
+      "line": 345,
+      "message": "`init` opens README by name without checking it is a regular file inside the checkout, so a README that is a symlink to a local path outside the repository (a cloned repository can carry one) writes that file's first paragraph into `.aegis/constitution.md`, which is then committed and pushed. Dominated by the stated trust model — the gate already runs the repository's own commands — so an observation, not a control the diff owes.",
+      "minimal_fix": "skip the name when `os.path.islink(path)` or `os.path.realpath(path)` is outside `ctx.root`",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "72f1d4a5e713638f",
+      "requirement": "R-33",
+      "rounds": [
+        2
+      ],
+      "severity": 0
     }
   ],
   "lens": "security",
-  "recorded": "2026-09-20T01:37:38",
+  "recorded": "2026-09-20T02:02:29",
   "reopened": [],
-  "report_tokens": 484,
+  "report_tokens": 399,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-FIRSTHOUR-01",
-  "verdict": "fail"
+  "verdict": "pass"
 }

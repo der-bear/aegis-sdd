@@ -1,8 +1,11 @@
 {
-  "diff_digest": "fd71c976b82012ea",
+  "diff_digest": "72f1d4a5e713638f",
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: scaffold.py:345-349 reads bytes, decodes with errors=\"replace\", catches OSError; test_a_readme_that_predates_utf8 fails on abc8c66",
       "first_seen_round": 1,
       "id": "F-43585f2b",
       "line": 343,
@@ -18,6 +21,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-2dd0b1d1",
+      "line": 1704,
+      "message": "The `cli` step's note says `aegis init` \"keeps every answer\", but a plain re-run on a project initialised with `--yes` drops `accepted_assumptions`, rebuilds the ledger and flips status complete→provisional, so the step after the constitution is \"review the assumption ledger [human]\" (verified: 5 rows, `next` says human). The wait R-33 removed comes back one step later, from the framework's own advice, and `next --run` executes it unattended; the test at :1334 never asserts the status afterwards.",
+      "minimal_fix": "advise `aegis scaffold` (writes only the missing files, leaves answers.json byte-identical — verified) and change the assertion at tests/test_aegis.py:1338, or carry `accepted_assumptions` and `status` over in `initialise` on a non-`--force` re-run and lock it",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "72f1d4a5e713638f",
+      "requirement": "R-33",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: checks.py:1388 warns on the template; flow.py:1702-1705 sends a missing constitution to `aegis init` (its side effect is the new sev-3)",
       "first_seen_round": 1,
       "id": "F-83ef6f18",
       "line": 1374,
@@ -32,7 +53,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: detect.py:429 `^@?`; test_a_quiet_just_recipe_is_a_target fails on abc8c66",
       "first_seen_round": 1,
       "id": "F-871be5af",
       "line": 423,
@@ -48,6 +72,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-286c3fff",
+      "line": 41,
+      "message": "The header (with flow.py:381 and docs/ARCHITECTURE.md:56) promises an agent may amend the constitution \"only through a task\", but `_task_new_locked` at flow.py:142-148 refuses every `.aegis/` glob, so `task new --owns .aegis/constitution.md` is refused (verified). An agent following the sentence either stops for a person or edits outside any lease, where `check trace` skips ownerless `.aegis/` paths silently; R-33's own text carries the wording, so the disagreement is spec versus flow.py:145.",
+      "minimal_fix": "exempt `.aegis/constitution.md` from the framework-state refusal in `_task_new_locked`, or (owner) reword R-33 and the three sentences to \"a person amends it; an agent proposes the change\"",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "72f1d4a5e713638f",
+      "requirement": "R-33",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: detect.py:352-354 pops the inferred keys only when the front door defines `test`; R-34 amended; test fails on abc8c66",
       "first_seen_round": 1,
       "id": "F-d3ce5e92",
       "line": 349,
@@ -62,7 +104,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: scaffold.py:371-383 handles every shape named (HTML block, fence with blank line, shared heading, BOM, lists, quotes, comments), locked by the seven-case test; setext and bold-lead are new findings",
       "first_seen_round": 1,
       "id": "F-ea1a8e7a",
       "line": 347,
@@ -78,6 +123,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-f7d5dea7",
+      "line": 378,
+      "message": "A setext underline is not stripped from the paragraph, so `Widgets\\n=======` drafts the purpose as \"Widgets =======\" (verified), and `Widgets\\n=======\\nWidgets turns…` as \"Widgets ======= Widgets turns…\". Every `README.rst` — a name the function tries — has an underlined title, so each one gets the wrong guess the docstring says costs more than an empty one.",
+      "minimal_fix": "drop lines matching `^(=+|-+|~+)\\s*$` (and `^\\.\\. ` directives) when building `lines`, before the prefix test",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "72f1d4a5e713638f",
+      "requirement": "R-33",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: detect.py:432 JUSTFILE_NAMES includes .justfile; test fails on abc8c66",
       "first_seen_round": 1,
       "id": "F-012fc91d",
       "line": 435,
@@ -92,7 +155,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: README.md:251-253 says CLAUDE.md and the AGENTS.md chain warn, skills and roles fail",
       "first_seen_round": 1,
       "id": "F-15ab23bb",
       "line": 252,
@@ -108,6 +174,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-aacacb0a",
+      "line": 380,
+      "message": "`*` in the skip list conflates a list marker with leading emphasis, so `**Widgets** turns orders into invoices.` is skipped and the next paragraph — verified as `pip install widgets` after its heading is stripped — becomes the purpose. A bold project name is a common first paragraph.",
+      "minimal_fix": "skip a list only on `re.match(r\"[-*+]\\s\", lines[0])`, keeping the bare-prefix test for the other markers",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "72f1d4a5e713638f",
+      "requirement": "R-33",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: __main__.py:299 and :307 no longer say to write it by hand",
       "first_seen_round": 1,
       "id": "F-ac8a20e6",
       "line": 299,
@@ -122,7 +206,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:02:28",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: tests/test_aegis.py:1307 asserts `next` on the drafted file via clear_human_gates(constitution=False)",
       "first_seen_round": 1,
       "id": "F-cefb0953",
       "line": 1305,
@@ -135,14 +222,29 @@
         1
       ],
       "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-dca8d969",
+      "line": 347,
+      "message": "`errors=\"replace\"` keeps init alive, but the test's own cp1251 README drafts a purpose that is 54 U+FFFD out of 64 characters (verified), and the file says it was drafted from the README. Every agent reads a line of replacement characters as the project's purpose until a person notices.",
+      "minimal_fix": "if \"\\ufffd\" in purpose, fall through to the no-README text (or try cp1251 before replacing)",
+      "path": "scripts/aegis/aegis_cli/scaffold.py",
+      "raised_digest": "72f1d4a5e713638f",
+      "requirement": "R-33",
+      "rounds": [
+        2
+      ],
+      "severity": 1
     }
   ],
   "lens": "correctness",
-  "recorded": "2026-09-20T01:37:37",
+  "recorded": "2026-09-20T02:02:28",
   "reopened": [],
-  "report_tokens": 1802,
+  "report_tokens": 1750,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-FIRSTHOUR-01",
   "verdict": "fail"
 }

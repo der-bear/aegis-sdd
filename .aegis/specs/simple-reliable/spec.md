@@ -232,8 +232,11 @@ R-32. **An adopter's own `CLAUDE.md` and `AGENTS.md` chain shall warn past their
 
 R-33. **The loop shall never wait for a constitution.** `init` drafts its purpose from the README's
       first paragraph and says so in the file; the header says a person amends it at any time and an
-      agent only through a task; `next` has no constitution step. The owner: a person should not be
-      needed in that equation at all.
+      agent when a task's objective calls for it, recorded in the handoff (it is `.aegis/` state,
+      outside any lease — `task new` refuses one, so the first wording, "only through a task that
+      leases it", promised a path that did not exist); `next` has no constitution step, and a
+      missing file is redrafted by `aegis scaffold`, which leaves the answers alone. The owner: a
+      person should not be needed in that equation at all.
 
 R-34. **A `justfile` (any of its three spellings, quiet `@recipe:` included) is a front door like a
       `Makefile`, and a front door that defines `test` replaces the inferred commands rather than adding

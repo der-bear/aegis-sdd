@@ -52,9 +52,10 @@ A pure function: the same inputs always produce the same bytes. Three consequenc
 
 **The constitution stopped contradicting itself.** It used to be both "only a human changes
 it" and "materialised at init". Now `init` drafts `constitution.md` once, from the README's
-first paragraph, and never rewrites it; a person amends it at any time and an agent only
-through a task that leases it. It *references* compiled policy; the compiler physically cannot
-write outside `generated/`.
+first paragraph, and never rewrites it; a person amends it at any time and an agent when a
+task's objective calls for it, saying so in the handoff — like every file under `.aegis/` it
+is outside any lease, which is why `task new` refuses one. It *references* compiled policy;
+the compiler physically cannot write outside `generated/`.
 
 **Drift became checkable.** `aegis check drift` recompiles and compares. A difference means
 someone hand-edited generated configuration — after which every later review argues against

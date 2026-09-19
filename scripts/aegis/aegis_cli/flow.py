@@ -378,7 +378,7 @@ def build_packet(ctx: Ctx, task_id: str) -> tuple[str, dict]:
     parts.append(
         "**Boundaries.**\n"
         "- Do not write outside the lease. A needed change elsewhere stops the task and returns a lease-expansion request.\n"
-        "- Do not edit `.aegis/generated/`, registries, or any skill; `.aegis/constitution.md` only when the lease names it.\n"
+        "- Do not edit `.aegis/generated/`, registries, or any skill; `.aegis/constitution.md` only when this task's objective calls for it, and say so in the handoff.\n"
         "- Do not weaken, skip or delete a test to reach green.\n"
         "- Do not improve code outside this task's scope.\n"
         f"- Risk tier {tier['id']} as declared: {tier['description']}. The gate judges the "
@@ -1214,8 +1214,10 @@ def check_handoff(ctx: Ctx, task_id: str) -> Report:
     if failed:
         report.fail("handoff", f"verification reported failures: {', '.join(failed)}", ctx.rel(path))
     manifest = checks.load_task(ctx, task_id)
+    # The same exemption `check trace` applies: every `.aegis/` file is framework state outside any
+    # lease (a task retires a requirement in its own spec), not only its run directory.
     outside = [f for f in data.get("changed_files", [])
-               if not matches_any(f, manifest.get("owns") or []) and not f.startswith(".aegis/runs/")]
+               if not matches_any(f, manifest.get("owns") or []) and not f.startswith(".aegis/")]
     if outside:
         report.fail("handoff", f"wrote outside the lease: {', '.join(outside[:5])}", ctx.rel(path),
                     hint="revert those paths and request a lease expansion")
@@ -1700,9 +1702,14 @@ def next_action(ctx: Ctx) -> dict:
                     "aegis init", "human")
 
     if not os.path.exists(ctx.path("constitution.md")):
-        # Nobody authors it: `init` drafts the purpose from the README and keeps the answers.
-        return step("draft the constitution", "constitution.md is missing", "aegis init", "cli",
-                    note="init writes only what is missing and keeps every answer")
+        # Nobody authors it. `scaffold`, not `init`: a re-run of init rebuilds the ledger and
+        # flips a complete project back to provisional, which is the human step R-33 removed,
+        # one step later. `scaffold` writes only what is missing and leaves answers.json alone.
+        profile = read_json(ctx.path("answers.json"), default={}).get("resolved", {}).get("q.core.profile", {})
+        profile = profile.get("value") if isinstance(profile, dict) else None
+        return step("draft the constitution", "constitution.md is missing",
+                    f"aegis scaffold --profile {profile}" if profile in ("S", "M", "L") else "aegis scaffold",
+                    "cli", note="scaffold writes only the missing files and never touches answers.json")
 
     answers = read_json(ctx.path("answers.json"), default={})
     if answers.get("status") == "provisional" and answers.get("ledger"):

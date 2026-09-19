@@ -39,7 +39,8 @@ Authoritative for: the principles below, and nothing else.
 References only: everything in `.aegis/generated/` (compiled — see `answers.json`).
 
 **Drafted by the agent at `aegis init` from the README; a person amends it at any time, and an
-agent amends it only through a task.** Generated configuration lives in
+agent amends it when a task's objective calls for it and says so in the handoff — like every
+file under `.aegis/`, it is outside any lease.** Generated configuration lives in
 `.aegis/generated/policy.json` and is referenced from here rather than copied, so the two can
 never disagree.
 
@@ -340,14 +341,23 @@ def _constitution_draft(ctx: Ctx) -> str:
     """
     purpose = ""
     for name in ("README.md", "README.rst", "README.txt", "README"):
+        path = os.path.join(ctx.root, name)
+        # A regular file inside the checkout: a README that is a symlink elsewhere would put
+        # that file's first paragraph into a committed constitution.
+        if os.path.islink(path) or not os.path.realpath(path).startswith(os.path.realpath(ctx.root) + os.sep):
+            continue
         try:
-            with open(os.path.join(ctx.root, name), "rb") as fh:
+            with open(path, "rb") as fh:
                 # A README that predates UTF-8 (cp1251, latin-1) is still a README; decoding it
                 # strictly made `init` — the first command of the first hour — exit as a bug.
+                # What cannot be decoded is not a purpose either: a line of U+FFFD would be read
+                # as the project's purpose by every agent until a person noticed.
                 text = fh.read().decode("utf-8", errors="replace")
         except OSError:
             continue
         purpose = _readme_purpose(text)
+        if "\ufffd" in purpose:
+            purpose = ""
         if purpose:
             break
     if not purpose:
@@ -373,12 +383,18 @@ def _readme_purpose(text: str) -> str:
     text = re.sub(r"(```|~~~).*?\1", "", text, flags=re.S)
     text = re.split(r"```|~~~", text, maxsplit=1)[0]
     for paragraph in re.split(r"\n\s*\n", text):
-        lines = [line.strip() for line in paragraph.splitlines()
-                 if line.strip() and not line.lstrip().startswith("#")]
+        # Headings in both spellings (`# Title`, and `Title` over a rule of `=`/`-`/`~`, which
+        # is every README.rst), and rst directives, are not prose.
+        raw = paragraph.splitlines()
+        rule = [bool(re.fullmatch(r"\s*(=+|-+|~+)\s*", line)) for line in raw] + [False]
+        lines = [line.strip() for i, line in enumerate(raw)
+                 if line.strip() and not rule[i] and not rule[i + 1]  # the title over a rule, and the rule
+                 and not line.lstrip().startswith(("#", ".. "))]
         if not lines:
             continue
-        if lines[0].startswith(("|", "-", "*", "+", "[", "!", "<", ">", "`")) \
-                or re.match(r"\d+[.)]\s", lines[0]):
+        # A list item is a marker and a space; `**Bold name** does …` is prose.
+        if lines[0].startswith(("|", "[", "!", "<", ">", "`")) \
+                or re.match(r"([-*+]|\d+[.)])\s", lines[0]):
             continue
         return " ".join(" ".join(lines).split())
     return ""
@@ -587,7 +603,7 @@ def scaffold(ctx: Ctx, profile: str, doc_profile: str, force: bool = False) -> l
             # no idea Aegis was installed. Append a pointer, keep their content.
             if pointer:
                 current = read_text(path, default="")
-                if "Aegis" not in current:
+                if "aegis" not in current.lower():
                     write_text(path, current.rstrip("\n") + "\n\n" + pointer)
                     created.append(f"{rel} (pointer appended)")
             return

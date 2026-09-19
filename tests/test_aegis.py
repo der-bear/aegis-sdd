@@ -1315,7 +1315,9 @@ class TheSecondProjectsFirstHour(ProjectFixture):
             fh.write("# Виджеты\n\nВиджеты превращают заказы в счета.\n".encode("cp1251"))
         out = run(["init", "--profile", "S", "--yes", "--force"], self.dir)
         self.assertEqual(out.returncode, 0, out.stderr)
-        self.assertNotIn("<one paragraph", open(os.path.join(self.dir, ".aegis/constitution.md")).read())
+        text = open(os.path.join(self.dir, ".aegis/constitution.md")).read()
+        self.assertNotIn("<one paragraph", text)
+        self.assertNotIn("\ufffd", text)  # a line of replacement characters is not a purpose
 
     def test_the_purpose_is_prose_not_the_first_thing_in_the_readme(self):
         from aegis_cli.scaffold import _readme_purpose
@@ -1327,17 +1329,58 @@ class TheSecondProjectsFirstHour(ProjectFixture):
             "1. install\n2. run\n\n> a quote\n\n<!-- hidden -->\n\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
             "# Widgets\n\n```\nan unclosed fence\n\nlooks like prose\n": "",
             "# Widgets\n\n## Install\n": "",
+            "Widgets\n=======\n\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
+            "Widgets\n-------\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
+            ".. image:: badge.svg\n\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
+            "# Widgets\n\n**Widgets** turns orders into invoices.\n\n    pip install widgets\n": "**Widgets** turns orders into invoices.",
+            "# Widgets\n\n* one\n* two\n\nWidgets turns orders into invoices.\n": "Widgets turns orders into invoices.",
         }
         for text, want in cases.items():
             self.assertEqual(_readme_purpose(text), want, repr(text))
 
     def test_a_missing_constitution_is_redrafted_not_authored(self):
+        # `aegis init` would redraft it too — and rebuild the ledger, flipping a complete project
+        # back to provisional: the human step R-33 removed, one step later.
         self.clear_human_gates(constitution=False)
         os.remove(os.path.join(self.dir, ".aegis", "constitution.md"))
+        answers_before = open(os.path.join(self.dir, ".aegis", "answers.json")).read()
         step = flow.next_action(core.Ctx(self.dir))
-        self.assertEqual((step["do"], step["command"], step["who"]), ("draft the constitution", "aegis init", "cli"), step)
-        self.assertEqual(run(["init"], self.dir).returncode, 0)
+        self.assertEqual((step["do"], step["who"]), ("draft the constitution", "cli"), step)
+        self.assertTrue(step["command"].startswith("aegis scaffold"), step)
+        self.assertEqual(run(step["command"].split()[1:], self.dir).returncode, 0)
         self.assertTrue(os.path.exists(os.path.join(self.dir, ".aegis", "constitution.md")))
+        self.assertEqual(open(os.path.join(self.dir, ".aegis", "answers.json")).read(), answers_before)
+        self.assertNotEqual(flow.next_action(core.Ctx(self.dir))["who"], "human")
+
+    def test_a_rerun_appends_the_pointer_once(self):
+        # The pointer itself carries no capital "Aegis", so the test that guarded the append let
+        # every re-run add another copy to the adopter's CLAUDE.md.
+        self.write("CLAUDE.md", "# Theirs\n\nTheir rules.\n")
+        for _ in range(3):
+            self.assertEqual(run(["scaffold", "--profile", "S"], self.dir).returncode, 0)
+        self.assertEqual(open(os.path.join(self.dir, "CLAUDE.md")).read().count("@.aegis/generated/rules.md"), 1)
+
+    def test_a_readme_outside_the_checkout_is_not_a_purpose(self):
+        from aegis_cli.scaffold import _constitution_draft
+        outside = tempfile.mkdtemp(prefix="aegis-outside-")
+        with open(os.path.join(outside, "secret.md"), "w") as fh:
+            fh.write("The first paragraph of a file outside the repository.\n")
+        os.remove(os.path.join(self.dir, "README.md")) if os.path.exists(os.path.join(self.dir, "README.md")) else None
+        os.symlink(os.path.join(outside, "secret.md"), os.path.join(self.dir, "README.md"))
+        self.assertNotIn("outside the repository", _constitution_draft(core.Ctx(self.dir)))
+
+    def test_a_spec_edit_is_inside_the_handoffs_lease_like_trace_says(self):
+        # A task retires a requirement in its own spec; trace exempts `.aegis/`, and the handoff
+        # check exempted only `.aegis/runs/`, so the two disagreed on the same file.
+        self.make_task()
+        self.write(".aegis/runs/T-1/handoff.json", json.dumps({
+            "task": "T-1", "agent": "builder", "summary": "done",
+            "changed_files": ["src/orders/a.py", ".aegis/specs/orders/spec.md"],
+            "verification": [{"command": "true", "result": "pass"}],
+            "deviations": [], "open_questions": [], "new_dependencies": [],
+            "invalidated_assumptions": [], "next_safe_action": "gate"}))
+        report = flow.check_handoff(core.Ctx(self.dir), "T-1")
+        self.assertFalse(any("outside the lease" in f.message for f in report.findings), [f.render() for f in report.findings])
 
     def test_an_older_template_constitution_warns_and_never_gates(self):
         # A project initialised before the draft keeps its `<one paragraph` template; the task
