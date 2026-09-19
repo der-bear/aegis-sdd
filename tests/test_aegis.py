@@ -1209,23 +1209,34 @@ class LandRefusesBeforeItRecords(ProjectFixture):
                                         capture_output=True, text=True).stdout.strip(), "")
 
     def test_the_docs_step_judges_as_the_merge_gate_does(self):
-        # A waived document must not keep `next` off `land` while `land` itself passes.
+        # A waived document must not keep `next` off `land` while `land` itself passes. The
+        # first version of this lock passed on the unfixed code: committing the waiver moved
+        # the digest, the receipt went stale, and the docs step was never reached at all. So
+        # after each commit the lenses are re-recorded and the task re-gated, and the assertion
+        # is the command `next` gives, not the absence of a word.
         ctx = _green_merge(self)
-        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
-        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "gated"], check=True)
-        self.write("src/orders/a.py", "A = 1\n")  # unchanged content; tree stays clean
         registry = os.path.join(self.dir, ".aegis/registry/diagrams.json")
         entries = json.load(open(registry)); entries[0]["verified_source_digest"] = "stale"
         json.dump(entries, open(registry, "w"))
-        subprocess.run(["git", "-C", self.dir, "commit", "-qam", "stale the diagram"], check=True)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "gated, diagram stale"], check=True)
         step = flow.next_action(ctx)
         self.assertIn("documentation", step["do"], step)
         self.write(".aegis/waivers.json", json.dumps([{
-            "id": "W-doc", "check": "docs", "scope": ["docs/API.md"], "reason": "known stale",
+            "id": "W-doc", "check": "docs", "scope": ["docs/API.md"],
+            "reason": "the API reference is known stale for this release",
             "owner": "Test Owner", "expires": "2099-01-01"}]))
-        subprocess.run(["git", "-C", self.dir, "commit", "-qam", "waive it"], check=True)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "waive it"], check=True)
+        for lens in json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)["lenses"]:
+            self.assertEqual(self.record("T-1", {"lens": lens, "verdict": "pass", "findings": []}).returncode, 0)
+        report = flow.gate(ctx, "task", task_id="T-1", run_commands=True)
+        self.assertFalse(report.failed, [f.render() for f in report.findings])
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "re-gated"], check=True)
         step = flow.next_action(ctx)
-        self.assertNotIn("documentation", step["do"], step)
+        self.assertEqual(step["command"], "aegis land", step)
+
 
 class ACommitBeforeTheClaimIsReviewedNotRefused(ProjectFixture):
     """A task's base is where the branch left the mainline, so anything committed on the branch

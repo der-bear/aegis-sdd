@@ -1,8 +1,11 @@
 {
-  "diff_digest": "c59f227c4488308a",
+  "diff_digest": "9c0b73f196de33b9",
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:54:39",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 3: README.md:112: a write outside one is caught by check trace at the merge boundary",
       "first_seen_round": 2,
       "id": "F-22b740b7",
       "line": 112,
@@ -13,6 +16,21 @@
       "requirement": "R-22",
       "rounds": [
         2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-59a66c64",
+      "line": 1228,
+      "message": "`test_the_docs_step_judges_as_the_merge_gate_does` passes unchanged on 3fd1810^: committing `.aegis/waivers.json` moves the digest, the receipt goes invalid, `gated` empties and the docs step is never reached. Its waiver's reason is 11 characters against the schema's 12, so with a current receipt `apply_waivers` fails closed — the lock does not fail on the behaviour it forbids.",
+      "minimal_fix": "give the reason 12+ characters, re-record the lenses and re-run the task gate after the waiver commit, then assert step[\"command\"] == \"aegis land\"",
+      "path": "tests/test_aegis.py",
+      "raised_digest": "9c0b73f196de33b9",
+      "requirement": "R-31",
+      "rounds": [
+        3
       ],
       "severity": 2
     },
@@ -71,7 +89,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:54:39",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 3: flow.py:577-582 the docstring is the first statement",
       "first_seen_round": 2,
       "id": "F-1aeac90d",
       "line": 579,
@@ -158,7 +179,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:54:39",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 3: flow.py:1546-1548: no receipt named; task status refuses merged by hand",
       "first_seen_round": 1,
       "id": "F-608c7ffa",
       "line": 1580,
@@ -174,7 +198,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:54:39",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 3: .aegis/specs/simple-reliable/architecture.md:3-5 preamble names the four deleted symbols",
       "first_seen_round": 2,
       "id": "F-86bd34c0",
       "line": 9,
@@ -225,7 +252,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:54:39",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 3: flow.py:548 fallback tier carries no review_rounds",
       "first_seen_round": 2,
       "id": "F-a4c05eb1",
       "line": 548,
@@ -295,11 +325,11 @@
     }
   ],
   "lens": "design",
-  "recorded": "2026-09-19T20:39:37",
+  "recorded": "2026-09-19T20:54:39",
   "reopened": [],
-  "report_tokens": 1300,
+  "report_tokens": 1133,
   "reviewer": "fable-5.1",
-  "round": 2,
+  "round": 3,
   "task": "TASK-SIMPLE-01",
   "verdict": "pass-with-notes"
 }

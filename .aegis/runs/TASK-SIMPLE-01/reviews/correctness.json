@@ -1,5 +1,5 @@
 {
-  "diff_digest": "c59f227c4488308a",
+  "diff_digest": "9c0b73f196de33b9",
   "findings": [
     {
       "disposition": "fixed",
@@ -20,7 +20,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:54:38",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: flow.py:1636-1643 refuses on git worktree list before _set_status; driven with main in a second worktree: exit 2, status gated, tree clean",
       "first_seen_round": 2,
       "id": "F-f8b17f0f",
       "line": 1645,
@@ -71,7 +74,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:54:38",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: flow.py:1753-1755 wraps check_docs in apply_waivers; driven with a valid docs waiver and a current receipt, next says aegis land",
       "first_seen_round": 2,
       "id": "F-6eda474f",
       "line": 1746,
@@ -159,11 +165,11 @@
     }
   ],
   "lens": "correctness",
-  "recorded": "2026-09-19T20:39:37",
+  "recorded": "2026-09-19T20:54:38",
   "reopened": [],
-  "report_tokens": 772,
+  "report_tokens": 532,
   "reviewer": "fable-5.1",
-  "round": 2,
+  "round": 3,
   "task": "TASK-SIMPLE-01",
-  "verdict": "fail"
+  "verdict": "pass"
 }
