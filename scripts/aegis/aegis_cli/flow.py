@@ -33,6 +33,7 @@ from .core import (
     globs_overlap,
     head_sha,
     default_base,
+    require_base,
     human_tokens,
     in_review_scope,
     matches_any,
@@ -410,7 +411,8 @@ def build_packet(ctx: Ctx, task_id: str) -> tuple[str, dict]:
         "- Do not edit `.aegis/generated/`, `.aegis/constitution.md`, registries, or any skill.\n"
         "- Do not weaken, skip or delete a test to reach green.\n"
         "- Do not improve code outside this task's scope.\n"
-        f"- Risk tier {tier['id']}: {tier['description']}.\n"
+        f"- Risk tier {tier['id']} as declared: {tier['description']}. The gate judges the "
+        f"effective tier from the diff, so a route or an authorisation change raises it.\n"
     )
     parts.append(
         f"**Handoff.** Before returning, write `.aegis/runs/{task_id}/handoff.json`:\n"
@@ -461,6 +463,11 @@ def task_diff(ctx: Ctx, task_id: str) -> str:
             continue
         if rel in untracked:
             full = os.path.join(ctx.root, rel)
+            if os.path.islink(full):
+                # The digest hashes the link's target; the diff shows the same, rather than
+                # inlining the target's bytes as if the path were a regular file.
+                parts.append(f"--- /dev/null\n+++ b/{rel}\n@@ -0,0 +1 @@\n+symlink -> {os.readlink(full)}\n")
+                continue
             if not os.path.isfile(full):
                 continue
             if checks._is_binary(full):
@@ -597,6 +604,9 @@ def diff_text(ctx: Ctx, base: str | None) -> str:
 
 
 def detect_change_kinds(ctx: Ctx, scope: list[str], base: str | None = None) -> list[str]:
+    # The change, as the review-scope filter defines it. `.aegis/runs/**` is bookkeeping, and
+    # a handoff whose `agent` field said "session" raised a documentation change to tier A.
+    scope = [rel for rel in scope if in_review_scope(rel)]
     """Conservative detectors over the diff, unioned with the task's declared kinds.
 
     Declared kinds alone are a self-report; detectors alone miss intent. Their union is what
@@ -1164,7 +1174,12 @@ def check_reviews(ctx: Ctx, task_id: str) -> Report:
                 report.fail("reviews", f"{lens}: reviewed by {reviewer}, which also built this task", None,
                             hint="tier A requires a different context, ideally a different model")
         if record.get("round", 0) > max_rounds:
-            report.fail("reviews", f"{lens}: {record['round']} rounds exceeds the limit of {max_rounds}",
+            # A signal, not a wall. Abandoning and re-issuing at the cap made every successor
+            # larger than the task it replaced, three times in four cycles; the number is
+            # worth knowing and worth stepping back on, not worth losing the work over.
+            report.warn("reviews", f"{lens}: {record['round']} rounds, past the {max_rounds} the "
+                        f"policy expects — a finding surviving this many rounds usually means the "
+                        f"mechanism is wrong; simplify before patching again",
                         hint="escalate to a human with what was tried; do not start another round")
         for finding in record.get("findings", []):
             if finding.get("severity", 0) >= 3 and finding.get("disposition") in ("open", None):
@@ -1535,7 +1550,7 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
     if stage == "merge":
         # Union, not preference: staging one file made every other candidate change
         # invisible to trace, requirements, documentation and review checks.
-        scope = sorted(set(staged_files(ctx)) | set(changed_files(ctx, default_base(ctx))))
+        scope = sorted(set(staged_files(ctx)) | set(changed_files(ctx, require_base(ctx))))
         report.note(f"{len(scope)} files in the candidate diff")
         report.extend(checks.check_structure(ctx))
         report.extend(checks.check_pointers(ctx))
@@ -1640,7 +1655,13 @@ def land(ctx: Ctx, run: bool = False) -> list[str]:
     default = _default_branch(ctx)
     current = git(ctx, "branch", "--show-current").strip()
     if current == default:
-        return [f"already on {default}; nothing to land"]
+        # Working on the mainline itself: the work is already where landing would put it.
+        # Without this a task committed here stayed `gated` and `next` said "merge" for ever.
+        if git(ctx, "status", "--porcelain").strip():
+            raise AegisError("the working tree is not clean; commit before landing")
+        for task_id in gated:
+            _set_status(ctx, task_id, "merged")
+        return [f"on {default} already: {', '.join(gated)} marked merged — commit .aegis/runs to record it"]
     tip = git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{default}").strip()
     if tip and not is_ancestor(ctx, tip, head):
         raise AegisError(f"{default} has commits HEAD does not; rebase or merge them first")
@@ -1675,7 +1696,8 @@ def _land_pending(ctx: Ctx) -> bool:
             return False
         default = _default_branch(ctx)
         tip = git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{default}").strip()
-        if not tip or tip == head:
+        current = git(ctx, "branch", "--show-current").strip()
+        if not tip or (tip == head and current != default):
             return False
         return any(t.get("status") == "gated" for t in checks.active_tasks(ctx))
     except AegisError:
@@ -1715,18 +1737,39 @@ def next_action(ctx: Ctx) -> dict:
         return step("write the constitution", "it is still the scaffolded template",
                     "$EDITOR .aegis/constitution.md", "human")
 
+    # Who a step needs is derived from one rule, stated in the build protocol: a person is
+    # needed for an irreversible outward-facing act, for a change to what the framework
+    # measures work against that a person owns, for a question a proposed ADR records, for a
+    # tool permission the runner refuses, and for an escalation. Everything else the agent
+    # decides, records and continues. Ten case-by-case `human` marks used to live here.
+    question = _open_adr_question(ctx)
+    if question:
+        return step("answer the question the ADR records", question[1], f"$EDITOR {question[0]}",
+                    "human", note="an ADR with `**Status:** proposed` and a `**Blocks:**` line "
+                                  "stops the loop until a person edits one of the two")
+
     tasks = checks.active_tasks(ctx)
     open_tasks = [t for t in tasks if t.get("status") not in ("merged", "abandoned")]
+    gated = [t for t in tasks if t.get("status") == "gated"]
+    building = [t for t in open_tasks if t.get("status") not in ("planned", "gated")]
 
-    if _land_pending(ctx):
-        # Before the backlog, not after it: a merge that has not landed is unfinished work,
-        # and with planned tasks waiting the step was never reached at all — the silence
-        # retro 0002 asked `next` to break.
-        return step("land the branch", "a merge receipt sits at or before HEAD and the "
-                    "default branch is still behind it", "aegis land", "human",
-                    note="`aegis land` prints the move; `aegis land --run` makes it, after "
-                         "re-running the full gate at HEAD — the receipt was earned on an "
-                         "earlier commit, so HEAD itself is what the gate must pass")
+    # Land between tasks: a gated task is committed and landed before the next one starts,
+    # and only when nothing is mid-build — a building task's uncommitted work is not a
+    # candidate, and the merge gate would refuse it for having no receipt anyway.
+    if gated and not building and git(ctx, "status", "--porcelain").strip():
+        # The step that stands between a gated task and a landed branch. Without it the loop
+        # went from a green merge gate straight to "plan the next feature", because landing
+        # needs a commit and nothing had said so.
+        return step("commit the candidate", f"{', '.join(t['id'] for t in gated)} gated and the "
+                    "tree is dirty; landing needs a commit",
+                    "git add -A && git commit", note="the message is yours; the pre-commit hook "
+                                                     "checks drift and structure and nothing else")
+
+    if gated and not building and _land_pending(ctx):
+        return step("land the branch", "a gated task is committed and the default branch is "
+                    "behind it", "aegis land --run", "cli",
+                    note="re-runs the full merge gate at HEAD, moves the ref as a fast-forward, "
+                         "and marks the gated tasks merged")
 
     if not open_tasks:
         specs = ctx.path("specs")
@@ -1787,17 +1830,11 @@ def next_action(ctx: Ctx) -> dict:
         record = read_json(os.path.join(reviews, f"{lens}.json"))
         rounds = record.get("round", 0)
         if record.get("diff_digest") != plan["diff_digest"]:
-            if rounds >= cap:
-                # The round that would fix this is the one the cap forbids. Advising it taught
-                # the loop to spend past the cap; the cap exists to force a simpler mechanism.
-                return step(f"escalate {task_id}",
-                            f"{lens}: the code moved after round {rounds}, and round {rounds + 1} "
-                            f"would exceed the cap of {cap}",
-                            None, "human",
-                            note="simplify the mechanism and re-issue it as a new task with a fresh "
-                                 "budget, or a person raises `refinement_rounds` in policy")
             return step(f"re-run lens-{lens}", "the code moved after that review, so it no longer describes this change",
-                        f"aegis lens plan {task_id}", note=f"dispatch lens-{lens} again")
+                        f"aegis lens plan {task_id}", note=f"dispatch lens-{lens} again"
+                        + (f" — round {rounds + 1}, past the {cap} the policy expects: a finding "
+                           f"surviving this many rounds usually means the mechanism is wrong, so "
+                           f"simplify before patching again" if rounds >= cap else ""))
         builder = (read_json(os.path.join(directory, "handoff.json"), default={}).get("agent") or "")
         came_back = [f["id"] for f in record.get("findings", [])
                      if f.get("reopened_in") and not _closed_by_a_person(f, builder, lens)]
@@ -1807,18 +1844,20 @@ def next_action(ctx: Ctx) -> dict:
                         None, "human",
                         note=f"when it is simplified and re-reviewed, a person records `aegis lens "
                              f"disposition {task_id} {came_back[0]} fixed --reason … --by <name>`")
-        if rounds > cap:
-            return step(f"escalate {task_id}", f"{lens} has exceeded the refinement round limit",
-                        None, "human")
         for finding in record.get("findings", []):
             if finding.get("severity", 0) >= 3 and finding.get("disposition") in (None, "open"):
                 # Fix the code, then re-review. Advising the disposition command first taught
                 # the loop that the cheapest route to green was to declare the finding fixed.
+                # At the cap the advice is the same and the note says what the number means.
                 return step(f"fix {finding['id']} in the code", f"{lens}: {finding['message'][:80]}",
                             None,
                             note=f"{finding.get('minimal_fix') or 'apply the fix'}, then re-run "
                                  f"lens-{lens} and record it; dismissing it instead — false-positive, "
-                                 f"waived or deferred — is a person's decision, not the loop's")
+                                 f"waived or deferred — is a person's decision, not the loop's"
+                                 + (f". This is round {rounds} of the {cap} the policy expects: a "
+                                    f"finding that survives this many rounds usually means the "
+                                    f"mechanism is wrong — simplify before patching again"
+                                    if rounds >= cap else ""))
         for finding in record.get("findings", []):
             problems = _dismissal_problems(ctx, finding, builder, lens)
             if problems:
@@ -1841,7 +1880,38 @@ def next_action(ctx: Ctx) -> dict:
                     "the manifest says gated but no passing gate wrote a receipt for this code",
                     f"aegis gate --stage task --task {task_id}", "cli")
 
-    return step("merge the branch", f"{task_id} is gated", "aegis gate --stage merge", "human")
+    # The doc profile fails the merge gate once code is in scope; say so here rather than
+    # letting the hook say it on push with a reason this loop never mentioned.
+    scope = changed_files(ctx, require_base(ctx))
+    docs = [f for f in checks.check_docs(ctx, scope).findings if f.severity == "fail"]
+    if docs:
+        return step("write the documentation the profile requires", docs[0].message, None,
+                    note=docs[0].hint or "then `aegis docs attest <id> --by <who>`")
+
+    return step("merge the branch", f"{task_id} is gated", "aegis gate --stage merge", "cli",
+                note="a check; it writes nothing. Then commit, then `aegis land --run`")
+
+
+def _open_adr_question(ctx: Ctx) -> tuple[str, str] | None:
+    """A `proposed` ADR that says what it blocks stops the loop until a person edits it.
+
+    Convention, not schema: `- **Status:** proposed` and a line beginning `- **Blocks:**`.
+    After TASK-STABLE-01 was abandoned the loop said "build the next task" past a decision
+    that forbade exactly that; an ADR with no `Blocks:` line blocks nothing.
+    """
+    directory = ctx.path("decisions")
+    if not os.path.isdir(directory):
+        return None
+    for name in sorted(os.listdir(directory)):
+        if not name.endswith(".md"):
+            continue
+        text = read_text(os.path.join(directory, name), default="")
+        if not re.search(r"^\s*-\s*\*\*Status:\*\*\s*proposed", text, re.M):
+            continue
+        blocks = re.search(r"^\s*-\s*\*\*Blocks:\*\*\s*(.+)$", text, re.M)
+        if blocks:
+            return (os.path.join(".aegis", "decisions", name), blocks.group(1).strip())
+    return None
 
 
 def metrics(ctx: Ctx) -> dict:

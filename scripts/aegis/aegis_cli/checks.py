@@ -634,7 +634,12 @@ def check_trace(ctx: Ctx, scope: list[str], task_id: str | None = None) -> Repor
     # configuration are product changes: exempting them let a dependency bump or a workflow
     # edit land with no task and no security review.
     shared = list(framework_owned)
-    considered = [f for f in scope if not matches_any(f, exclude)]
+    # An explicit lease beats an inferred default: `**/build/**` in the generated paths
+    # excluded `skills/build/SKILL.md` — a source file in a directory named build — from
+    # attribution entirely, and every adopter with a `build/` or `dist/` source tree inherits
+    # that. Held leases only: a planned row naming `build/**` must not lift the exclusion.
+    held = [g for t in tasks if t.get("status") in HOLDING for g in (t.get("owns") or [])]
+    considered = [f for f in scope if matches_any(f, held) or not matches_any(f, exclude)]
 
     owners: dict[str, list[str]] = {}
     for task in tasks:

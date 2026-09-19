@@ -142,6 +142,16 @@
       "autonomy": "always-ask",
       "severity": "blocking",
       "rationale": "Copied into the constitution and enforced by the write-lease check. Empty is a valid answer for a greenfield project."
+    },
+    {
+      "id": "q.core.mainline",
+      "ask": "Which branch does work land on, if not main or master?",
+      "kind": "free",
+      "default": null,
+      "writes": "policy.mainline",
+      "autonomy": "auto-default",
+      "severity": "optional",
+      "rationale": "The merge gate diffs a branch against where it left the mainline. Aegis tries origin/HEAD, origin/main, origin/master, main and master; a project on develop or trunk names it here once, and nothing else changes."
     }
   ]
 }

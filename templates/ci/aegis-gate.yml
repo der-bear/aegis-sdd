@@ -1,8 +1,9 @@
 # Copy to .github/workflows/ to make the merge invariant a property of the repository
 # rather than something every agent has to cooperate with.
 #
-# The commit hook is per-machine and per-agent; this runs on the candidate merge commit no
-# matter who produced it, which is the only place the invariant actually holds.
+# The pre-commit hook checks drift and structure; the pre-push hook runs the merge gate, and
+# `git push --no-verify` skips it. This runs on the candidate no matter who produced it or how,
+# which is the only place the invariant actually holds.
 name: aegis gate
 
 on:

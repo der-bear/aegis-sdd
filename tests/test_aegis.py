@@ -270,8 +270,14 @@ class NextNeverContradictsTheGate(ProjectFixture):
         manifest = json.load(open(path))
         manifest["status"] = "gated"
         json.dump(manifest, open(path, "w"))
+        # Land between tasks: with T-A gated and nothing building, the loop commits and lands
+        # before it starts T-B — two fast steps, not a stall. With T-B building, T-B comes
+        # first: its uncommitted work is not a candidate, and the gate would refuse it.
         advice = run(["next"], self.dir).stdout
-        self.assertIn("T-B", advice, "a gated task must not stall an unbuilt one")
+        self.assertIn("commit", advice)
+        flow.task_status(core.Ctx(self.dir), "T-B", "building")
+        advice = run(["next"], self.dir).stdout
+        self.assertIn("T-B", advice, "a gated task must not stall a building one")
 
 
 class ChosenPoliciesAreEnforced(ProjectFixture):
@@ -963,7 +969,10 @@ class SizeBudgetsWarn(ProjectFixture):
 class NextEscalatesAtTheCap(ProjectFixture):
     """R-2: at the cap the loop stops, rather than advising the round the cap forbids."""
 
-    def test_a_stale_review_at_the_cap_is_a_human_step(self):
+    def test_a_stale_review_at_the_cap_is_a_signal_not_a_wall(self):
+        # The cap used to be a wall: abandon and re-issue, which made every successor larger
+        # than the task it replaced, three times in four cycles. It is a signal now — the step
+        # is the same re-run, and the note says what the number means.
         self.make_task()
         _handoff(self)
         lenses = None
@@ -975,9 +984,9 @@ class NextEscalatesAtTheCap(ProjectFixture):
                 self.assertEqual(out.returncode, 0, out.stderr)
         self.write("src/orders/a.py", "A = 4\n")  # the code moved after round 3
         step = flow.next_action(core.Ctx(self.dir))
-        self.assertEqual(step["who"], "human", step)
-        self.assertIn("exceed", step["why"])
-        self.assertNotIn("re-run", step["do"])
+        self.assertNotEqual(step["who"], "human", step)
+        self.assertIn("re-run", step["do"])
+        self.assertIn("simplify", step["note"], step)
 
 
 class TheGitHookIsTheOnlyBarrier(unittest.TestCase):
@@ -1106,9 +1115,79 @@ class AGatedTaskOwnsItsFilesUntilItLands(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "landed work"], check=True)
         run(["task", "new", "T-LATER", "--feature", "orders", "--objective", "later",
              "--owns", "src/later/**", "--requirements", "R-1", "--kinds", "code"], self.dir)
+        # The new manifest is uncommitted, so the loop says commit first — a checkpoint is one
+        # command now — and then land, as `cli`, before the backlog is touched.
         step = flow.next_action(core.Ctx(self.dir))
-        self.assertEqual(step["command"], "aegis land", step)
+        self.assertIn("commit", step["do"], step)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "backlog"], check=True)
+        step = flow.next_action(core.Ctx(self.dir))
+        self.assertEqual(step["command"], "aegis land --run", step)
+        self.assertEqual(step["who"], "cli", step)
 
+
+class TheFirstHour(ProjectFixture):
+    """What a stranger hits in their first hour, each reproduced by an independent review that
+    drove a throwaway repository through init → task → gate → merge → land."""
+
+    def _default(self):
+        return subprocess.run(["git", "-C", self.dir, "branch", "--show-current"],
+                              capture_output=True, text=True).stdout.strip()
+
+    def test_a_mainline_not_called_main_is_named_not_guessed(self):
+        # On `develop` with no `main`, the merge scope silently became the whole repository —
+        # 48 files for three changed — and every commit was refused with no cause named.
+        subprocess.run(["git", "-C", self.dir, "branch", "-m", self._default(), "develop"], check=True)
+        self.make_task()
+        out = run(["gate", "--stage", "merge", "--no-run"], self.dir)
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("no mainline ref", out.stderr)
+        self.assertIn("q.core.mainline", out.stderr)
+        self.assertEqual(run(["answer", "q.core.mainline", '"develop"'], self.dir).returncode, 0)
+        out = run(["gate", "--stage", "merge", "--no-run"], self.dir)
+        self.assertNotIn("no mainline ref", out.stderr)
+
+    def test_the_frameworks_own_bookkeeping_does_not_raise_the_tier(self):
+        # `\bsession\b` in a handoff's `agent` field made a documentation change tier A.
+        self.make_task()
+        run(["task", "claim", "T-1"], self.dir)
+        self.write("docs/notes.md", "# notes\n")
+        self.write(".aegis/runs/T-1/handoff.json", json.dumps({
+            "task": "T-1", "agent": "claude session (orchestrator and builder)",
+            "summary": "docs", "changed_files": ["docs/notes.md"],
+            "verification": [{"command": "true", "result": "pass"}]}))
+        ctx = core.Ctx(self.dir)
+        kinds = flow.detect_change_kinds(ctx, core.changed_files(ctx, checks.load_task(ctx, "T-1")["base_sha"]))
+        self.assertNotIn("auth", kinds, kinds)
+        self.assertIn("as declared", run(["packet", "T-1"], self.dir).stdout)
+
+    def test_a_held_lease_beats_the_generated_path_default(self):
+        # `**/build/**` in generated_paths excluded `skills/build/SKILL.md` from attribution.
+        self.make_task(owns="src/build/**")
+        run(["task", "claim", "T-1"], self.dir)
+        self.write("src/build/x.py", "X = 1\n")
+        report = checks.check_trace(core.Ctx(self.dir), ["src/build/x.py"], "T-1")
+        self.assertFalse(report.failed, [f.render() for f in report.findings])
+        self.assertFalse(any("owns none" in f.message for f in report.findings))
+        # A planned row naming the path does not lift the exclusion.
+        run(["task", "new", "T-2", "--feature", "orders", "--objective", "later",
+             "--owns", "src/dist/**", "--requirements", "R-1", "--kinds", "code"], self.dir)
+        self.write("src/dist/bundle.js", "x\n")
+        report = checks.check_trace(core.Ctx(self.dir), ["src/dist/bundle.js"], None)
+        self.assertFalse(any("belongs to no task" in f.message for f in report.findings))
+
+    def test_a_task_committed_on_the_mainline_lands_in_place(self):
+        # Solo on main: commit before the merge gate left the task `gated` for ever and `next`
+        # saying "merge" on every run.
+        _green_merge(self)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "on main"], check=True)
+        step = flow.next_action(core.Ctx(self.dir))
+        self.assertEqual(step["command"], "aegis land --run", step)
+        out = run(["land", "--run"], self.dir)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("marked merged", out.stdout)
+        self.assertEqual(checks.load_task(core.Ctx(self.dir), "T-1")["status"], "merged")
 
 class ACommitBeforeTheClaimIsReviewedNotRefused(ProjectFixture):
     """A task's base is where the branch left the mainline, so anything committed on the branch

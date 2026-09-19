@@ -582,18 +582,44 @@ def merge_base(ctx: Ctx, ref: str) -> str | None:
     return out or None
 
 
-def default_base(ctx: Ctx) -> str | None:
-    """Where this branch left the mainline, or None when no mainline ref exists.
+MAINLINE_REFS = ("origin/HEAD", "origin/main", "origin/master", "main", "master")
 
-    The merge stage's scope and the base-agreement check in `trace` both need one answer to
-    "what did this branch inherit", so it lives beside `merge_base` rather than in the flow
-    that happened to need it first.
+
+def default_base(ctx: Ctx) -> str | None:
+    """Where this branch left the mainline, or None when no mainline ref resolves.
+
+    `policy.mainline` first, when a project named its branch; then the remote's default, the
+    two common names on the remote, and the two common names locally. `origin/master` is in
+    the list because `git remote add`, unlike `git clone`, leaves no `origin/HEAD` symref, and
+    a master-default remote then rooted at the *local* `master`.
     """
-    for ref in ("origin/HEAD", "origin/main", "main", "master"):
+    refs = list(MAINLINE_REFS)
+    named = (read_json(os.path.join(ctx.root, ".aegis", "generated", "policy.json"),
+                       default={}) or {}).get("mainline")
+    if named:
+        refs = [f"origin/{named}", named] + refs
+    for ref in refs:
         base = merge_base(ctx, ref)
         if base:
             return base
     return None
+
+
+def require_base(ctx: Ctx) -> str | None:
+    """`default_base`, or a clear error on a born branch that matches no mainline ref.
+
+    Silently treating `None` as "diff against the empty tree" made the merge scope the entire
+    repository — 48 files in the candidate for three changed — and every commit was refused
+    with a message that named none of this. A repository whose mainline is `develop` hit it
+    in its first hour.
+    """
+    base = default_base(ctx)
+    if base or not head_sha(ctx):
+        return base
+    raise AegisError(
+        "no mainline ref resolves: tried " + ", ".join(MAINLINE_REFS) + ". Name the mainline "
+        "branch once with `aegis answer q.core.mainline '\"<branch>\"'`, or create `main` at "
+        "the mainline commit, or push and let `origin/HEAD` say it.")
 
 
 def is_ancestor(ctx: Ctx, older: str, newer: str) -> bool:

@@ -56,6 +56,7 @@ TARGETS: dict[str, dict[str, str]] = {
         "refinement_rounds": "maximum lens/fix rounds before escalation",
         "pii": "whether the system carries personal data",
         "legacy_baseline": "ratchet-from-today | fix-before-adopting",
+        "mainline": "the branch work lands on, when it is not main or master",
     },
     "doc_profile": {
         "kind": "web-saas | api-service | data-etl | library | stateful",

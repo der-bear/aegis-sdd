@@ -166,7 +166,7 @@ repository produced a different kind of evidence.
 |---|---|---|---|
 | Lenses | correctness, security, design | the same three roles, fresh contexts | the same three roles, fresh again |
 | Rounds | 3 (the cap) | 3 (the cap) | 3 (the cap) |
-| Findings | 43 | 25 (15 + 4 + 6) | 43 across three rounds, after three audits of the session |
+| Findings | 43 | 25 (15 + 4 + 6) | 27 (15 + 6 + 6), after three audits of the session |
 | Blocking left | 7, in three mechanisms | 0 | 0 |
 | Status in its manifest | abandoned | abandoned | the task this document ships with, written before its gate ran |
 
