@@ -7,6 +7,10 @@
     "owner": "framework maintainers",
     "path": "docs/ARCHITECTURE.md",
     "status": "proposed",
+    "verified_at": "2026-09-18",
+    "verified_by": "Claude Opus 5",
+    "verified_note": "verified against the code by a fresh read-only pass; every finding applied",
+    "verified_source_digest": "203817d03db47bdf",
     "watches": [
       "scripts/aegis/aegis_cli/**",
       "hooks/**",
@@ -22,9 +26,9 @@
     "path": "README.md",
     "status": "proposed",
     "verified_at": "2026-09-18",
-    "verified_by": "claude-opus-5 session agent",
-    "verified_note": "Read-only verification pass, every command, subcommand, flag and check name in README cross-checked against build_parser(); check commands returns ok; test_every_check_name_is_in_the_readme locks the check list. No false claims found against __main__.py. Unlisted-but-existing commands (compile, scaffold, lease check|show, check all, --root) recorded as omissions for the next task.",
-    "verified_source_digest": "693bd9980ff8629e",
+    "verified_by": "Claude Opus 5",
+    "verified_note": "verified against the code by a fresh read-only pass; every finding applied",
+    "verified_source_digest": "afbb367eba473a3a",
     "watches": [
       "scripts/aegis/aegis_cli/__main__.py"
     ]
@@ -50,9 +54,9 @@
     "path": "README.md",
     "status": "proposed",
     "verified_at": "2026-09-18",
-    "verified_by": "claude-opus-5 session agent",
-    "verified_note": "Read-only verification pass, roles table checked against each agent's frontmatter, slash commands against skills/{spec,plan,tasks,build}, the workflow name and phases against workflows/aegis-task.js, codex-lens invocation against the script, profile S/L against config.py. No false claims found against skills/, agents/ or workflows/.",
-    "verified_source_digest": "8b62c4100a5f0d22",
+    "verified_by": "Claude Opus 5",
+    "verified_note": "verified against the code by a fresh read-only pass; every finding applied",
+    "verified_source_digest": "315c8f365cb550d8",
     "watches": [
       "skills/**",
       "agents/**",

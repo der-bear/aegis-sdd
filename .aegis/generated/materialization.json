@@ -1,5 +1,5 @@
 {
-  "answers_digest": "b0804b17eb5fd2639c5ea3de67aa1d85be88cafc0c4081ff89dadca0ee3004db",
+  "answers_digest": "7aca240ac070eb98b9a2d491252f52cbf796e2eb0dfde2c7456d7c5beac8109a",
   "banks": [
     "context/brownfield",
     "core",
@@ -10,6 +10,6 @@
     "project-type/web-saas"
   ],
   "compiler_version": 3,
-  "config_digest": "f034292efd6323febf32981bcc359dbc3b645bab6d46a7e9adbb57ecfb2f866a",
+  "config_digest": "a462a69f6f13453d702811e4642d8b3e2e8ea4610010c25cd3134b70d21dfa2d",
   "note": "Regenerate with `aegis compile`. Never hand-edit anything under generated/."
 }

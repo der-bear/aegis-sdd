@@ -307,60 +307,6 @@ def changed_files(ctx: Ctx, base: str | None, head: str = "HEAD") -> list[str]:
     return sorted(files)
 
 
-# The commit hook's decision, made from the command text in tested Python rather than in shell.
-#
-# Detection over-approximates the ordinary spellings of running git — `git`, `\git`,
-# `/usr/bin/git`, a quoted "git", behind `command`/`env`/`exec`, variable assignments or
-# options with quoted values, inside `$(…)` or backticks, or as the quoted command of
-# `sh -c`/`bash -c`/`eval` — and stays clear of a quoted phrase handed to anything else, such as
-# `grep "git commit"`. It is an early error, not a barrier: a shell can always construct a
-# command no pattern recognises, which is why landing requires a passing merge gate and a
-# gate receipt.
-#
-# The one exemption is the exact bookkeeping command the shipped workflow runs. Three review
-# rounds each found a new way through a parser that tried to decide what an arbitrary commit
-# would record (a second line, `bash -c`, `GIT_INDEX_FILE`, a staged rename, `$(…)` inside a
-# message, git's abbreviated `--inc`). The parser was deleted; an exact match has nothing to
-# get around.
-_SHELL_WORD = r"(?:[^\s\"']|\"[^\"]*\"|'[^']*')"  # one shell word may contain quoted spaces
-_GIT_COMMIT_OR_PUSH = re.compile(
-    r"(?:^|[\s;&|(){}`])"
-    r"(?:(?:command|exec|env|nice|time|sudo)\s+(?:-\S+\s+)*)*"
-    r"(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*"
-    r"\\?(?:[^\s;&|\"']*/)?(?P<q>[\"']?)git(?P=q)"
-    rf"(?:\s+(?:-C|-c|--git-dir|--work-tree|--namespace)\s+{_SHELL_WORD}+|\s+-{_SHELL_WORD}*)*"
-    r"\s+(?P<r>[\"']?)(?:commit|push)(?P=r)(?=\s|$|[;&|)}`])")
-# The quoted command of a shell or `eval` is a command, not a phrase: unwrap it so the detector
-# sees `git` where the shell will run it.
-_SHELL_STRING = re.compile(
-    r"(?:^|(?<=[\s;&|(){}`]))(?:[^\s;&|\"'`]*/)?(?:(?:ba|z|da|k)?sh|eval)\s+(?:-\S+\s+)*([\"'])(.*?)(?:\1|$)")
-# Any alias a git command defines for itself gates, whatever it expands to: `!git commit`, or a
-# value read from the environment through `--config-env`, commits as surely as `commit` does.
-_INLINE_ALIAS = re.compile(r"(?:^|\s)(?:-c\s*|--config-env[=\s]\s*)[\"']?alias\.", re.I)
-_TASK_ID = r"[A-Za-z0-9][A-Za-z0-9._-]*"
-_BOOKKEEPING = re.compile(
-    rf"(?:git add -f \.aegis/runs/(?P<added>{_TASK_ID}) && )?"
-    rf"git commit -q -m \"chore\((?P<task>{_TASK_ID})\): task manifest\" -- \.aegis/runs/(?P=task)"
-    r"(?: \|\| true)?")
-
-
-def commit_scope(command: str) -> str:
-    """`none` — not a git commit or push; `exempt` — exactly the bookkeeping commit
-    `git [add -f .aegis/runs/T && ]commit -q -m "chore(T): task manifest" -- .aegis/runs/T`;
-    `gate` — any other commit or push."""
-    flat = " ".join(command.replace("\\\n", " ").split())
-    if _INLINE_ALIAS.search(flat) and "git" in flat:
-        return "gate"  # `git -c alias.ci=commit ci`: the alias is in the text, so it is not hidden
-    if not _GIT_COMMIT_OR_PUSH.search(_SHELL_STRING.sub(lambda m: f" {m.group(2)} ", flat)):
-        return "none"
-    # Exactly as the shell reads it. Flattened, a newline — which ends a command — became a
-    # space, and `… --<newline>.aegis/runs/T` matched while the shell committed the whole index.
-    match = _BOOKKEEPING.fullmatch(command.strip())
-    if match and match.group("added") in (None, match.group("task")):
-        return "exempt"
-    return "gate"
-
-
 def untracked_files(ctx: Ctx) -> set[str]:
     out = git(ctx, "ls-files", "--others", "--exclude-standard", "-z")
     return {f for f in out.split("\0") if f}
@@ -537,6 +483,27 @@ def _is_task_manifest(rel: str) -> bool:
     return rel.startswith(".aegis/runs/") and rel.endswith("/manifest.json")
 
 
+def in_review_scope(rel: str) -> bool:
+    """Is this path part of the change a review is a verdict on?
+
+    One answer, used by `diff_digest` and by `task_diff`, because two copies of this rule
+    disagreed: `.aegis/waivers.json` was inside the digest and outside the diff, so the
+    review meant to be the control on a waiver could not see the waiver. A comment claiming
+    the two filters were "mirrored exactly" is not a mechanism; calling the same function is.
+
+    Bookkeeping is out — recording a review must not invalidate the review being recorded.
+    The *contract* is in: specifications, the task manifest, `answers.json` (it recompiles
+    every rule) and `waivers.json` (it silences checks), because a verdict on code that met
+    the old terms says nothing about the new ones.
+    """
+    if rel in ("CLAUDE.md", "AGENTS.md"):
+        return False
+    if rel.startswith(".aegis/"):
+        return (rel.startswith(".aegis/specs/") or rel == ".aegis/answers.json"
+                or rel == ".aegis/waivers.json" or _is_task_manifest(rel))
+    return True
+
+
 def diff_digest(ctx: Ctx, base: str | None) -> str:
     """Identity of the current change set: content, not just file names.
 
@@ -545,15 +512,7 @@ def diff_digest(ctx: Ctx, base: str | None) -> str:
     """
     hasher = hashlib.sha256()
     for rel in changed_files(ctx, base):
-        # Bookkeeping is excluded — recording a review must not invalidate the review being
-        # recorded. The *contract* is not bookkeeping: specifications and the task manifest
-        # are included, because a verdict on code that met the old acceptance criteria says
-        # nothing about the new ones.
-        if rel in ("CLAUDE.md", "AGENTS.md"):
-            continue
-        if rel.startswith(".aegis/") and not (
-                rel.startswith(".aegis/specs/") or rel == ".aegis/answers.json"
-                or _is_task_manifest(rel)):
+        if not in_review_scope(rel):
             continue
         if _is_task_manifest(rel):
             # The contract half of the manifest only: requirements, acceptance, lease.
@@ -621,6 +580,30 @@ def ref_exists(ctx: Ctx, ref: str) -> bool:
 def merge_base(ctx: Ctx, ref: str) -> str | None:
     out = git(ctx, "merge-base", "HEAD", ref).strip()
     return out or None
+
+
+def default_base(ctx: Ctx) -> str | None:
+    """Where this branch left the mainline, or None when no mainline ref exists.
+
+    The merge stage's scope and the base-agreement check in `trace` both need one answer to
+    "what did this branch inherit", so it lives beside `merge_base` rather than in the flow
+    that happened to need it first.
+    """
+    for ref in ("origin/HEAD", "origin/main", "main", "master"):
+        base = merge_base(ctx, ref)
+        if base:
+            return base
+    return None
+
+
+def is_ancestor(ctx: Ctx, older: str, newer: str) -> bool:
+    return bool(older) and git(ctx, "merge-base", older, newer).strip() == older
+
+
+def files_between(ctx: Ctx, a: str, b: str) -> list[str]:
+    """Paths whose content differs between two revisions, renames split into both sides."""
+    out = git(ctx, "diff", "--name-only", "--no-renames", a, b)
+    return [line for line in out.splitlines() if line.strip()]
 
 
 # ---------------------------------------------------------------------------- globs

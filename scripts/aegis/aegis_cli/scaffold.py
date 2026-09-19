@@ -241,12 +241,11 @@ def complete_baseline_renames(ctx: Ctx) -> list[str]:
 GIT_HOOK_MARK = "# installed by `aegis git-hooks install`"
 
 _PRE_COMMIT = GIT_HOOK_MARK + """
-# The barrier every runner shares. A Claude Code hook sees only what Claude Code runs; this one
-# sees every commit made in this checkout, by any agent, engine or person.
-#
-# Here the index is authoritative, unlike in a parser reading a command someone typed: what is
-# staged when this hook runs is what the commit will contain. So the bookkeeping exemption can
-# read the index, and only a commit that contains nothing but the run directory is exempt.
+# Fast, and about the commit itself: compiled configuration must match its answers, and the
+# framework's own files must be where the framework expects them. Both take a fraction of a
+# second and neither reads the diff. Everything that judges the *change* — attribution, reviews,
+# tests, documentation — runs at the merge boundary: `pre-push` and CI. A commit is a checkpoint,
+# and a checkpoint that a gate can refuse is a checkpoint nobody makes.
 set -eu
 root=$(git rev-parse --show-toplevel)
 [ -d "$root/.aegis" ] || exit 0
@@ -254,29 +253,22 @@ aegis="__AEGIS__"
 [ -x "$aegis" ] || aegis=$(command -v aegis 2>/dev/null || true)
 if [ -z "${aegis:-}" ] || [ ! -x "$aegis" ]; then
   {
-    echo "Aegis gate cannot run: the CLI is not at __AEGIS__ and not on PATH."
+    echo "Aegis cannot run: the CLI is not at __AEGIS__ and not on PATH."
     echo "Run the framework's install.sh, or \\`aegis git-hooks install\\` from the checkout you use."
-    echo "A hook that cannot check is not a gate, so this refuses rather than passing quietly."
   } >&2
   exit 1
 fi
-staged=$(git diff --cached --name-only)
-[ -n "$staged" ] || exit 0
-if ! printf '%s\\n' "$staged" | grep -qv '^\\.aegis/runs/'; then
-  exit 0
-fi
-if output=$("$aegis" --root "$root" gate --stage merge --no-run 2>&1); then
+if output=$("$aegis" --root "$root" check drift 2>&1) && output2=$("$aegis" --root "$root" check structure 2>&1); then
   exit 0
 fi
 {
-  echo "Aegis gate failed — this commit would leave the project inconsistent."
-  printf '%s\\n' "$output" | tail -30
-  echo
-  echo "Fix the findings above. \\`git commit --no-verify\\` skips this hook and CI runs the same"
-  echo "gate, which is why CI is the barrier and this is the early error."
+  echo "Aegis: this commit would leave compiled configuration out of step with its answers."
+  printf '%s\\n%s\\n' "${output:-}" "${output2:-}" | grep -E '^\\s*\\[FAIL\\]' | head -12
+  echo "\\`aegis compile\\` regenerates it; \\`aegis answer <q> <v>\\` is how configuration changes."
 } >&2
 exit 1
 """
+
 
 _PRE_PUSH = GIT_HOOK_MARK + """
 # What is about to become other people's problem runs the full gate, commands included.

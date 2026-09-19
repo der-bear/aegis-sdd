@@ -1,11 +1,8 @@
 # The framework's own gate, running on the framework's own repository.
 #
-# This is the barrier the local hooks are not: `git commit --no-verify` skips a git hook, and a
-# Claude Code hook only sees what Claude Code runs. This job sees the candidate no matter who
-# produced it, which is the only place the merge invariant actually holds.
-#
-# The commit hook is per-machine and per-agent; this runs on the candidate merge commit no
-# matter who produced it, which is the only place the invariant actually holds.
+# This is the barrier the local hook is not: `git commit --no-verify` skips a git hook, and a
+# hook is per-machine. This job sees the candidate no matter who produced it, which is the
+# only place the merge invariant actually holds.
 name: aegis gate
 
 on:

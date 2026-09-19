@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -16,6 +17,7 @@ from typing import Any
 
 from . import checks
 from .core import (
+    content_key, ABSENT, git,
     AegisError,
     Ctx,
     EMPTY_TREE,
@@ -30,7 +32,9 @@ from .core import (
     git_available,
     globs_overlap,
     head_sha,
+    default_base,
     human_tokens,
+    in_review_scope,
     matches_any,
     normalise_glob,
     read_json,
@@ -158,18 +162,6 @@ def _task_new_locked(ctx: Ctx, task_id: str, *, feature: str, objective: str, ow
             "narrow the lease, or have the human unfreeze the path in answers.json first."
         )
 
-    for other in checks.active_tasks(ctx):
-        if other["id"] == task_id or other.get("status") in ("merged", "abandoned"):
-            continue
-        clash = [(mine, theirs) for mine in owns for theirs in (other.get("owns") or [])
-                 if globs_overlap(mine, theirs)]
-        if clash:
-            pairs = "; ".join(f"{m} ∩ {t}" for m, t in clash[:3])
-            raise AegisError(
-                f"write lease overlaps {other['id']} ({pairs}). Narrow the globs, or finish "
-                f"that task first — overlapping leases are how two builders silently "
-                f"overwrite each other."
-            )
 
     manifest = {
         "id": task_id,
@@ -310,6 +302,24 @@ def task_status(ctx: Ctx, task_id: str, status: str) -> dict:
         )
 
     if status == "building" and current_status != "building":
+        manifest = checks.load_task(ctx, task_id)
+        # Where the lease is actually taken. Checking only in `task_claim` left
+        # `aegis task status <id> building` as a way past it whenever the profile allows a
+        # second builder, and a later claim then passed because the task was no longer planned.
+        _refuse_lease_clash(ctx, task_id, manifest.get("owns") or [])
+        if current_status == "planned":
+            # Only here, and only from a real commit. The base is fixed when the lease
+            # starts, so a task planned before an earlier one landed does not review that
+            # task's merged files. Two regressions taught the two halves of that sentence:
+            # `review -> building` is a legal move, and refreshing there moved the base past
+            # the task's own reviewed commit, which the gate then called "not in its reviewed
+            # change"; and raw `git rev-parse HEAD` prints the literal `HEAD` on an unborn
+            # branch, which baked `base_sha: "HEAD"` into a manifest whose diff is then empty
+            # for ever. `head_sha` returns None instead, and None leaves the base alone.
+            head = head_sha(ctx)
+            if head and manifest.get("base_sha") != head:
+                manifest["base_sha"] = head
+                write_json(os.path.join(run_dir(ctx, task_id), "manifest.json"), manifest)
         policy = checks.policy(ctx)
         limit = policy.get("parallel_builders", 1)
         in_flight = [t for t in checks.active_tasks(ctx)
@@ -515,7 +525,8 @@ def task_diff(ctx: Ctx, task_id: str) -> str:
 
     The workflow and the Codex runner each rebuilt it in shell from `git ls-files --others`,
     so pre-adoption files the digest excludes were handed to every lens — three copies of
-    "the change" that disagreed. One function now, built on `changed_files`.
+    "the change" that disagreed. One function now, built on `changed_files` and sharing
+    `in_review_scope` with the digest, so the diff cannot go blind to a file the digest covers.
     """
     manifest = checks.load_task(ctx, task_id)
     base = manifest.get("base_sha")
@@ -523,10 +534,7 @@ def task_diff(ctx: Ctx, task_id: str) -> str:
     untracked = untracked_files(ctx)
     parts: list[str] = []
     for rel in files:
-        # The digest's own filter: bookkeeping is not the change, the contract is.
-        if rel in ("CLAUDE.md", "AGENTS.md") or (
-                rel.startswith(".aegis/") and not (rel.startswith(".aegis/specs/")
-                                                  or rel.endswith("/manifest.json"))):
+        if not in_review_scope(rel):
             continue
         if rel in untracked:
             full = os.path.join(ctx.root, rel)
@@ -544,6 +552,30 @@ def task_diff(ctx: Ctx, task_id: str) -> str:
     return "\n".join(p for p in parts if p)
 
 
+def _refuse_lease_clash(ctx: Ctx, task_id: str, owns: list[str]) -> None:
+    """A lease is exclusive while it is held — from claim to merge — not from the moment a
+    task is planned.
+
+    Refusing overlap at `task new` made one spec split into several tasks impossible: the
+    later tasks could not be written down while the first was building, so their requirements
+    read as uncovered at its merge gate and the gate failed for work that was planned. A plan
+    is not a lease. Planning several overlapping tasks is allowed; claiming the second while
+    the first holds it is refused, which is the moment a builder would actually collide.
+    """
+    for other in checks.active_tasks(ctx):
+        if other["id"] == task_id or other.get("status") not in checks.HOLDING:
+            continue
+        clash = [(mine, theirs) for mine in owns for theirs in (other.get("owns") or [])
+                 if globs_overlap(mine, theirs)]
+        if clash:
+            pairs = "; ".join(f"{m} ∩ {t}" for m, t in clash[:3])
+            raise AegisError(
+                f"write lease overlaps {other['id']} ({pairs}), which holds it. Narrow the "
+                f"globs, or finish that task first — overlapping leases are how two builders "
+                f"silently overwrite each other."
+            )
+
+
 def task_claim(ctx: Ctx, task_id: str) -> dict:
     """Start a task: focus it so the lease is enforced, move it to `building` under the
     parallel-builder limit, and record what its packet costs.
@@ -554,7 +586,8 @@ def task_claim(ctx: Ctx, task_id: str) -> dict:
     """
     manifest = checks.load_task(ctx, task_id)
     if manifest.get("status") == "planned":
-        # The transition can be refused (parallel-builder limit). Focusing first left the
+        # The transition can be refused (lease clash, parallel-builder limit). Focusing first
+        # left the
         # marker pointing at the refused task, so the lease hook then enforced the wrong
         # lease against the builder that was actually running.
         task_status(ctx, task_id, "building")
@@ -1030,10 +1063,6 @@ def lens_record(ctx: Ctx, task_id: str, payload: dict, lens: str | None = None) 
 
 # Names that are recognisably not a person: the framework's agents, common engine and model
 # families, and any `engine:model` reviewer label. A person's name rarely contains a colon.
-FRAMEWORK_AGENT = re.compile(
-    r"^(lens|lens-.*|aegis-.*|claude.*|codex.*|gemini.*|gpt-.*|opus.*|sonnet.*|haiku.*|.*:.*)$",
-    re.IGNORECASE)
-
 
 def _closed_by_a_person(finding: dict, builder: str, lens: str = "") -> bool:
     """A second strike is closed by a person, never by the lens or the builder.
@@ -1046,9 +1075,16 @@ def _closed_by_a_person(finding: dict, builder: str, lens: str = "") -> bool:
 
 
 def _names_a_person(name: str | None, builder: str, lens: str = "") -> bool:
-    by = (name or "").strip()
-    return (bool(by) and by.lower() not in ((builder or "").strip().lower(), (lens or "").strip().lower())
-            and not FRAMEWORK_AGENT.match(by))
+    return checks.is_person_name(name, builder, lens)
+
+
+def _waivers_or_problem(ctx: Ctx, problems: list, label: str) -> list[dict]:
+    try:
+        return checks.load_waivers(ctx)
+    except AegisError as err:
+        problems.append((f"{label}: waivers.json is invalid ({' '.join(str(err).split())})",
+                         "no waiver applies until the file validates"))
+        return []
 
 
 def _dismissal_problems(ctx: Ctx, finding: dict, builder: str, lens: str) -> list[tuple[str, str]]:
@@ -1083,7 +1119,7 @@ def _dismissal_problems(ctx: Ctx, finding: dict, builder: str, lens: str) -> lis
     if disposition in ("waived", "deferred"):
         # Only a `finding` waiver naming this id counts. Citing a waiver written for another
         # check borrowed its owner and expiry for a decision nobody recorded.
-        waivers = [w for w in checks.load_waivers(ctx)
+        waivers = [w for w in _waivers_or_problem(ctx, problems, label)
                    if w.get("check") == "finding" and not checks.expired(w)
                    and finding["id"] in (w.get("scope") or [])]
         if not waivers:
@@ -1273,7 +1309,7 @@ def check_handoff(ctx: Ctx, task_id: str) -> Report:
     tokens = estimate_tokens(canonical(data))
     cap = (checks.policy(ctx).get("budgets") or {}).get("handoff", 1500)
     if tokens > cap:
-        report.fail("handoff", f"≈{tokens} tokens exceeds the {cap} cap", ctx.rel(path),
+        report.warn("handoff", f"≈{tokens} tokens, past the {cap} warning line", ctx.rel(path),
                     hint="report outcomes and paths, never restate the code")
     verifications = [v for v in data.get("verification", []) if isinstance(v, dict)]
     failed = [v.get("command", "?") for v in verifications if v.get("result") == "fail"]
@@ -1378,6 +1414,8 @@ def docs_attest(ctx: Ctx, diagram_id: str | None, by: str = "", note: str = "") 
             "`aegis docs attest` needs --by <who>: attesting is a claim that you brought the "
             "diagram up to date, and an unsigned claim is not evidence."
         )
+    if len(by.strip()) < 3:
+        raise AegisError(f"`--by {by!r}` names nobody; give the name of who checked the document")
     return _docs_attest(ctx, diagram_id, by, note)
 
 
@@ -1579,7 +1617,7 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
     if stage == "merge":
         # Union, not preference: staging one file made every other candidate change
         # invisible to trace, requirements, documentation and review checks.
-        scope = sorted(set(staged_files(ctx)) | set(changed_files(ctx, _default_base(ctx))))
+        scope = sorted(set(staged_files(ctx)) | set(changed_files(ctx, default_base(ctx))))
         report.note(f"{len(scope)} files in the candidate diff")
         report.extend(checks.check_structure(ctx))
         report.extend(checks.check_pointers(ctx))
@@ -1597,19 +1635,20 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
         report.extend(checks.check_requirements(ctx))
         report.extend(checks.check_docs(ctx, scope, closing_feature=True))
         report.extend(checks.check_budget(ctx))
-        # Every task that is not merged or abandoned must have been reviewed and handed off.
-        # Skipping `planned` and `building` let a task land by never advancing its status.
+        # Every task holding its lease over part of this candidate must have been reviewed
+        # and handed off; skipping `building` once let a task land by never advancing its
+        # status. A `planned` task is not skipped for leniency: it owns nothing, so code
+        # written under its globs fails `trace` as belonging to no task until someone claims
+        # it — one rule instead of two, and the strict side of it.
         for task in checks.active_tasks(ctx):
-            if task.get("status") == "abandoned":
+            # Only tasks holding their lease. A merged task's gate receipt is bound to a
+            # digest that never recurs, so demanding it here failed the gate for anyone
+            # else's later change under the same globs; and typing `merged` into a manifest
+            # buys nothing, because without a merge receipt the task owns no file and
+            # `trace` says so. A planned task owns nothing either, for the same reason.
+            if task.get("status") not in checks.HOLDING:
                 continue
             if not _task_touched_scope(ctx, task, scope):
-                continue
-            if task.get("status") == "merged":
-                # Editing the manifest to `merged` otherwise removed the task from every
-                # later check — the cheapest possible way out of the gate.
-                if not gate_receipt_valid(ctx, task["id"]):
-                    report.fail("trace", f"{task['id']} is recorded merged with no gate receipt",
-                                None, hint="a status is not a gate; re-run the task gate")
                 continue
             if task.get("status") != "gated" or not gate_receipt_valid(ctx, task["id"]):
                 # Valid artefacts are not the same as a passed gate, and neither is a status
@@ -1650,6 +1689,7 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
                 # gated task merged recorded work as landed that had not left its branch.
                 if task.get("status") == "gated" and _task_touched_scope(ctx, task, scope):
                     _set_status(ctx, task["id"], "merged")
+                    _write_merge_receipt(ctx, task, scope)
                     merged.append(task["id"])
             task_focus(ctx, None)
             if merged:
@@ -1659,13 +1699,205 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
     raise AegisError(f"unknown gate stage {stage!r}; expected bootstrap, task or merge")
 
 
-def _default_base(ctx: Ctx) -> str | None:
+def _write_merge_receipt(ctx: Ctx, task: dict, scope: list[str]) -> None:
+    """What the merge gate saw of this task's files, keyed by content — ADR-4's rule applied
+    to a merged task. `check_trace` reads it: the task owns a scope file only while the file
+    holds this, which is what lets the branch take its next commit before it lands."""
+    files = {}
+    for rel in scope:
+        if matches_any(rel, task.get("owns") or []):
+            files[rel] = content_key(os.path.join(ctx.root, rel)) or ABSENT
+    write_json(os.path.join(run_dir(ctx, task["id"]), "merge-receipt.json"), {
+        "task": task["id"],
+        "sha": git(ctx, "rev-parse", "HEAD").strip(),
+        "at": now(),
+        "files": files,
+    })
+
+
+def _default_branch(ctx: Ctx) -> str:
+    head = git(ctx, "symbolic-ref", "-q", "--short", "refs/remotes/origin/HEAD").strip()
+    if head.startswith("origin/"):
+        return head[len("origin/"):]
+    for name in ("main", "master"):
+        if git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{name}").strip():
+            return name
+    raise AegisError("no default branch found (origin/HEAD, main or master)")
+
+
+def land(ctx: Ctx, run: bool = False) -> list[str]:
+    """Move the default branch to HEAD once HEAD has passed the full merge gate.
+
+    Printing the command is the default. Moving a default branch is a merge, and the person
+    who owns the branch runs it — or says `--run`, which checks that a merge receipt sits at
+    or before HEAD and that the working tree is clean, then moves the ref without a checkout
+    (a checkout would refuse over an uncommitted file, which is exactly the state after a
+    merge gate has just written its bookkeeping).
+    """
     from .core import merge_base
-    for ref in ("origin/HEAD", "origin/main", "main", "master"):
-        base = merge_base(ctx, ref)
-        if base:
-            return base
-    return None
+    head = git(ctx, "rev-parse", "HEAD").strip()
+    if not head:
+        raise AegisError("not a git repository")
+    passed = []
+    for task in checks.active_tasks(ctx):
+        path = os.path.join(run_dir(ctx, task["id"]), "merge-receipt.json")
+        if os.path.exists(path):
+            sha = (read_json(path, default={}) or {}).get("sha") or ""
+            if sha and merge_base(ctx, sha) == sha:
+                passed.append((task["id"], sha[:12]))
+    if not passed:
+        raise AegisError("nothing at or before HEAD has passed the full merge gate; "
+                         "run `aegis gate --stage merge` first")
+    default = _default_branch(ctx)
+    current = git(ctx, "branch", "--show-current").strip()
+    if current == default:
+        return [f"already on {default}; nothing to land"]
+    tip = git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{default}").strip()
+    if tip and merge_base(ctx, tip) != tip:
+        # Checked before printing, not only before moving: printing the forced command and
+        # refusing to run it handed the person the very move the code calls destructive.
+        raise AegisError(f"{default} has commits HEAD does not; rebase or merge them first")
+    command = f"git branch -f {default} {head[:12]}"
+    lines = [f"merge receipt(s) at or before HEAD: " + ", ".join(f"{t}@{s}" for t, s in passed)]
+    if not run:
+        # A receipt says a tree behind HEAD passed. Printing the command on the strength of
+        # that alone handed the person a move that lands a red HEAD — and a printed command is
+        # the path most people take. The checks run here without the commands, which writes
+        # nothing (the gate's bookkeeping is guarded by `run_commands`), so printing stays
+        # read-only; `--run` is what pays for the suite.
+        if gate(ctx, "merge", run_commands=False).failed:
+            raise AegisError("the merge gate's checks are red at HEAD; `aegis gate --stage "
+                             "merge` says why. Landing would move the branch onto it")
+        return lines + [f"to land: {command}", "or: aegis land --run"]
+    if git(ctx, "status", "--porcelain").strip():
+        raise AegisError("the working tree is not clean; commit or stash before landing")
+    # The receipt says something behind HEAD passed on a tree that HEAD may not match; the
+    # full gate, commands included, is what says HEAD itself passes. Landing is the moment.
+    if gate(ctx, "merge", run_commands=True).failed:
+        raise AegisError("the full merge gate is red at HEAD; fix it before landing")
+    # The gate itself writes: a green merge marks gated tasks merged and records their
+    # receipts. Landing on top of that would put a ref where the tree no longer is.
+    dirty = git(ctx, "status", "--porcelain").strip()
+    if dirty:
+        raise AegisError("the merge gate recorded its result; commit that bookkeeping, then "
+                         "land:\n  " + "\n  ".join(dirty.splitlines()[:5]))
+    git(ctx, "branch", "-f", default, head, check=True)
+    return lines + [f"landed: {default} -> {head[:12]}"]
+
+
+def _committed_delegation(ctx: Ctx) -> dict:
+    """The delegation as HEAD records it, which is the only one that authorises anything.
+
+    `aegis answer` refuses to write `answers.json` while a lease is focused, but releasing the
+    focus, answering, and focusing again is three commands — so the working tree's delegation
+    is whatever the agent last wrote, and an agent could name its own owner and waive in that
+    name. HEAD's cannot be written that way without a commit, and a commit of `answers.json`
+    is inside `diff_digest`, so it re-takes every review of the candidate, and `trace` says
+    out loud that the candidate changed the project's answers. Authority is data, and the data
+    has to be older than the decision it authorises.
+    """
+    raw = git(ctx, "show", "HEAD:.aegis/answers.json")
+    if not raw.strip():
+        return {}
+    try:
+        answers = json.loads(raw)
+    except ValueError:
+        return {}
+    entry = (answers.get("resolved") or {}).get("q.core.delegate") or {}
+    value = entry.get("value")
+    return value if isinstance(value, dict) else {}
+
+
+def waive(ctx: Ctx, check: str, scope: list[str], reason: str, expires: str, ticket: str = "") -> str:
+    """Record a waiver in the delegated owner's name, for a check that person has delegated.
+
+    Authority is data: `policy.delegation` names the person and the checks. The waiver it
+    records is owned by that person — the one who can be asked — and says an agent recorded
+    it. A `finding` waiver is never delegated: dismissing a blocking finding without a code
+    change is the one decision the builder's side must not make.
+    """
+    import re as _re
+    delegation = _committed_delegation(ctx)
+    owner = str(delegation.get("owner") or "").strip()
+    allowed = [str(c) for c in (delegation.get("may_waive") or [])]
+    if not checks.is_person_name(owner):
+        raise AegisError("no delegation at HEAD: `policy.delegation.owner` names nobody in the "
+                         "committed answers, so a person records waivers by hand — or answers "
+                         "`q.core.delegate` once and commits it. An uncommitted answer does not "
+                         "authorise: it is writable by the agent it would authorise")
+    if check == "finding":
+        raise AegisError("a finding waiver is never delegated: a person records it")
+    if check not in allowed:
+        raise AegisError(f"the delegation covers {', '.join(allowed) or 'no checks'}, not `{check}`; "
+                         "a person records this one, or widens `q.core.delegate`")
+    if not _re.fullmatch(r"\d{4}-\d{2}-\d{2}", expires or ""):
+        raise AegisError("--expires must be an ISO date (YYYY-MM-DD)")
+    try:
+        when = _dt.date.fromisoformat(expires)
+    except ValueError:
+        raise AegisError(f"--expires {expires!r} is not a real date") from None
+    if when <= _dt.date.today():
+        raise AegisError("--expires must be in the future")
+    if len((reason or "").strip()) < 12:
+        raise AegisError("--reason: say why, in at least a sentence")
+    if not scope:
+        raise AegisError("--scope: at least one path or glob")
+    from .core import validate
+    path = ctx.path("waivers.json")
+    waivers = read_json(path, default=[]) or []
+    stamp = _dt.date.today().isoformat()
+    taken = {w.get("id") for w in waivers if isinstance(w, dict)}
+    wid = next(f"W-{check}-{stamp}-{n}" for n in range(1, len(taken) + 2)
+               if f"W-{check}-{stamp}-{n}" not in taken)
+    entry = {"id": wid, "check": check, "scope": list(scope),
+             "reason": f"{reason.strip()} [recorded by an agent under policy.delegation]",
+             "owner": owner, "expires": expires}
+    if ticket:
+        entry["ticket"] = ticket
+    candidate = waivers + [entry]
+    # Validate the candidate list before it reaches disk. Writing first and validating after
+    # left an invalid waivers.json behind — and an invalid file applies no waiver at all, so
+    # one bad `aegis waive` turned every gate red until someone edited the file by hand.
+    errors = validate(candidate, checks.WAIVER_SCHEMA)
+    if errors:
+        raise AegisError(f"that waiver would make waivers.json invalid: {errors[0]}")
+    # The schema is not the whole rule: the loader also refuses an owner who is not a person
+    # and a finding scope that is not an id. Checking only the schema let `waive` report
+    # success on a file every gate then rejected, so the agent believed a waiver was in force
+    # that applied to nothing.
+    original = read_json(path, default=[])
+    write_json(path, candidate)
+    try:
+        checks.load_waivers(ctx)
+    except AegisError as err:
+        write_json(path, original)
+        raise AegisError(f"that waiver would leave waivers.json unusable: "
+                         f"{' '.join(str(err).split())}") from None
+    return wid
+
+
+def _land_pending(ctx: Ctx) -> bool:
+    """Has something at or before HEAD passed the full merge gate while the default branch
+    is still behind it? Quiet about anything it cannot determine."""
+    from .core import merge_base
+    try:
+        head = git(ctx, "rev-parse", "HEAD").strip()
+        if not head:
+            return False
+        default = _default_branch(ctx)
+        tip = git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{default}").strip()
+        if not tip or tip == head:
+            return False
+        for task in checks.active_tasks(ctx):
+            sha = (read_json(os.path.join(run_dir(ctx, task["id"]), "merge-receipt.json"),
+                             default={}) or {}).get("sha")
+            if sha and merge_base(ctx, sha) == sha:
+                return True
+    except AegisError:
+        return False
+    return False
+
+
 
 
 # -------------------------------------------------------------------------- status
@@ -1705,6 +1937,16 @@ def next_action(ctx: Ctx) -> dict:
 
     tasks = checks.active_tasks(ctx)
     open_tasks = [t for t in tasks if t.get("status") not in ("merged", "abandoned")]
+
+    if _land_pending(ctx):
+        # Before the backlog, not after it: a merge that has not landed is unfinished work,
+        # and with planned tasks waiting the step was never reached at all — the silence
+        # retro 0002 asked `next` to break.
+        return step("land the branch", "a merge receipt sits at or before HEAD and the "
+                    "default branch is still behind it", "aegis land", "human",
+                    note="`aegis land` prints the move; `aegis land --run` makes it, after "
+                         "re-running the full gate at HEAD — the receipt was earned on an "
+                         "earlier commit, so HEAD itself is what the gate must pass")
 
     if not open_tasks:
         specs = ctx.path("specs")
@@ -1760,9 +2002,20 @@ def next_action(ctx: Ctx) -> dict:
         return step(f"review {task_id}", f"required lenses have not run: {', '.join(missing)}",
                     f"aegis lens plan {task_id}", note=f"dispatch lens-{missing[0]}")
 
+    cap = checks.policy(ctx).get("refinement_rounds") or 3
     for lens in sorted(recorded):
         record = read_json(os.path.join(reviews, f"{lens}.json"))
+        rounds = record.get("round", 0)
         if record.get("diff_digest") != plan["diff_digest"]:
+            if rounds >= cap:
+                # The round that would fix this is the one the cap forbids. Advising it taught
+                # the loop to spend past the cap; the cap exists to force a simpler mechanism.
+                return step(f"escalate {task_id}",
+                            f"{lens}: the code moved after round {rounds}, and round {rounds + 1} "
+                            f"would exceed the cap of {cap}",
+                            None, "human",
+                            note="simplify the mechanism and re-issue it as a new task with a fresh "
+                                 "budget, or a person raises `refinement_rounds` in policy")
             return step(f"re-run lens-{lens}", "the code moved after that review, so it no longer describes this change",
                         f"aegis lens plan {task_id}", note=f"dispatch lens-{lens} again")
         builder = (read_json(os.path.join(directory, "handoff.json"), default={}).get("agent") or "")
@@ -1774,7 +2027,7 @@ def next_action(ctx: Ctx) -> dict:
                         None, "human",
                         note=f"when it is simplified and re-reviewed, a person records `aegis lens "
                              f"disposition {task_id} {came_back[0]} fixed --reason … --by <name>`")
-        if record.get("round", 0) > (checks.policy(ctx).get("refinement_rounds") or 3):
+        if rounds > cap:
             return step(f"escalate {task_id}", f"{lens} has exceeded the refinement round limit",
                         None, "human")
         for finding in record.get("findings", []):
@@ -1921,6 +2174,6 @@ def status(ctx: Ctx) -> str:
         if os.path.exists(path):
             lines.append(f"  registry/{name}: {len(read_json(path))} entries")
     budget_report = checks.check_budget(ctx)
-    failures = [f for f in budget_report.findings if f.severity == "fail"]
-    lines.append(f"  budgets: {'OK' if not failures else str(len(failures)) + ' over cap'}")
+    over = [f for f in budget_report.findings if f.severity in ("fail", "warn")]
+    lines.append(f"  budgets: {'OK' if not over else str(len(over)) + ' past a warning line'}")
     return "\n".join(lines)

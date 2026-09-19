@@ -22,5 +22,11 @@
     "path": ".aegis/decisions/ADR-4-adoption-is-a-commit.md",
     "status": "draft (TASK-UNBLOCK-03)",
     "title": "ADR-4: adoption is a commit, not a permanent exemption"
+  },
+  {
+    "id": "ADR-5-the-attribution-ceiling-of-v1",
+    "path": ".aegis/decisions/ADR-5-the-attribution-ceiling-of-v1.md",
+    "status": "unknown",
+    "title": "ADR-5. The attribution ceiling of v1"
   }
 ]

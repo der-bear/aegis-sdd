@@ -136,7 +136,8 @@ R-28. Every protocol, pointer file and measured number shall say what the code d
 - R-5: after `aegis packet`, the manifest is still `planned` and no `ACTIVE` marker exists;
   after `aegis task claim`, both are set.
 - R-6: no `next` command contains `#`; `--run` executes a `gate` step.
-- R-7: `hooks/pre-commit-gate.sh` contains no `AEGIS_SKIP_GATE`.
+- R-7: superseded by SPEC-2 R-3 — the Claude Code commit hook was deleted, and the git hook
+  it left behind has no environment switch (`TheGitHookIsTheOnlyBarrier`).
 - R-8: `agents/aegis-orchestrator.md` contains no `task status` line.
 - R-9: `aegis check setup` passes except for the constitution signature note.
 - R-10: `AdoptionRatchetsFromToday`, `MigrateBaselinesOutsideOpenLeases`.
@@ -199,7 +200,7 @@ R-28. Every protocol, pointer file and measured number shall say what the code d
 
 - Lens report: `{lens, verdict, findings[], reconciled?: [{id, followup, evidence?}]}`.
 - `aegis next` step: `{do, why, command, note, who: cli|agent|human}`.
-- `aegis commit-scope`: shell command on stdin → `none | exempt | gate`.
+- aegis commit-scope (removed by SPEC-2 R-3; the git hook reads the index instead)
 - Finding waiver: `{id, check: "finding", scope: ["F-xxxxxxxx", …], reason, owner, expires}`.
 - `aegis diff <TASK>`: unified diff over the digest's file set.
 - `aegis lens record <TASK> --lens <name> [--reviewer <who>] [--digest <d>]`; `aegis lens

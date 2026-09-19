@@ -7,7 +7,11 @@
       "id": "q.core.mode",
       "ask": "How should initialisation run?",
       "kind": "single",
-      "options": ["interactive", "hybrid", "autonomous"],
+      "options": [
+        "interactive",
+        "hybrid",
+        "autonomous"
+      ],
       "default": "hybrid",
       "writes": "policy.mode",
       "autonomy": "auto-default",
@@ -18,7 +22,11 @@
       "id": "q.core.profile",
       "ask": "Which framework profile fits this project?",
       "kind": "single",
-      "options": ["S", "M", "L"],
+      "options": [
+        "S",
+        "M",
+        "L"
+      ],
       "default": "S",
       "detect": "repo_size",
       "writes": "policy.profile",
@@ -30,7 +38,13 @@
       "id": "q.core.project-type",
       "ask": "What kind of system is this?",
       "kind": "single",
-      "options": ["api-service", "web-saas", "data-etl", "library", "stateful"],
+      "options": [
+        "api-service",
+        "web-saas",
+        "data-etl",
+        "library",
+        "stateful"
+      ],
       "default": "api-service",
       "detect": "project_type",
       "writes": "doc_profile.kind",
@@ -42,8 +56,17 @@
       "id": "q.core.autonomy-limits",
       "ask": "Which decisions may agents take without asking you?",
       "kind": "multi",
-      "options": ["code-style", "internal-refactors", "new-dependencies", "schema-changes", "public-contracts"],
-      "default": ["code-style", "internal-refactors"],
+      "options": [
+        "code-style",
+        "internal-refactors",
+        "new-dependencies",
+        "schema-changes",
+        "public-contracts"
+      ],
+      "default": [
+        "code-style",
+        "internal-refactors"
+      ],
       "writes": "policy.autonomy_limits",
       "autonomy": "always-ask",
       "severity": "blocking",
@@ -53,7 +76,11 @@
       "id": "q.core.testing",
       "ask": "What is the testing mandate?",
       "kind": "single",
-      "options": ["strict-tdd", "tests-with-code", "critical-paths-only"],
+      "options": [
+        "strict-tdd",
+        "tests-with-code",
+        "critical-paths-only"
+      ],
       "default": "tests-with-code",
       "writes": "policy.testing_mandate",
       "autonomy": "auto-default",
@@ -64,8 +91,17 @@
       "id": "q.core.nfr",
       "ask": "Rank the non-functional priorities that should decide close calls.",
       "kind": "scale",
-      "options": ["delivery-speed", "performance", "security", "compatibility", "operability"],
-      "default": ["delivery-speed", "security"],
+      "options": [
+        "delivery-speed",
+        "performance",
+        "security",
+        "compatibility",
+        "operability"
+      ],
+      "default": [
+        "delivery-speed",
+        "security"
+      ],
       "writes": "policy.nfr_priorities",
       "autonomy": "always-ask",
       "severity": "blocking",
@@ -75,7 +111,11 @@
       "id": "q.core.lens-strictness",
       "ask": "How strict should automated review be?",
       "kind": "single",
-      "options": ["minimal", "standard", "strict"],
+      "options": [
+        "minimal",
+        "standard",
+        "strict"
+      ],
       "default": "standard",
       "writes": "policy.lens_strictness",
       "autonomy": "auto-default",
@@ -102,6 +142,16 @@
       "autonomy": "always-ask",
       "severity": "blocking",
       "rationale": "Copied into the constitution and enforced by the write-lease check. Empty is a valid answer for a greenfield project."
+    },
+    {
+      "id": "q.core.delegate",
+      "ask": "Who owns exemptions, and which checks may an agent waive in their name?",
+      "kind": "free",
+      "default": {},
+      "writes": "policy.delegation",
+      "autonomy": "auto-default",
+      "severity": "optional",
+      "rationale": "A waiver is owned by a person who can be asked. Naming that person once, with the checks they delegate (for example docs and env), lets an agent record a routine waiver without a call; a finding waiver is never delegated. The default is empty, which changes nothing: every waiver is then recorded by hand. A person opts in with `aegis answer q.core.delegate` and the shape {\"owner\": \"<name>\", \"may_waive\": [\"docs\"]}."
     }
   ]
 }

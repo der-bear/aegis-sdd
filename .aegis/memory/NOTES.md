@@ -5,76 +5,78 @@ not a log. Keep it under the `notes` token budget in `policy.json`.
 
 ## Current milestone
 
-**TASK-UNBLOCK-03 is merged, on branch `adopt-aegis` — not landed on `main`, not pushed.** The first full green cycle
-of this dogfood — init → spec → plan → tasks → build → review → gate → merge — which is the
-acceptance criterion EVALUATION §2 set. Three commits: `5dfb9e0` records the adoption state
-(13 paths by name plus the staged rename), `1277dbe` is the task, and `b430e32` its merge bookkeeping. The review digest
-`7942d66a9fd82cf9` did not move across the adoption commit, which is ADR-4's central claim,
-now verified on the real repository rather than in a fixture.
+**TASK-STABLE-01 is abandoned, and the framework's own rule is what abandoned it.** Branch
+`stable-01`, off `adopt-aegis` at `458eb78`. One commit, `e8bbace`, carries the round's evidence;
+the 21 code and document files are uncommitted because the gate refuses them. Seven of its sixteen
+requirements converged with every finding closed — R-1, R-2, R-3, R-5, R-7, R-8, R-16. R-4 and R-6,
+the attribution half, did not: the class produced a blocking finding in every round of this task and
+of the two before it, and in round 3 correctness and security found *opposite* failures of one rule
+in one round — it refuses legitimate work on a brownfield branch that diverged before adoption, and
+its trust root is a local ref an agent can move with one command. Rule 5 says the mechanism is
+wrong, and rule 5 is what the task obeyed.
 
-Three lens rounds, 43 findings, all three lenses ending with zero blocking open. 213 tests.
+**ADR-5 decides what to do, and leaves the owner one binary question.** Revised 2026-09-19 after an
+independent review: the next task deletes the base-agreement rule, sets a task's base at the branch
+point so a pre-claim commit is *reviewed* instead of refused, and states the trust model in a
+paragraph. Hours, four records instead of five, and it answers the brownfield refusal by inclusion —
+the owner's "do not over-restrict the agent", paid for by deleting code. The question that is not
+mine: **does a checkout with no remote trust its agent?** Nothing in v1 or v2 can tell the agent
+moving `main` from the owner moving it, so the answer decides whether the two `who: human` steps
+become `cli` or whether a remote becomes a precondition for the guarantees.
 
-**One thing is committed knowingly wrong, under a person-owned waiver.** `docs/ARCHITECTURE.md`
-holds three claims a verification pass found false against the code. It sits inside the
-digest, and the round budget was spent, so correcting it before the commit would have invalidated
-the receipt and all three reviews. The owner chose to commit with it stale and owned:
-`W-architecture-stale-after-cap`, Alex Derkach, expires 2026-10-02. The next task retires the
-waiver by correcting the three claims on the small post-commit diff and attesting the document.
+**The tree stays as round 3 read it** because the next task starts by deleting that rule, not because
+moving it would destroy evidence.
 
-`aegis status` currently prints "2 still uncommitted and attributed to adoption". Both halves are
-false: `CLAUDE.md` and `AGENTS.md` are committed, under the task. The baseline is retired — 13
-paths as recorded, 2 changed under a task. That is requirement 4 of the next task.
-
-**Landing is the owner's step, and the framework currently forces it.** Once the task was
-`merged`, the pre-commit hook refused the next commit: the merge gate diffs the whole branch
-against `main`, and a merged task no longer owns its 48 files. The agent's attempt to move `main`
-was refused by the permission layer as a merge without review — correctly. So this file is
-uncommitted until the branch lands (requirement 10 in retro 0002 records the finding).
+255 tests, `make lint` clean, the bootstrap gate green, all four documents attested,
+`W-architecture-stale-after-cap` deleted. After the abandonment `trace` correctly reports forty
+files as belonging to no task. Retro: `.aegis/memory/retros/0003.md`.
 
 ## Decisions taken (with the ADR they became, if any)
 
-- ADR-2, with amendments from all three cycles: root causes, sequence, and what the dogfood changed.
+- ADR-2, with amendments from all four cycles: root causes, sequence, and what the dogfood changed.
 - ADR-3: lenses, roles and engines are data; no vendor is required. Not yet built.
 - ADR-4: adoption is attributed by content, not by history — a recorded path belongs to adoption
   while the repository still holds what was recorded, absence is itself a record, and committing
   the adoption state as it stands keeps it attributed and retires the baseline.
 - A changed mechanism is a new change: it gets a new task with a fresh round budget, never a
   reset counter on the old one.
-- The commit hook is an early error, not a barrier. The barrier outside Claude Code is
-  `aegis git-hooks install` plus CI, and a hook that cannot find its CLI refuses rather than
-  passing quietly.
-- A blocking review finding is closed by a code change a re-review confirms, or by a person who
-  is neither the builder nor the lens (R-25). One implementation, read by the gate and by
-  `aegis next`.
-- A document is attested only when someone has checked it. `cli-reference` and `usage` carry an
-  agent's signature and say so; `architecture` carries none, because signing a claim there is
-  evidence against is worse than an unowned stale marker.
+- A plan is not a lease. A task holds `owns` from `claim` to `merge`; several planned tasks may
+  name the same globs, and code under a planned task's globs belongs to no task.
+- A merged task keeps a file only while the file still holds what its merge receipt recorded.
+  That is what lets a branch take its next commit before it lands.
+- Authority is data, and the data must be older than the decision it authorises: `aegis waive`
+  reads the delegation from `HEAD:.aegis/answers.json`, never from the working tree.
+- Size budgets warn and never block. A rewrite to fit a number costs more tokens than the overage
+  and loses what was cut — the owner's two reasons. This file and the handoff are both over.
+- A document is attested only when someone has checked it, and an agent that checked one may sign
+  for that.
 
 ## The lesson of this cycle
 
-**A green task gate does not imply a committable state.** Document freshness and review freshness
-are independent checks over the same files, and once the round budget is spent only one of them
-can be satisfied: correcting a document invalidates the reviews, leaving it uncorrected blocks
-the merge. Two consecutive cycles ended in that vice, which makes it a class, and rule 5 says the
-mechanism is wrong. The mechanism is **review bound to a moving working tree** — ADR-1's case,
-now with a second receipt. The cheap fix available today: verify the documents *before* the last
-lens round, not after.
+**Do not touch the tree between dispatching a round and the last lens reporting.** A report is
+bound to the digest the lens was given; an edit while another lens reads refuses the report it is
+about to write, and a refused report has no ids, so its findings can never be reconciled. Two
+reports, lost in one afternoon. Now R-16, in the protocol, with its receipt.
 
-Second: mechanical checks passing is not the documents being true. `check commands`,
-`check protocols` and `check pointers` were all green while three prose claims were false.
+Second: a test written to lock a document claim counts only once it has been shown to fail on the
+bad text. Both of this cycle's first attempts passed on the very text they were written to
+correct — one harvested words from descriptions, the other looked for a number anywhere in a
+table row. Both were verified red-then-green this time, and the same discipline caught a real
+regression an hour later, when restructuring the README broke the command list.
+
+Third: the residual of a check belongs in the document, not in the reviewer's head. The
+base-agreement rule in `check trace` is vacuous on the default branch, and ARCHITECTURE §3 says so.
 
 ## Next actions, in order
 
-1. **Owner:** land the branch — `git branch -f main adopt-aegis` moves `main` to the gated
-   commit without a checkout (the working tree holds this uncommitted file, so `git switch main`
-   would refuse). Then `git add .aegis/memory && git commit` lands this checkpoint and retro 0002,
-   and `main` moves once more. Push and review as a pull request when ready. It changed `skills/`, the protocols and the
-   drafted constitution, which rule 4 says a human approves.
-2. Next task: retro 0002's list, in the owner's order — friction first, then the nine code findings.
-   The first is a regression this cycle introduced in the tests-ran evidence; the sixth retires
-   the waiver.
-3. Then TASK-UNIVERSAL-01 (bundle step 4, ADR-3). Step 5 must be rewritten as the remainder: it
-   was prepared against the pre-03 tree and now overlaps what this task implemented differently.
+1. **Owner:** answer ADR-5's fork. Everything else waits on it.
+2. Then the converging task: delete `_unreviewed_at_base` and the three `default_base` findings with
+   it, fix the one false number in EVALUATION §8 (27, not 43 — its own records and metrics say so),
+   take R-16's script half (record the dispatched digest at `lens plan`; let `lens record` store a
+   stale-marked report instead of discarding it), and the nine advisory findings mapped in
+   TASK-STABLE-01's handoff under `findings_to_steps`.
+3. Then TASK-STABLE-02 (R-9, R-10) and TASK-STABLE-03 (R-11..R-15, plus `templates/**` and the CI
+   template's divergent claim, recorded in TASK-STABLE-01's `lease_expansion_request`).
 
 ## Open questions for the human
 
@@ -82,17 +84,14 @@ Second: mechanical checks passing is not the documents being true. `check comman
 - Project 2: which project of a different kind.
 - Keep the adoption baseline at all? ADR-4 makes it correct; retro 0001 argues for deleting it and
   requiring a commit before the first task.
-
-## Decided by the owner since the merge
-
-- The definition of optimal: stable, little human participation, the agent not over-restricted,
-  no artefact ever rewritten for tokens. The gate blocks on correctness only. Retro 0002 carries
-  the eight requirements this re-orders the next task into; they come before the code findings.
+- Push and pull request for `adopt-aegis` and `stable-01`: not done, and not to be done without
+  the owner. Both changed `skills/`, the protocols and the drafted constitution.
 
 ## How to verify the current state
 
-    make check                          # 213 tests + bootstrap gate
-    scripts/aegis/aegis gate --stage task --task TASK-UNBLOCK-03 --no-run
-    scripts/aegis/aegis gate --stage merge --no-run     # green; architecture waived
+    make check                          # 255 tests + bootstrap gate
+    python3 tests/test_aegis.py         # the same 255, which is what R-16's neighbour locks
+    scripts/aegis/aegis gate --stage task --task TASK-STABLE-01 --no-run
+    scripts/aegis/aegis gate --stage merge --no-run
     scripts/aegis/aegis next
     scripts/aegis/aegis status

@@ -29,12 +29,16 @@ No dependencies: Python 3.9+, standard library.
 ```bash
 cd your-project
 aegis init
+aegis git-hooks install
+aegis gate --stage bootstrap
 aegis interview
 ```
 
-`init` reads manifests, lockfiles, the Makefile and CI, then scaffolds and compiles. It
-establishes packages with their **real** test and lint commands, the project type,
-environment variables, routes, migration and test paths.
+`init` reads manifests, lockfiles, the Makefile and CI, then scaffolds and compiles. It does
+not install the git hooks and does not run the bootstrap gate: both are the next two commands,
+because a check that installs itself is one nobody decided to have; `check setup` warns while
+the hooks are missing. `init` establishes packages with their **real** test and lint commands,
+the project type, environment variables, routes, migration and test paths.
 
 `interview` turns what is left into a conversation: only what detection could not answer,
 in batches of three, irreversible decisions first, each with a default and the reason it is
@@ -49,7 +53,9 @@ Read from the repository — confirm as one screen (2 items):
 Batch 1:
   Which decisions may agents take without asking you? [irreversible]
     options: code-style, internal-refactors, new-dependencies, schema-changes, public-contracts
-    why:     This is the escalation boundary every builder is held to.
+    default: ["code-style", "internal-refactors"]
+    why:     This is the escalation boundary every builder is held to. It is the one setting
+             worth your attention even in a hurry.
     record:  aegis answer q.core.autonomy-limits <value>
 ```
 
@@ -76,8 +82,8 @@ next: review TASK-042-01  [agent]
   then: dispatch lens-security
 ```
 
-`aegis next --run` executes consecutive CLI steps and stops where a human or an agent is
-needed.
+`aegis next --run` executes the step when it is a self-contained `aegis` command — today that
+is the task gate, and nothing else — and stops where a human or an agent is needed.
 
 The full cycle, as slash commands in Claude Code:
 
@@ -102,7 +108,7 @@ delegate — it silently degrades into a builder holding the wrong prompt.
 
 | Problem | Mechanism |
 |---|---|
-| Agents edit the same files and collide | An exclusive **write lease** per task; overlapping leases are refused at creation, and a write outside one is refused by a hook |
+| Agents edit the same files and collide | An exclusive **write lease** per task, held from `claim` to `merge`; claiming a lease another task holds is refused, and a write outside one is refused by a hook |
 | Every builder gets a differently worded brief | `aegis packet` **generates** the delegation contract from the spec and the manifest |
 | "Which reviews should run" is a judgement call | `aegis lens plan` computes it from declared **and** detected change kinds |
 | Review findings get lost between rounds | Stable finding ids, carried dispositions, and detection of a "fixed" finding that came back |
@@ -110,7 +116,7 @@ delegate — it silently degrades into a builder holding the wrong prompt.
 | Diagrams drift from the code | Content digest of the sources a diagram watches — a date can be edited, a digest cannot |
 | Documentation accumulates | Anything outside the doc profile is a gate finding, not a bonus |
 | Configuration drifts | `answers.json` → `generated/` by a pure function; hand edits are blocked and detected |
-| The gate cannot run on a legacy repo | Three stages, and every check scoped to the diff rather than the repository |
+| The gate cannot run on a legacy repo | Three stages, and the change-sensitive checks scoped to the diff rather than the repository |
 
 ## Any kind of project
 
@@ -128,9 +134,10 @@ about tenancy; a data pipeline about personal data; a library about its compatib
 promise. Supporting a new kind of project is one JSON file in `interview/project-type/`,
 usually with `extends` — no agent and no engine changes.
 
-Profiles scale the machinery: **S** is one builder, two registries and two lenses on task
-work — the third, design, is dispatched when a feature closes; **L** is
-three builders, every registry and a strict review matrix. A profile can shrink as readily
+Profiles scale the machinery: **S** is one builder, two registries and one lens on ordinary
+task work — correctness; security joins it on a route, auth, dependency or data-migration
+change, and design when a feature closes. **L** is three builders, every registry and a strict
+review matrix, where correctness and security are always on. A profile can shrink as readily
 as grow.
 
 ## Roles
@@ -212,29 +219,37 @@ variable; calling it a guarantee promises more than it can do.
 **Guarantees — properties of artifacts, not requests.**
 Exclusive write leases, with real glob intersection and a hook that refuses the write.
 A review that quotes the digest it was given, so an edit afterwards invalidates it.
-A status that cannot be asserted: `gated` requires a receipt written by a passing gate that
-actually ran the project's commands, and `merged` requires that receipt to still match.
+A status that is earned, not typed: `gated` requires a receipt written by a passing gate that
+actually ran the project's commands, and `merged` requires that receipt to still match. The
+receipt is a file; what stops it being forged is the hierarchy of trust — CI re-derives the
+gate from the same inputs — not a signature.
 Configuration as a pure function of `answers.json`, with hand edits blocked and detected.
 A gate that fails when nothing ran.
 
 **Checks — deterministic, but only as true as the artifacts they read.**
 Requirement coverage per feature, file-to-task attribution, diagram freshness by source
 digest, artifact token budgets, registry schemas, waivers with an owner and an expiry — and a
-blocking review finding is deferred only by a `finding` waiver that names its id.
+blocking review finding is deferred only by a `finding` waiver that names its id — and that one
+is never delegated: a person writes it into `.aegis/waivers.json`, which is what the gate's own
+hint says to do.
 
 **Heuristics — they catch the typical case and say so.**
 Diff scans for unregistered environment variables, events, flags, integrations and routes;
 the testing mandate; change-kind detection; evidence that a test command ran tests, read from
-the summaries the common runners print — a runner nobody recognises produces "the gate cannot
-tell", not a pass. They find `publish("order.created")` and not
+the summaries the common runners print — a runner nobody recognises makes the gate warn that
+it cannot tell, and pass. They find `publish("order.created")` and not
 `publish(topic)`. Every such finding says so in its own output, and the patterns are
 extensible through `capabilities`.
 
 **Known limits.** A `Bash` command can still write where an `Edit` would be refused; the
 containment there is the builder's git worktree and the landing review, not the hook. Write
-hooks exist only inside Claude Code; a Codex builder is contained by attribution at the gate.
-The commit hook recognises the ordinary spellings of `git commit` and `git push`; a shell can
-build one it does not, so the hook is an early error and the merge gate is the barrier.
+hooks exist only inside Claude Code; any other builder is contained by attribution at the gate.
+The git pre-commit hook runs the merge gate's *checks* — not the project's commands, and not at
+all for a commit carrying only run bookkeeping; pre-push and CI run the full gate, and
+`--no-verify` skips a hook and not CI, which is why CI is the barrier and the hook the early
+error. Both write hooks are silent in a checkout with no `.aegis/` at all. Size budgets on lens reports, the handoff and NOTES.md
+warn and never block; the bootstrap budgets — CLAUDE.md, the AGENTS.md chain, skills, roles —
+still fail, because those are loaded into every session.
 On an uncommitted repository, what was there at adoption is attributed to adoption for as long
 as the repository still holds it — committing that state as it is keeps it attributed and
 retires the baseline, while a commit that records something else puts the path back in task
@@ -246,25 +261,58 @@ anyone looked. Token figures are estimates — no tokenizer ships with Python; s
 ## Commands
 
 ```
-aegis init [--yes] [--profile S|M|L]   detect, scaffold, compile, index, install CI
-aegis interview [--json]               what is left to ask, batched and ordered
-aegis answer <question> <value>        record an answer and recompile
+aegis init [--yes] [--profile S|M|L] [--mode interactive|hybrid|autonomous] [--force]
+                                       detect, scaffold, compile, index, and add the gate
+                                       workflow where the project already uses GitHub Actions
+                                       (otherwise it is parked at .aegis/ci/). Then run
+                                       `aegis gate --stage bootstrap` and
+                                       `aegis git-hooks install` — neither happens on its own
+aegis interview [--json] [--all]       what is left to ask, batched and ordered; --all
+                                       includes the phase-2 questions
+aegis answer <question> <value> [--source --rationale]
+                                       record an answer and recompile. `q.core.delegate`
+                                       takes {"owner": "<name>", "may_waive": ["docs"]} and
+                                       must be committed before `aegis waive` will use it
 aegis next [--run]                     the next action; --run executes CLI steps
-aegis commit-scope                     (for the commit hook) none | exempt | gate for a shell command
 aegis detect                           what the repository says about itself; writes nothing
 aegis migrate                          after a framework upgrade; records a missing adoption baseline
-aegis git-hooks install [--force]      pre-commit and pre-push: the gate for commits Claude Code
-                                       never sees (a runner without hooks is covered by CI)
-aegis task new|claim|status|list|focus manifests and the write lease
-aegis packet <TASK>                    the delegation contract
+aegis compile | scaffold [--profile --doc-profile --force]
+                                       recompile .aegis/generated from answers;
+                                       re-materialise files
+aegis git-hooks install [--force]      pre-commit (the merge gate's checks, no project
+                                       commands) and pre-push (the full gate): the early error
+                                       every runner shares — CI is the barrier
+aegis task new <ID> --feature --objective --owns [--requirements --kinds]
+aegis task claim <ID> | status <ID> <value> | list | focus [<ID>]
+                                       manifests and the write lease; `focus` with no id
+                                       releases it, which is how you answer the interview
+                                       again — `aegis answer` is refused under a lease
+aegis lease check --path <p>           may this path be written (the write hook calls this;
+                                       without --path it refuses)
+aegis lease show                       the focused task's globs
+aegis land [--run]                     prints the move once the merge gate's checks are green
+                                       at HEAD; --run re-runs the full gate, commands
+                                       included, and moves the ref
+aegis waive <check> --scope --reason --expires [--ticket]
+                                       a waiver for one of the checks the *committed*
+                                       q.core.delegate delegates, in that owner's name; an
+                                       uncommitted delegation authorises nothing, and
+                                       `finding` is never delegated
+aegis packet <TASK> [--json]           the delegation contract
 aegis diff <TASK>                      the diff a reviewer reads — exactly what the digest covers
-aegis lens plan|record|disposition     review planning and evidence (record: --lens --reviewer
-                                       --digest; disposition: --by)
-aegis gate --stage bootstrap|task|merge
-aegis check <name>                     structure setup registry env surfaces routes trace
+aegis lens plan <ID> [--closing] | record <ID> --lens [--reviewer --digest]
+aegis lens disposition <ID> <F-id> fixed|false-positive|waived|deferred --reason --by
+                                       review planning and evidence; `--closing` is the only way
+                                       the design lens is planned at a feature close
+aegis gate --stage bootstrap|task|merge [--task <ID>] [--no-run]
+aegis check <name>|all                 structure setup registry env surfaces routes trace
                                        requirements testing docs budget drift banks reviews
                                        handoff protocols pointers commands
-aegis index | fmt | budget | metrics | status | docs attest --by <who>
+                                       (--task, --base, --feature scope the diff-bound ones;
+                                       `docs --closing` and `requirements --planned` widen two)
+aegis index | fmt | budget | metrics | status
+aegis docs attest [<id>] --by <who> [--note]
+aegis --root <dir> …                   run against another checkout
 ```
 
 ## Documentation

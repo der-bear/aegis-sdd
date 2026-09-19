@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from aegis_cli import checks, config, detect, flow, scaffold  # noqa: E402
 from aegis_cli.core import AegisError, Ctx, Report, emit, find_root, read_json  # noqa: E402
-from aegis_cli.core import commit_scope as core_commit_scope  # noqa: E402
 
 
 CHECKS = {
@@ -88,6 +87,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--rationale", default="")
     sub.add_parser("index", help="regenerate derived indexes")
     sub.add_parser("migrate", help="bring a project up to this version of the framework")
+    p = sub.add_parser("land", help="move the default branch to HEAD once it has passed the full merge gate")
+    p.add_argument("--run", action="store_true", help="move the ref; default prints the command")
+    p = sub.add_parser("waive", help="record a waiver in the delegated owner's name (policy.delegation)")
+    p.add_argument("check")
+    p.add_argument("--scope", required=True, help="comma-separated paths or globs")
+    p.add_argument("--reason", required=True)
+    p.add_argument("--expires", required=True, help="ISO date")
+    p.add_argument("--ticket", default="")
     p = sub.add_parser("git-hooks", help="install the git-level gate: every commit in this "
                                         "checkout, not only the ones Claude Code runs")
     p.add_argument("action", choices=["install"])
@@ -95,8 +102,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="replace a pre-commit or pre-push hook this command did not write")
     p = sub.add_parser("diff", help="the task's diff, over exactly the files its digest covers")
     p.add_argument("id")
-    sub.add_parser("commit-scope",
-                   help="read a shell command on stdin; print none|exempt|gate for the commit hook")
     sub.add_parser("fmt", help="canonicalise and sort the registries")
     sub.add_parser("status", help="one-screen project state")
     sub.add_parser("budget", help="measured token load per role and protocol")
@@ -211,9 +216,6 @@ def main(argv: list[str] | None = None) -> int:
         emit(flow.task_diff(ctx, args.id))
         return 0
 
-    if args.command == "commit-scope":
-        emit(core_commit_scope(sys.stdin.read()))
-        return 0
 
     if args.command == "interview":
         plan = config.interview(ctx, include_deferred=args.all)
@@ -334,6 +336,15 @@ def main(argv: list[str] | None = None) -> int:
         emit("compiled:\n" + "\n".join(f"  {c}" for c in changed) if changed else "already current")
         return 0
 
+    if args.command == "land":
+        for line in flow.land(ctx, run=args.run):
+            emit(line)
+        return 0
+    if args.command == "waive":
+        scope = [s.strip() for s in args.scope.split(",") if s.strip()]
+        wid = flow.waive(ctx, args.check, scope, args.reason, args.expires, args.ticket)
+        emit(f"recorded {wid} in the delegated owner's name")
+        return 0
     if args.command == "git-hooks":
         results = scaffold.install_git_hooks(ctx, force=args.force)
         if not results:

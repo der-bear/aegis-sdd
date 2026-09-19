@@ -7,7 +7,7 @@
     "path": ".aegis/protocols/audit.md"
   },
   {
-    "body_tokens": 1736,
+    "body_tokens": 1993,
     "change_kinds": [],
     "description": "Run the full Aegis cycle for one task — packet, builder, lenses, refinement, documentation sync, gate. Use to implement a task that already has a manifest.",
     "name": "build",
@@ -85,7 +85,7 @@
     "path": ".aegis/protocols/review.md"
   },
   {
-    "body_tokens": 1308,
+    "body_tokens": 1334,
     "change_kinds": [],
     "description": "The shared contract every Aegis review lens follows — scope, severity meaning, output format, and what is never a finding. Use when reviewing a task diff as any lens, in any runner. Not for implementing fixes.",
     "name": "review-lens",
@@ -99,7 +99,7 @@
     "path": ".aegis/protocols/spec.md"
   },
   {
-    "body_tokens": 721,
+    "body_tokens": 786,
     "change_kinds": [],
     "description": "Decompose a specified feature into Aegis task manifests with exclusive write leases, requirement links and acceptance criteria. Use after /aegis:plan and before any implementation.",
     "name": "tasks",

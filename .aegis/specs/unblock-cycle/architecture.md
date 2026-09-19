@@ -5,7 +5,7 @@
 - `scripts/aegis/aegis_cli/flow.py` — lens schema and recording, packet, claim, next.
 - `scripts/aegis/aegis_cli/__main__.py` — CLI surface (`task claim`, `next --run`).
 - `workflows/aegis-task.js` — the runner loop; reads `refinement_rounds`.
-- `hooks/pre-commit-gate.sh` — no override.
+- hooks/pre-commit-gate.sh — deleted by SPEC-2 R-3; the git hook is the barrier.
 - `skills/{build,spec,review-lens}/SKILL.md`, `agents/{aegis-orchestrator,lens-correctness}.md` — protocol text.
 
 ## Contracts and interfaces

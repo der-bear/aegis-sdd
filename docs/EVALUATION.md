@@ -165,8 +165,8 @@ repository produced a different kind of evidence.
 | | TASK-UNBLOCK-01 | TASK-UNBLOCK-02 | TASK-UNBLOCK-03 |
 |---|---|---|---|
 | Lenses | correctness, security, design | the same three roles, fresh contexts | the same three roles, fresh again |
-| Rounds | 3 (the cap) | 3 (the cap) | 2 |
-| Findings | 43 | 25 (15 + 4 + 6) | 15 in round 1, from three audits of the session |
+| Rounds | 3 (the cap) | 3 (the cap) | 3 (the cap) |
+| Findings | 43 | 25 (15 + 4 + 6) | 43 across three rounds, after three audits of the session |
 | Blocking left | 7, in three mechanisms | 0 | 0 |
 | Status in its manifest | abandoned | abandoned | the task this document ships with, written before its gate ran |
 
@@ -245,6 +245,15 @@ size, and it is right — the lenses reviewed the files the packet named, not 65
 fix is not a smaller list, it is a commit: once this lands, the next task's diff is its own
 change. Recorded as this cycle's clearest structural cost, and as the reason the sequence now
 puts the barrier and the commit before anything else.
+
+**How the third cycle ended.** Round 3 was the first in which all three lenses returned zero
+blocking, and the task gate went green — the first of the dogfood. The merge gate then stayed
+red on one document: a verification pass found three claims in `docs/ARCHITECTURE.md` false
+against the code, and correcting them would have moved the digest with no round left. The owner
+chose to commit with the document stale under a waiver in his name, the branch landed, and the
+next commit was refused by the installed hook, with forty-eight `belongs to no task` findings —
+a merged task no longer owned its files until `main` moved. Both facts became requirements of the next task (retro 0002), and
+the second became the merge receipt described in ARCHITECTURE §6.
 
 **What this still does not prove.** Nothing here measures whether the framework pays for itself:
 one task, one repository, one day. The lens acceptance rate (0.69–0.73 in the first task) and the

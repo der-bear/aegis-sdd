@@ -18,14 +18,20 @@ import re
 from typing import Any, Iterable
 
 from .core import (
+    ABSENT,
     AegisError,
+    content_key,
     Ctx,
     Report,
     asset_dirs,
     canonical,
     changed_files,
+    default_base,
     estimate_tokens,
+    files_between,
+    is_ancestor,
     matches_any,
+    _digest_at,
     read_json,
     read_text,
     tokens_of_file,
@@ -84,6 +90,62 @@ WAIVER_SCHEMA = {
 }
 
 
+FRAMEWORK_AGENT = re.compile(
+    # A model name, not a word a person's name may start with: the token is followed by a
+    # hyphen, a digit, or nothing. `claude.*` refused every owner called Claude Monet, and
+    # since a waiver's owner is now checked, one such person made the whole file invalid.
+    r"^(?:lens\b|aegis-|chatgpt|copilot|\S+:\S+"
+    r"|(?:claude|codex|gemini|opus|sonnet|haiku|fable|gpt|grok|llama|mistral)"
+    r"(?:[-\d]|\s*$"
+    # A version, or the runner's product word: "Claude Code", "Codex CLI", "claude session"
+    # are names of agents as surely as "claude-opus-5", and each closed a second strike.
+    r"|\s+(?:\S*\d\S*|opus|sonnet|haiku|fable|pro|flash|mini|turbo"
+    r"|code|cli|agent|session|bot|assistant)\b))",
+    re.IGNORECASE)
+
+
+# Words that name a role, a machine or nothing at all. A name made only of these names
+# nobody: `Bot Bot` and `the bot` both passed the model-name test, because neither begins with
+# a model word. The table is closed on purpose — chasing every way of writing "an agent" is the
+# arms race the two-strike rule exists to stop, and the boundary is stated in `is_person_name`.
+_NAMES_NOBODY = {
+    "a", "admin", "agent", "ai", "an", "anonymous", "assistant", "auto", "automated", "bot",
+    "bots", "builder", "ci", "cli", "code", "lens", "llm", "model", "n", "na", "none",
+    "reviewer", "root", "script", "session", "system", "team", "the", "unknown", "user",
+}
+# Letters and digits only, so punctuation carries nothing: `n/a` tokenised to `n` and `/a`, and
+# `/a` is in no table, so the one spelling most likely to mean "nobody" passed.
+_WORD = re.compile(r"[^\W_]+", re.UNICODE)
+
+
+def is_person_name(name: str | None, builder: str = "", lens: str = "") -> bool:
+    """A name the framework will accept as a person's: not empty, not a single character, and
+    not something it recognises as an agent, the task's builder or the lens in question.
+
+    A `--by` of one character passed every check while naming nobody; and a waiver's owner
+    was never checked at all, so an agent could mute a check with itself as the accountable
+    party. One test, read by dispositions, attestations and waivers alike — the value of the
+    rule is that whoever is named can be asked. Attestation is different: an agent that
+    checked a document may sign for that, so `docs attest` asks only for a real name.
+
+    What it cannot do, and does not claim: tell a real person from an invented one. `Jane Smith`
+    passes whether or not she exists. That is why a waiver is a record and not a signature — the
+    gate says the candidate changed the file and re-takes every review of it, and the person the
+    record names is someone a reader can go and ask.
+    """
+    by = (name or "").strip()
+    if len(by) < 3:
+        return False
+    if by.lower() in ((builder or "").strip().lower(), (lens or "").strip().lower()):
+        return False
+    if FRAMEWORK_AGENT.match(by):
+        return False
+    tokens = [t.lower() for t in _WORD.findall(by)]
+    # Nothing left that could be anyone's name. `Test Owner` keeps its `owner`, `Alex Derkach`
+    # keeps both, and `the bot` keeps nothing.
+    return bool([t for t in tokens if t not in _NAMES_NOBODY and not t.isdigit()])
+
+
 def load_waivers(ctx: Ctx) -> list[dict]:
     """A waiver must name a specific check and a specific scope.
 
@@ -100,6 +162,10 @@ def load_waivers(ctx: Ctx) -> list[dict]:
     if duplicates:
         errors.append(f"$: duplicate waiver ids {duplicates}; an audit reference must be unambiguous")
     for index, waiver in enumerate(waivers if isinstance(waivers, list) else []):
+        if isinstance(waiver, dict) and not is_person_name(waiver.get("owner")):
+            # An owner is who can be asked. An agent-named owner muted a check with nobody
+            # accountable; delegation is how an agent records one in a person's name.
+            errors.append(f"$[{index}].owner: {waiver.get('owner')!r} is not a person's name")
         if isinstance(waiver, dict) and waiver.get("check") == "finding":
             loose = [s for s in waiver.get("scope") or [] if not FINDING_ID.match(str(s))]
             if loose:
@@ -146,7 +212,17 @@ def waiver_for(waivers: list[dict], check: str, path: str | None) -> dict | None
 
 
 def apply_waivers(ctx: Ctx, report: Report) -> Report:
-    waivers = load_waivers(ctx)
+    try:
+        waivers = load_waivers(ctx)
+    except AegisError as err:
+        # Fail closed, as a finding: no waiver applies, and the gate says which entry is wrong
+        # instead of dying with a traceback that hides every other finding.
+        out = Report(notes=list(report.notes))
+        for finding in report.findings:
+            out.add(finding)
+        out.fail("waiver", " ".join(str(err).split()), ".aegis/waivers.json",
+                 hint="no waiver applies until the file validates")
+        return out
     if not waivers:
         return report
     out = Report(notes=list(report.notes))
@@ -519,6 +595,96 @@ def active_tasks(ctx: Ctx) -> list[dict]:
     return out
 
 
+HOLDING = ("building", "review", "refine", "docs", "gated")
+"""The statuses in which a task holds its write lease: from claim to merge.
+
+A `planned` task is a plan. It owns nothing, so a backlog of them neither blocks a merge nor
+claims a file twice — and code written under a planned task's globs belongs to no task, which
+is stricter than asking that task for a handoff, not looser.
+"""
+
+
+def merge_receipt_files(ctx: Ctx, task_id: str, scope: set | None = None) -> dict[str, str]:
+    """What the full merge gate recorded for a task's files, by content key; empty if none."""
+    from .core import merge_base
+    path = ctx.path("runs", task_id, "merge-receipt.json")
+    if not os.path.exists(path):
+        return {}
+    receipt = read_json(path, default={}) or {}
+    if scope is not None and not (set(receipt.get("files") or {}) & set(scope)):
+        return {}  # nothing here is in this candidate, so do not ask git about ancestry
+    sha = str(receipt.get("sha") or "")
+    # The one field that binds a receipt to where it was earned. A receipt whose commit is
+    # not behind HEAD — a rebase, a copied file — is ignored, not trusted. This is not a
+    # signature: `.aegis/runs/` is a versioned file below CI in the hierarchy of trust, and
+    # the document says so rather than claiming otherwise.
+    if not sha or merge_base(ctx, sha) != sha:
+        return {}
+    files = receipt.get("files")
+    return files if isinstance(files, dict) else {}
+
+
+def merge_receipt_at(ctx: Ctx, task_id: str) -> str:
+    receipt = read_json(ctx.path("runs", task_id, "merge-receipt.json"), default={}) or {}
+    return str(receipt.get("at") or "")
+
+
+def _unreviewed_at_base(ctx: Ctx, base: str | None, root: str | None, paths: list[str],
+                       owns: list[str], receipted: dict[str, set[str]]) -> set[str]:
+    """Paths whose content at a task's base no review ever saw.
+
+    A lease says who may write a file. It does not say that what is already in the file was
+    reviewed, and a task's own diff cannot tell the difference: commit a payload while the
+    task is still a plan, claim — which fixes the base at that commit — then add one comment
+    to the same file, and `aegis diff` shows the comment while the merge receipt records the
+    whole content as the task's reviewed work. The payload sits at the base, so it is outside
+    `base..worktree` and every lens read a diff that did not contain it.
+
+    So a holding task's base must agree with what the branch inherited, for each file it
+    claims, unless a merge receipt on this branch records that exact content — which is what
+    an earlier task of the same branch leaves behind when it legitimately changed the file.
+
+    Only when the branch point is an ancestor of the base. A base at or before the branch
+    point is behind the mainline, and everything after it is inside the task's own reviewed
+    diff, where the lenses do see it.
+    """
+    if not base or not root or base == root or not is_ancestor(ctx, root, base):
+        return set()
+    suspect = set(files_between(ctx, root, base))
+    out: set[str] = set()
+    for rel in paths:
+        if rel not in suspect or not matches_any(rel, owns):
+            continue
+        at_base = _digest_at(ctx, base, rel)
+        if at_base is None or at_base == _digest_at(ctx, root, rel):
+            continue
+        if at_base in receipted.get(rel, ()):
+            continue
+        out.add(rel)
+    return out
+
+
+def _holds_recorded(ctx: Ctx, rel: str, record: str) -> bool:
+    """Does the repository still hold, at this path, what the merge gate recorded?
+
+    The index too, not only the working tree — the same rule the adoption baseline uses, and
+    for the same reason the commit hook reads the index: what is staged is what a commit
+    will contain. Comparing the working tree alone let someone stage different content,
+    restore the tree to the recorded bytes, and commit the staged version under a merged
+    task's name.
+    """
+    from .core import _digest_in_index
+    full = os.path.join(ctx.root, rel)
+    key = content_key(full)
+    if key is None:
+        if record != ABSENT or os.path.lexists(full):
+            return False
+    elif key != record:
+        return False
+    staged = _digest_in_index(ctx, rel)
+    return staged is None or staged == record
+
+
 def check_trace(ctx: Ctx, scope: list[str], task_id: str | None = None) -> Report:
     """Map every changed file to exactly one owning task.
 
@@ -544,10 +710,27 @@ def check_trace(ctx: Ctx, scope: list[str], task_id: str | None = None) -> Repor
             # `.aegis/`, which is exactly where a project freezes its standards.
             report.fail("trace", "changed file is inside a frozen zone", rel,
                         hint="a human unfreezes the path in answers.json first; no task owns it")
+    if ".aegis/waivers.json" in scope:
+        # A waiver is a record, not a signature: the file is ordinary and a hand-typed entry
+        # with a plausible owner loads like any other. What the gate can do is say the
+        # candidate changed it, and put it in the digest so every review of this candidate
+        # is re-taken.
+        report.warn("trace", "this candidate changes what the gate is allowed to waive",
+                    ".aegis/waivers.json",
+                    hint="a waiver names a person who can be asked; `aegis waive` records one "
+                         "under `policy.delegation`, and every other entry is a person's")
     if ".aegis/answers.json" in scope:
         # A shell write plus `aegis compile` leaves no drift and no lease trail, so the one
         # thing the gate can do is say it out loud and invalidate every review of this
         # candidate — the digest covers the file for that reason.
+        #
+        # A warning rather than a failure, deliberately. The attack it was raised against —
+        # release the focus, answer `q.core.delegate` with an invented owner, waive in that
+        # name — is closed at the other end: `aegis waive` reads the delegation from
+        # `HEAD:.aegis/answers.json`, so an uncommitted answer authorises nothing, and the
+        # commit that would authorise it is itself in the digest and named here. Failing
+        # instead would refuse every candidate in which a person answered a question, which is
+        # the ordinary way configuration changes and the thing the framework asks them to do.
         report.warn("trace", "this candidate changes the project's answers", ".aegis/answers.json",
                     hint="frozen zones, autonomy limits and commands live there: a person "
                          "confirms the change, and `aegis answer` is how it is meant to happen")
@@ -579,12 +762,63 @@ def check_trace(ctx: Ctx, scope: list[str], task_id: str | None = None) -> Repor
     considered = [f for f in scope if not matches_any(f, exclude)]
 
     owners: dict[str, list[str]] = {}
-    for task in tasks:
-        if task.get("status") in ("merged", "abandoned"):
-            continue
+    # Receipts first, then leases, because they answer different questions and the order is
+    # what keeps them from answering both at once. A merged task owns a file while the file
+    # still holds exactly what the full merge gate saw — its own commits stay attributed to
+    # it before the branch lands, and a later edit does not. A holding task then claims by
+    # glob only what no receipt holds; otherwise the second task over the same globs failed
+    # the merge gate with "claimed by several tasks" for a file it had not touched, which is
+    # the backlog this mechanism exists to allow.
+    # One rule: a content record beats a lease, and the earliest record wins. Both halves
+    # live here, so a receipt can record everything its gate saw without a second tie-break
+    # at the writing end.
+    merged = sorted((t for t in tasks if t.get("status") == "merged"),
+                    key=lambda t: (merge_receipt_at(ctx, t["id"]), t["id"]))
+    # What receipts on this branch record, by path: content an earlier merged task is
+    # evidence for, which is the one legitimate reason a later task's base can differ from
+    # what the branch inherited.
+    receipted: dict[str, set[str]] = {}
+    root = default_base(ctx)
+    for task in merged:
+        recorded = merge_receipt_files(ctx, task["id"], set(considered))
+        for rel, key in recorded.items():
+            receipted.setdefault(rel, set()).add(key)
         for rel in considered:
-            if matches_any(rel, task.get("owns") or []):
+            if rel in owners or rel not in recorded:
+                continue
+            if _holds_recorded(ctx, rel, recorded[rel]):
                 owners.setdefault(rel, []).append(task["id"])
+    for task in tasks:
+        if task.get("status") not in HOLDING:
+            continue  # a plan is not a lease; an abandoned task never held one
+        # Only what this task's own reviewed diff contains. A glob match alone let a commit
+        # made before the lease started — while the task was still planned, or before it
+        # existed — be attributed to the task at the merge stage although no lens ever saw
+        # it: the file was outside `aegis diff`, outside the digest and outside the task
+        # gate, and the merge receipt then recorded it as the task's own work.
+        reviewed = set(changed_files(ctx, task.get("base_sha")))
+        unreviewed = _unreviewed_at_base(ctx, task.get("base_sha"), root, considered,
+                                        task.get("owns") or [], receipted)
+        for rel in considered:
+            if rel in owners or not matches_any(rel, task.get("owns") or []):
+                continue
+            if rel in unreviewed:
+                report.fail("trace", f"{task['id']}'s base already carries a change to this "
+                            f"file that no review covers", rel,
+                            hint="the lease began after this content was committed, so it is "
+                                 "outside `aegis diff` and every lens read a diff without it. "
+                                 "Land the commit that carries it under its own task, or "
+                                 "create a task whose base predates it")
+                continue
+            if rel not in reviewed:
+                report.fail("trace", f"inside {task['id']}'s lease but not in its reviewed "
+                            f"change; it was already there when the task started", rel,
+                            hint="this change predates the lease, so no lens has seen it and "
+                                 "no task owns it: make it again under a claimed lease, or "
+                                 "create a task whose base is older than the change. Re-"
+                                 "claiming cannot help — a base only ever moves forward")
+                continue
+            owners.setdefault(rel, []).append(task["id"])
 
     mine = 0
     for rel in considered:
@@ -596,7 +830,9 @@ def check_trace(ctx: Ctx, scope: list[str], task_id: str | None = None) -> Repor
             # read it — deliberately, because exempting CI and root manifests let a
             # dependency bump land unreviewed — so the hint promised a knob that did nothing.
             report.fail("trace", "changed file belongs to no task", rel,
-                        hint="add the path to the owning task's `owns` globs, or create the task "
+                        hint="`aegis task claim <ID>` the planned task whose globs name it — a "
+                             "plan owns nothing until it is claimed — or add the path to the "
+                             "owning task's `owns` globs, or create the task "
                              "that owns it; a path recorded at adoption is attributed to adoption "
                              "while the repository still holds what was recorded, so committing "
                              "the adoption state as it is keeps it attributed and retires the "
@@ -680,20 +916,30 @@ def check_requirements(ctx: Ctx, feature: str | None = None, planned: bool = Fal
                                  "abandon the tasks that cite them")
             continue
         cited: set[str] = set()
+        pending: set[str] = set()
         for task in tasks:
-            # A `planned` manifest citing every requirement would otherwise report a feature
-            # fully covered before a line of it exists.
-            accepted = ("planned", "building", "review", "refine", "docs", "gated", "merged") \
-                if planned else ("gated", "merged")
-            if task.get("feature") != name or task.get("status") not in accepted:
+            if task.get("feature") != name or task.get("status") == "abandoned":
                 continue
             # Only requirements this spec declares: citing R-999 covered nothing and said so
             # to nobody.
-            cited.update(r for r in (task.get("requirements") or []) if r in declared)
-        uncovered = sorted(declared - cited)
+            declared_here = {r for r in (task.get("requirements") or []) if r in declared}
+            # A `planned` manifest citing every requirement would otherwise report a feature
+            # fully covered before a line of it exists. At the merge stage a requirement an
+            # open task cites is *pending*: one spec split into several tasks is the ordinary
+            # case, and calling the later tasks' requirements "uncovered" failed the first
+            # task's merge gate for work that was planned and leased.
+            if planned or task.get("status") in ("gated", "merged"):
+                cited.update(declared_here)
+            else:
+                pending.update(declared_here)
+        pending -= cited
+        uncovered = sorted(declared - cited - pending)
         if uncovered:
             report.fail("requirements", f"{name}: not covered by any task: {', '.join(uncovered)}",
                         ctx.rel(spec_file), hint="run `/aegis:tasks` for the feature or move them out of scope")
+        if pending:
+            report.info("requirements", f"{name}: pending in open tasks: {', '.join(sorted(pending))}",
+                        ctx.rel(spec_file))
         stray = sorted(cited - declared)
         if stray:
             report.warn("requirements", f"{name}: tasks cite requirements this spec does not declare: "
@@ -710,7 +956,7 @@ NORMALISE = re.compile(r"[ \t]+")
 def source_digest(ctx: Ctx, patterns: Iterable[str]) -> str:
     """Digest of the normalised content of every file a diagram watches.
 
-    Content-addressed rather than timestamp-based: a `last_verified` date can be bumped by
+    Content-addressed rather than timestamp-based: a `verified_at` date can be bumped by
     anyone to turn a gate green, a digest cannot be satisfied without actually looking at
     what changed.
     """
@@ -1181,7 +1427,9 @@ def check_budget(ctx: Ctx) -> Report:
     if os.path.exists(notes):
         used, cap = tokens_of_file(notes), budgets.get("notes", 3000)
         if used > cap:
-            report.fail("budget", f"NOTES.md ≈{used} tokens (cap {cap})", ctx.rel(notes),
+            # A warning, never a failure: the owner's rule is that no artefact is rewritten
+            # for tokens, because the rewrite costs more than the overage and loses context.
+            report.warn("budget", f"NOTES.md ≈{used} tokens (warning line {cap})", ctx.rel(notes),
                         hint="it is a checkpoint, not a log: rewrite it rather than appending")
         else:
             report.info("budget", f"NOTES.md ≈{used} tokens (cap {cap})", ctx.rel(notes))
@@ -1204,10 +1452,10 @@ def check_budget(ctx: Ctx) -> Report:
                 if not isinstance(used, int):
                     used = tokens_of_file(path)
                 if used > cap:
-                    report.fail("budget", f"{task_id}/{name}: the latest lens report is ≈{used} tokens (cap {cap})",
+                    report.warn("budget", f"{task_id}/{name}: the latest lens report is ≈{used} tokens (warning line {cap})",
                                 ctx.rel(path),
-                                hint="re-run the lens: a message is at most two sentences, advisory "
-                                     "findings go first when space is short (review-lens protocol)")
+                                hint="size is not correctness: the report is read as it is; keep each "
+                                     "message to two sentences (review-lens protocol)")
     return report
 
 
@@ -1256,6 +1504,25 @@ def check_protocol_copies(ctx: Ctx) -> Report:
     return report
 
 
+def git_hook_installed(ctx: Ctx) -> bool:
+    from .scaffold import GIT_HOOK_MARK
+    from .core import git
+    # `git rev-parse --git-path hooks`, as the installer uses: in a linked worktree `.git` is
+    # a file and the hooks live in the main repository, so reading `<root>/.git/hooks` told
+    # every builder worktree that the gate it was running under was not installed.
+    hooks = git(ctx, "rev-parse", "--git-path", "hooks").strip() or ".git/hooks"
+    if not os.path.isabs(hooks):
+        hooks = os.path.join(ctx.root, hooks)
+    path = os.path.join(hooks, "pre-commit")
+    if not os.path.isfile(path):
+        return False
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            return GIT_HOOK_MARK in fh.read()
+    except OSError:
+        return False
+
+
 def check_setup(ctx: Ctx) -> Report:
     """Is the project's own setup finished enough to vouch for work?
 
@@ -1274,6 +1541,15 @@ def check_setup(ctx: Ctx) -> Report:
         report.fail("setup", f"{len(answers['ledger'])} auto-resolved assumption(s) are unreviewed",
                     hint="confirm them with `aegis answer`, or accept them deliberately "
                          "with `aegis init --yes`")
+    from .core import git_available
+    if git_available(ctx) and not git_hook_installed(ctx):
+        # The barrier for commits nobody routes through Claude Code. Nothing installs it
+        # automatically, so a fresh clone has no local gate until someone opts in — and the
+        # session that does not know that is the one that commits past it.
+        report.warn("setup", "the git-level gate is not installed in this checkout", None,
+                    hint="`aegis git-hooks install` — CI runs the same gate, so this is the "
+                         "early error, not the barrier")
+
     return report
 
 

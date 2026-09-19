@@ -52,10 +52,11 @@ thorough is the most expensive thing a lens can do.
 
 ## Size
 
-The whole report fits in about **1,000 tokens** — the gate measures it. A message is at most
-two sentences: what is wrong and the concrete consequence. `minimal_fix` is one line. When
-the findings do not fit, keep the blocking ones and drop observations and advisories first;
-a long report is read less carefully than a short one, which defeats the review.
+The gate measures the report and warns past about 1,000 tokens; it never blocks on size, and
+nothing is dropped or reordered to fit — a finding left out to save tokens is a review that
+did not happen. A message is at most two sentences: what is wrong and the concrete consequence. `minimal_fix` is one line. Write
+every finding you have: a long report is worse to read than a short one, and a review missing
+a finding is worse than both.
 
 ## Output
 

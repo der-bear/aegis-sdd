@@ -11,6 +11,8 @@
 # Exit 2 blocks the tool call and returns stderr to the model as the reason.
 set -uo pipefail
 
+root="${CLAUDE_PROJECT_DIR:-$PWD}"
+
 payload="$(cat)"
 path="$(printf '%s' "$payload" | python3 -c '
 import json, sys
@@ -22,13 +24,30 @@ inp = data.get("tool_input") or {}
 print(inp.get("file_path") or inp.get("notebook_path") or "")
 ' 2>/dev/null)"
 
-[ -n "$path" ] || exit 0
+if [ -z "$path" ]; then
+  # An empty path means the payload parsed to nothing — no python3, or a shape this hook
+  # does not know. A hook that cannot read what it is judging refuses, like the git hooks —
+  # but only where Aegis governs. Refusing without that test meant that in a project with no
+  # `.aegis/`, a machine without python3 could not write a single file, in the name of a
+  # framework that was not there. Path matching below stays unconditional: compiled output is
+  # compiled output in whatever checkout it sits.
+  if [ -d "$root/.aegis" ] && ! command -v python3 >/dev/null 2>&1; then
+    echo "Aegis cannot check this write: python3 is not on PATH, so the tool payload cannot be read." >&2
+    exit 2
+  fi
+  # python3 is here and the payload still yielded nothing. Unlike the lease hook, this one does
+  # not refuse: what it guards is compiled output, and the barrier for that is `aegis check
+  # drift` at every gate stage, which reads the files rather than the payload. Refusing every
+  # write on an unfamiliar payload shape would cost more than it protects, and the protection
+  # does not depend on this hook. That is the honest boundary, not an oversight.
+  exit 0
+fi
 
 # A relative path must be judged like an absolute one. Matching only `*/.aegis/...` meant
 # `.aegis/generated/policy.json` sailed through the check written to stop exactly that.
 case "$path" in
   /*) ;;
-  *) path="${CLAUDE_PROJECT_DIR:-$PWD}/$path" ;;
+  *) path="$root/$path" ;;
 esac
 
 # Resolve `..` before matching: `.aegis/registry/../constitution.md` is the constitution,

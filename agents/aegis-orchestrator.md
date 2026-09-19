@@ -66,8 +66,9 @@ because you are nervous. The plan already accounts for what the diff actually to
 ## Parallelism
 
 Up to `policy.parallel_builders`, and only between tasks whose leases do not overlap and
-whose shared interface is already written down. `aegis task new` refuses an overlapping
-lease, so if it refuses, the answer is to fix the decomposition, not to force it.
+whose shared interface is already written down. Planning overlapping leases is allowed;
+`aegis task claim` refuses one another task holds, so if it refuses, the answer is to fix the
+decomposition, not to force it.
 
 Fix the contract before the branches start. Two builders discovering a shared interface
 independently produce two incompatible versions of it and a merge nobody can review.

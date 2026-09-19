@@ -60,6 +60,13 @@ This unions the task's declared change kinds with kinds detected from the actual
 security review still happens when authorisation moved through middleware rather than a new
 route. Run exactly the lenses it names — dispatch them in parallel, each in a clean context.
 
+**Do not touch the tree until the last of them has reported.** A report is bound to the digest
+the lens was given, so an edit made while another lens is still reading refuses the report it is
+about to write — and a refused report has no finding ids, so its findings cannot be reconciled in
+any later round. Fix nothing, rename nothing, correct no document until every lens of the round
+is in. For the same reason, verify each stale document *before* the last round the cap allows:
+correcting one afterwards moves the digest with no round left to re-take.
+
 Each lens returns JSON. Record it, attaching who reviewed and what they read — the lens
 does not echo either:
 
@@ -87,6 +94,10 @@ raised it, not by a declaration.
 ```bash
 aegis lens disposition <TASK-ID> F-1a2b3c4d false-positive --reason "the cited line is test scaffolding" --by <who>
 ```
+
+A check the owner delegated in `policy.delegation` is waived by you, not by them:
+`aegis waive <check> --scope <paths> --reason <why> --expires <date>` records it in their name,
+with an expiry. Only the listed checks, and never `finding`.
 
 Dismissing a blocking finding — `false-positive`, `waived` or `deferred` — is a person's
 decision: `--by` names them, and the gate refuses the task's builder, the lens that raised it,

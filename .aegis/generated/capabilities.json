@@ -1,5 +1,6 @@
 {
   "baseline": {
+    "absent_recorded": true,
     "files": {
       ".claude-plugin/plugin.json": "3d198cb99114fd9d9ea0998d1deb75ecce03810412375f745e8968af3a1e3949",
       "AGENTS.md": "de63176aac518e2fbf7fde3ddc19847b6671a57e56c5ae47961cb603d9d87dee",
