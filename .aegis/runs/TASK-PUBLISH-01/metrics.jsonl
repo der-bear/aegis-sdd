@@ -7,3 +7,4 @@
 {"at": "2026-09-19T22:52:28", "blocking": 0, "event": "lens", "findings": 1, "lens": "security", "round": 2, "task": "TASK-PUBLISH-01", "verdict": "pass-with-notes"}
 {"at": "2026-09-19T22:56:12", "event": "status", "task": "TASK-PUBLISH-01", "value": "gated"}
 {"at": "2026-09-19T22:56:12", "event": "gate", "failing_checks": [], "passed": true, "seconds": 224.0, "stage": "task", "task": "TASK-PUBLISH-01"}
+{"at": "2026-09-20T01:14:23", "event": "status", "task": "TASK-PUBLISH-01", "value": "merged"}
