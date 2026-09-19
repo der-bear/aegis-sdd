@@ -7,10 +7,10 @@
     "owner": "framework maintainers",
     "path": "docs/ARCHITECTURE.md",
     "status": "proposed",
-    "verified_at": "2026-09-19",
+    "verified_at": "2026-09-20",
     "verified_by": "Claude Fable 5.1",
-    "verified_note": "rounds 5-6 changed next_action's sort key and check_requirements' hint only; §3 and §6 re-read against 78124f9",
-    "verified_source_digest": "94ec3572b18e0a8e",
+    "verified_note": "TASK-PUBLISH-01 changed one condition in the testing mandate; §3 and §6 unaffected, read against 6f9ec7c",
+    "verified_source_digest": "375cf6e2a3a5c57d",
     "watches": [
       "scripts/aegis/aegis_cli/**",
       "hooks/**",
