@@ -44,7 +44,7 @@ code review re-runs one lens, not three.
      attributed to it before the branch lands and a new edit to the same file belongs to no
      task. `aegis land` shall print the command that moves the default branch, and run it only
      when asked to, only with a merge receipt at or before HEAD, and only on a clean tree.
-~~R-5.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* Delegation shall be data: a core interview question shall write `policy.delegation` with
+~~R-5.~~ *(deleted 2026-09-19, SPEC-3/df28057 — a waiver is a record with an owner; no delegation exists)* Delegation shall be data: a core interview question shall write `policy.delegation` with
      the owner's name and the checks an agent may waive in that name. A waiver's owner shall
      pass the same person test as a finding disposition; an agent may record a waiver in the
      delegated owner's name only for a listed check, and only with an expiry and a reason.
@@ -55,7 +55,7 @@ code review re-runs one lens, not three.
      Code under a planned task's globs therefore belongs to no task until it is claimed. At the
      merge stage a requirement an open task cites shall be reported as pending, not uncovered;
      uncovered shall mean that no live task cites it.
-~~R-7.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* `aegis diff` shall show every file the digest covers, `.aegis/answers.json` included; the
+~~R-7.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3; the receipt carve-out clause went with the hook — pre-commit checks drift and structure only)* `aegis diff` shall show every file the digest covers, `.aegis/answers.json` included; the
      installed git hooks' run-directory exemption shall not cover `gate-receipt.json` or
      `merge-receipt.json`; `--by` and a waiver's owner shall share one validator that refuses a
      name shorter than three characters or one the framework knows as an agent.

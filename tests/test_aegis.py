@@ -1238,6 +1238,39 @@ class LandRefusesBeforeItRecords(ProjectFixture):
         self.assertEqual(step["command"], "aegis land", step)
 
 
+class NextAgreesWithTheGate(ProjectFixture):
+    """`next` never advises a land the merge gate will refuse, and never ranks a task whose
+    receipt the code has moved past as finished."""
+
+    def test_an_uncovered_requirement_is_named_before_land(self):
+        ctx = _green_merge(self)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "gated"], check=True)
+        self.assertEqual(flow.next_action(ctx)["command"], "aegis land")
+        self.write(".aegis/specs/orders/spec.md",
+                   "# SPEC-1\n## Requirements\nR-1. The system shall charge once.\nR-2. It shall refund.\n")
+        subprocess.run(["git", "-C", self.dir, "commit", "-qam", "a requirement nobody cites"], check=True)
+        for lens in json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)["lenses"]:
+            self.assertEqual(self.record("T-1", {"lens": lens, "verdict": "pass", "findings": []}).returncode, 0)
+        self.assertFalse(flow.gate(ctx, "task", task_id="T-1", run_commands=True).failed)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qam", "re-gated"], check=True)
+        step = flow.next_action(ctx)
+        self.assertIn("cover or retire", step["do"], step)
+        self.assertIn("R-2", step["why"], step)
+        self.assertIn("striking", step["note"] or "", step)
+
+    def test_a_stale_receipt_ranks_the_task_as_unfinished(self):
+        ctx = _green_merge(self)
+        run(["task", "new", "T-LATER", "--feature", "orders", "--objective", "later",
+             "--owns", "src/later/**", "--requirements", "R-1", "--kinds", "code"], self.dir)
+        self.write("src/orders/a.py", "A = 2\n")  # the code moved past the receipt
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "moved on"], check=True)
+        step = flow.next_action(ctx)
+        self.assertIn("T-1", step["command"] or "", step)  # re-review T-1, not build T-LATER
+        self.assertNotIn("T-LATER", step["do"], step)
+
 class ACommitBeforeTheClaimIsReviewedNotRefused(ProjectFixture):
     """A task's base is where the branch left the mainline, so anything committed on the branch
     before the claim is inside its diff, digest and packet: reviewed, not refused. The rule that

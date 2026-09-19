@@ -1762,7 +1762,7 @@ def next_action(ctx: Ctx) -> dict:
         uncovered = [f for f in checks.check_requirements(ctx).findings if f.severity == "fail"]
         if uncovered:
             return step("cover or retire the requirement", uncovered[0].message, None,
-                        note="cite it in the task that delivered it, or mark it deleted in the spec")
+                        note=uncovered[0].hint)
     if gated and not building and _land_pending(ctx):
         on_mainline = git(ctx, "branch", "--show-current").strip() == _default_branch(ctx)
         return step("land the branch", "a gated task is committed on the mainline; the gate "
@@ -1794,7 +1794,17 @@ def next_action(ctx: Ctx) -> dict:
 
     # Unfinished work outranks finished work: a gated task is waiting on a human to merge,
     # while a planned one is waiting on the agent. Sorting gated first stalled the pipeline.
-    task = sorted(open_tasks, key=lambda t: (t.get("status") == "gated", t["id"]))[0]
+    # Gated with a receipt that still matches ranks last — it is waiting on land, not on the
+    # agent — and so does `gated` with no receipt at all, which is a typed status and must not
+    # stall an unbuilt task. Gated with a receipt the code has moved past is unfinished: it
+    # needs a re-review and a re-gate, and ranking it as finished sent the loop to claim a
+    # planned task the lease clash then refused.
+    def finished(t: dict) -> bool:
+        if t.get("status") != "gated":
+            return False
+        has_receipt = os.path.exists(os.path.join(run_dir(ctx, t["id"]), "gate-receipt.json"))
+        return not has_receipt or gate_receipt_valid(ctx, t["id"])
+    task = sorted(open_tasks, key=lambda t: (finished(t), t["id"]))[0]
     task_id = task["id"]
     if not task.get("requirements"):
         # The gate rejects this unconditionally, so advising anything else here would send

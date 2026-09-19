@@ -121,7 +121,7 @@ def load_waivers(ctx: Ctx) -> list[dict]:
     for index, waiver in enumerate(waivers if isinstance(waivers, list) else []):
         if isinstance(waiver, dict) and not is_person_name(waiver.get("owner")):
             # An owner is who can be asked. An agent-named owner muted a check with nobody
-            # accountable; delegation is how an agent records one in a person's name.
+            # accountable.
             errors.append(f"$[{index}].owner: {waiver.get('owner')!r} is not a person's name")
         if isinstance(waiver, dict) and waiver.get("check") == "finding":
             loose = [s for s in waiver.get("scope") or [] if not FINDING_ID.match(str(s))]
@@ -765,7 +765,10 @@ def check_requirements(ctx: Ctx, feature: str | None = None, planned: bool = Fal
         uncovered = sorted(declared - cited - pending)
         if uncovered:
             report.fail("requirements", f"{name}: not covered by any task: {', '.join(uncovered)}",
-                        ctx.rel(spec_file), hint="run `/aegis:tasks` for the feature or move them out of scope")
+                        ctx.rel(spec_file), hint="`/aegis:tasks` for the feature gives it a task; a requirement "
+                             "delivered or deleted elsewhere is retired by striking its line — "
+                             "`~~R-N.~~ *(delivered|deleted <date>, <where>)* …` — since a "
+                             "requirement is a line that starts `R-N.`")
         if pending:
             report.info("requirements", f"{name}: pending in open tasks: {', '.join(sorted(pending))}",
                         ctx.rel(spec_file))

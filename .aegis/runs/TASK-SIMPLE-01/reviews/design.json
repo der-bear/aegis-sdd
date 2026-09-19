@@ -1,5 +1,5 @@
 {
-  "diff_digest": "32c3115f81fbf5db",
+  "diff_digest": "61dbce3e684f97d4",
   "findings": [
     {
       "disposition": "fixed",
@@ -164,6 +164,21 @@
       "severity": 1
     },
     {
+      "disposition": "open",
+      "first_seen_round": 5,
+      "id": "F-36914497",
+      "line": 124,
+      "message": "Comment `delegation is how an agent records one in a person's name` describes machinery df28057 deleted.",
+      "minimal_fix": "end the sentence at `nobody accountable`",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "61dbce3e684f97d4",
+      "requirement": "R-22",
+      "rounds": [
+        5
+      ],
+      "severity": 1
+    },
+    {
       "disposition": "fixed",
       "disposition_at": "2026-09-19T20:39:37",
       "disposition_by": "lens-design",
@@ -233,6 +248,21 @@
       "requirement": "R-24",
       "rounds": [
         1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 5,
+      "id": "F-92954ebe",
+      "line": 1764,
+      "message": "The coverage step's note and the check's own hint give two different remedies for one failure, and the note's first remedy is exactly what 57bd2df did and was refused cross-feature; the architecture is silent on how a requirement is retired — the `~~R-N.~~` convention lives only in a commit message.",
+      "minimal_fix": "`note=uncovered[0].hint`, and let the hint name the strike form",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "61dbce3e684f97d4",
+      "requirement": "R-31",
+      "rounds": [
+        5
       ],
       "severity": 1
     },
@@ -328,11 +358,11 @@
     }
   ],
   "lens": "design",
-  "recorded": "2026-09-19T21:03:31",
+  "recorded": "2026-09-19T21:27:22",
   "reopened": [],
-  "report_tokens": 827,
+  "report_tokens": 1082,
   "reviewer": "fable-5.1",
-  "round": 4,
+  "round": 5,
   "task": "TASK-SIMPLE-01",
-  "verdict": "pass"
+  "verdict": "pass-with-notes"
 }

@@ -1,5 +1,5 @@
 {
-  "diff_digest": "32c3115f81fbf5db",
+  "diff_digest": "61dbce3e684f97d4",
   "findings": [
     {
       "disposition": "fixed",
@@ -36,6 +36,36 @@
         2
       ],
       "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 5,
+      "id": "F-13f44b57",
+      "line": 47,
+      "message": "R-5 is struck `delivered … under SPEC-3`, but no `aegis waive` exists and this file's own acceptance paragraph says R-5 was deleted rather than finished; R-7's carve-out clause is moot the same way. A reader of the marker believes delegation exists.",
+      "minimal_fix": "mark R-5 like R-4 — deleted — and note on R-7 that the carve-out clause went with the hook",
+      "path": ".aegis/specs/stable-autonomy/spec.md",
+      "raised_digest": "61dbce3e684f97d4",
+      "requirement": "R-5",
+      "rounds": [
+        5
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 5,
+      "id": "F-306efe4a",
+      "line": 1797,
+      "message": "On this tree `aegis next` says `build TASK-STABLE-02`, which `_refuse_lease_clash` refuses (gated TASK-SIMPLE-01 holds `scripts/aegis/aegis_cli/**`), while `land` refuses for `no task is gated with a receipt for the current code`: `gated` is filtered by receipt validity but the sort still keys on status alone, so a task whose receipt went stale after a fix commit ranks last and its re-gate step is unreachable while any planned task exists.",
+      "minimal_fix": "rank a task with a receipt that exists but no longer matches the digest as unfinished",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "61dbce3e684f97d4",
+      "requirement": "R-31",
+      "rounds": [
+        5
+      ],
+      "severity": 2
     },
     {
       "disposition": "fixed",
@@ -162,14 +192,29 @@
         1
       ],
       "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 5,
+      "id": "F-390b5735",
+      "line": 1762,
+      "message": "The coverage step in `next_action` has no test; a reorder past `_land_pending` would go unnoticed.",
+      "minimal_fix": "one test: gated task with a valid receipt, an uncovered requirement in its spec, assert `next` says `cover or retire` rather than `land`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "61dbce3e684f97d4",
+      "requirement": "R-31",
+      "rounds": [
+        5
+      ],
+      "severity": 1
     }
   ],
   "lens": "correctness",
-  "recorded": "2026-09-19T21:03:31",
+  "recorded": "2026-09-19T21:27:22",
   "reopened": [],
-  "report_tokens": 509,
+  "report_tokens": 936,
   "reviewer": "fable-5.1",
-  "round": 4,
+  "round": 5,
   "task": "TASK-SIMPLE-01",
-  "verdict": "pass"
+  "verdict": "pass-with-notes"
 }
