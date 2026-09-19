@@ -50,5 +50,7 @@ work. If a change here also implies configuration, edit `answers.json` and run
 
 ## Signature
 
-Drafted 2026-09-17 from README, ARCHITECTURE and EVALUATION. **Awaiting a human's
-confirmation or rewrite before the first merge gate** — until then this file is a proposal.
+Drafted 2026-09-17 from README, ARCHITECTURE and EVALUATION. **Confirmed by the owner, Alex
+Derkach, on 2026-09-19** — in conversation, with the words «делай что нужно, разрешаю», after the
+simplification recorded in ADR-5 and retro 0003; the agent recorded the confirmation here on his
+behalf and did not sign for him. Amendments follow the section above.

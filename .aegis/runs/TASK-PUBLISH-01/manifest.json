@@ -1,0 +1,24 @@
+{
+  "acceptance": [],
+  "base_sha": "3c965afb697b3cdb4f502b335e240d1d67f22fbc",
+  "change_kinds": [
+    "docs"
+  ],
+  "created": "2026-09-19T22:16:24",
+  "feature": "simple-reliable",
+  "id": "TASK-PUBLISH-01",
+  "objective": "Publish: MIT licence, the constitution confirmed, a licence section in the README",
+  "owns": [
+    ".github/**",
+    "LICENSE",
+    "README.md"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-28"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "building",
+  "updated": "2026-09-19T22:16:26"
+}

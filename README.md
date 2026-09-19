@@ -309,3 +309,7 @@ aegis --root <dir> …                   run against another checkout
   and what the measurements say about the method itself.
 - [docs/spec-v0.3-original.md](docs/spec-v0.3-original.md) — the original specification,
   kept as the design record.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Alex Derkach.
