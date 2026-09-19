@@ -1,0 +1,118 @@
+{
+  "diff_digest": "c79cfaf9798c3437",
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-3e1edd64",
+      "line": 1680,
+      "message": "`land` moves the mainline to HEAD and only then commits the merged bookkeeping on the current branch, so the mainline never carries the record it just wrote (driven: `main` = the task commit, `feature` = task + `chore: land`). On `main`, `next` says land again, `land` writes a second divergent `chore: land T-1`, and the next land from the feature branch is refused with `main has commits HEAD does not`.",
+      "minimal_fix": "mark merged and commit first, then `git branch -f <default> HEAD`; update the assertion at tests/test_aegis.py:1085",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-20",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-42b74895",
+      "line": 124,
+      "message": "`tier A needs the minimum number of review rounds `aegis lens plan` prints, even when the first is clean` — the plan no longer prints one and the gate no longer enforces one, so the orchestrator dispatches a second lens round for nothing; it also contradicts the one-rule paragraph fifteen lines above.",
+      "minimal_fix": "delete the clause after `different model`; re-vendor the protocol",
+      "path": "skills/build/SKILL.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-24",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-4cda3bc9",
+      "line": 182,
+      "message": "Holding is listed as `building`, `review`, `refine`, `docs`, `gated`; the three middle statuses were deleted (`HOLDING = (\"building\", \"gated\")`). This is the one ordered list R-28 says a reader answers ownership from.",
+      "minimal_fix": "`building`, `gated`",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-28",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-de11d543",
+      "line": 1773,
+      "message": "The docs step and the `merge the branch` step are unreachable in the ordinary flow: a gated task with a clean tree always satisfies `_land_pending`, so the land step fires first. With the profile's diagram missing, `next` repeats `land the branch` for ever and only `land`'s stderr names the cause, which is the hole R-31 described.",
+      "minimal_fix": "run `check_docs(scope, closing_feature=True)` over the gated tasks before advising land, or delete the two dead steps",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-31",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-e4252975",
+      "line": 85,
+      "message": "`aegis next --run` executes every `cli` step, and `aegis land` and `aegis gate --stage merge` are `cli` — so `--run` moves the mainline ref and commits. The sentence says it runs the task gate `and nothing else`.",
+      "minimal_fix": "name the three: the task gate, the merge gate, and `land`",
+      "path": "README.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-24",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-fded4808",
+      "line": 258,
+      "message": "§4 says the tier decides a minimum number of review rounds that `aegis lens plan` prints and `check_reviews` enforces; `min_review_rounds` was deleted from both and nothing reads the tier's `review_rounds`. A reader plans an extra round the gate does not require.",
+      "minimal_fix": "cut the minimum-rounds clause; keep the independent-reviewer sentence",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-0cd8b0bf",
+      "line": 1775,
+      "message": "On the mainline the land step's `why` reads `the default branch is behind it` while `land` then prints `on main already; nothing to move` — the reason `next` gives is not what happened.",
+      "minimal_fix": "branch the `why` on `current == default`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-31",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-19T15:21:03",
+  "reopened": [],
+  "report_tokens": 1169,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-SIMPLE-01",
+  "verdict": "fail"
+}

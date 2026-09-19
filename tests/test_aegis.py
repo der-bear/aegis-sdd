@@ -555,7 +555,7 @@ class TheGateReceiptSurvivesItsOwnWrite(ProjectFixture):
             self.assertTrue(flow.gate_receipt_valid(core.Ctx(self.dir), "T-1"),
                             "a green gate must leave a receipt that still matches")
 
-    def test_merged_requires_a_receipt_not_just_a_status(self):
+    def test_merged_is_refused_by_hand(self):
         self.make_task()
         path = os.path.join(self.dir, ".aegis/runs/T-1/manifest.json")
         manifest = json.load(open(path))
@@ -1081,11 +1081,13 @@ class AGatedTaskOwnsItsFilesUntilItLands(ProjectFixture):
         self.assertIn("not clean", out.stderr)
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "everything"], check=True)
-        head = subprocess.run(["git", "-C", self.dir, "rev-parse", "HEAD"], capture_output=True, text=True).stdout
         out = run(["land"], self.dir)
         self.assertEqual(out.returncode, 0, out.stderr)
+        # The ref moved to the commit that carries the record — land records, then moves —
+        # so the mainline and the branch agree and a second land has nothing to do.
+        head = subprocess.run(["git", "-C", self.dir, "rev-parse", "HEAD"], capture_output=True, text=True).stdout
         landed = subprocess.run(["git", "-C", self.dir, "rev-parse", default], capture_output=True, text=True).stdout
-        self.assertEqual(head, landed)  # the ref moved to the gated commit
+        self.assertEqual(head, landed)
         self.assertEqual(checks.load_task(core.Ctx(self.dir), "T-1")["status"], "merged")
         # and land committed its own bookkeeping, so the tree is clean
         self.assertEqual(subprocess.run(["git", "-C", self.dir, "status", "--porcelain"],

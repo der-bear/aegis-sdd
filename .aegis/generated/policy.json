@@ -75,8 +75,7 @@
         "data-migration",
         "money",
         "concurrency"
-      ],
-      "review_rounds": 2
+      ]
     },
     "B": {
       "description": "standard feature work behind a contract",
@@ -86,8 +85,7 @@
         "contract",
         "cross-module",
         "dependency"
-      ],
-      "review_rounds": 1
+      ]
     },
     "C": {
       "description": "mechanical; batched review is acceptable",
@@ -96,8 +94,7 @@
         "code",
         "docs",
         "test"
-      ],
-      "review_rounds": 1
+      ]
     }
   },
   "self_governance": [

@@ -47,7 +47,6 @@ await agent(
 
 const built = await agent(
   `${packet}\n\n` +
-  `if that fails, stop and report it rather than continuing unprotected.\n\n` +
   `Then carry out that packet exactly. Write \`.aegis/runs/${task}/handoff.json\` before you ` +
   `finish, including "agent": "aegis-builder". Return at most 300 words.`,
   { label: `build:${task}`, phase: 'Build', agentType: 'aegis-builder' },
@@ -188,8 +187,6 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
 }
 
 phase('Documentation')
-
-// The lease forbids writes under `.aegis/`; the doc-manager's whole job is there.
 
 // Dispatch the doc-manager only when there is documentation work. An agent context per
 // task for a role that usually has nothing to apply was the workflow's largest fixed cost.

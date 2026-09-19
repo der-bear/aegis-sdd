@@ -10,6 +10,6 @@
     "project-type/web-saas"
   ],
   "compiler_version": 3,
-  "config_digest": "712d7097cf75d22c36817b200526bc03e849e825a6453282ef3183a6175452d2",
+  "config_digest": "6375011627e078789f45f2dbaca2c6cff535f0317fd53e4607372c1df2ea1015",
   "note": "Regenerate with `aegis compile`. Never hand-edit anything under generated/."
 }

@@ -58,6 +58,8 @@ aegis lens disposition <ID> <F-id> false-positive|waived|deferred --reason "..."
                                   # dispatch aegis-doc-manager
 aegis gate --stage task --task <ID>
                                   # a green gate sets `gated` itself; never set it by hand
+git add -A && git commit          # a checkpoint; pre-commit checks drift and structure only
+aegis land                        # the full merge gate at HEAD, the ref moved, merged written
 ```
 
 Run the lenses `aegis lens plan` names — not fewer because you are confident, not more

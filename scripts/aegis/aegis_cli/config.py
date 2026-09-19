@@ -153,19 +153,16 @@ LENS_MATRIX: dict[str, dict[str, list[str]]] = {
 RISK_TIERS: dict[str, dict[str, Any]] = {
     "A": {
         "match_change_kinds": ["auth", "data-migration", "money", "concurrency"],
-        "review_rounds": 2,
         "independent_reviewer": True,
         "description": "irreversible or authority-bearing; builder is never final reviewer",
     },
     "B": {
         "match_change_kinds": ["route", "contract", "cross-module", "dependency"],
-        "review_rounds": 1,
         "independent_reviewer": True,
         "description": "standard feature work behind a contract",
     },
     "C": {
         "match_change_kinds": ["code", "docs", "test"],
-        "review_rounds": 1,
         "independent_reviewer": False,
         "description": "mechanical; batched review is acceptable",
     },
@@ -632,7 +629,7 @@ def _render_rules(policy: dict, capabilities: dict, standards: dict) -> str:
     Compiling them buys three things the old prefilled files could not have: they carry the
     project's *actual* commands and limits rather than placeholders; they are a pure
     function of answers, so `check drift` notices tampering; and they live under
-    `generated/`, where the write hook refuses agent edits. An agent can overwrite the
+    `generated/`, where `check drift` catches a hand edit at commit. An agent can overwrite the
     pointer files — that is detected and repaired — but it cannot rewrite the rules.
     """
     commands = []

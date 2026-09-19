@@ -9,7 +9,7 @@ name: aegis gate
 on:
   pull_request:
   push:
-    branches: [main, master]
+    branches: [main, master]  # add your mainline here if it is not one of these (policy.mainline)
 
 jobs:
   gate:

@@ -82,8 +82,9 @@ next: review TASK-042-01  [agent]
   then: dispatch lens-security
 ```
 
-`aegis next --run` executes the step when it is a self-contained `aegis` command — today that
-is the task gate, and nothing else — and stops where a human or an agent is needed.
+`aegis next --run` executes the step when it is a self-contained `aegis` command — the task
+gate, the merge gate and `aegis land`, which moves the mainline — and stops where a person or an
+agent is needed.
 
 The full cycle, as slash commands in Claude Code:
 
@@ -91,7 +92,7 @@ The full cycle, as slash commands in Claude Code:
 /aegis:spec checkout        # spec.md with verifiable R-* requirements
 /aegis:plan checkout        # architecture options → ADR → architecture.md
 /aegis:tasks checkout       # decomposition into manifests with write leases
-/aegis:build TASK-042-01    # packet → builder → lenses → refinement → docs → gate
+/aegis:build TASK-042-01    # packet → builder → lenses → refinement → docs → gate → commit → land
 ```
 
 Run the orchestrator as the session agent, not as a subagent:
@@ -217,7 +218,8 @@ The distinction is the point. A regex scan catches the typical case and is evade
 variable; calling it a guarantee promises more than it can do.
 
 **Guarantees — properties of artifacts, not requests.**
-Exclusive write leases, with real glob intersection and a hook that refuses the write.
+Exclusive write leases, with real glob intersection — a declaration `check trace` reads at the
+merge boundary; nothing refuses a write mid-task.
 A review that quotes the digest it was given, so an edit afterwards invalidates it.
 A status that is earned, not typed: `gated` requires a receipt written by a passing gate that
 actually ran the project's commands, and `merged` requires that receipt to still match. The

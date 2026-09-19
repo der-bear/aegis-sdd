@@ -1,0 +1,208 @@
+{
+  "diff_digest": "c79cfaf9798c3437",
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-f0e65246",
+      "line": 50,
+      "message": "With the `task focus` sentence removed, the builder's prompt now opens `${packet}\\n\\nif that fails, stop and report it rather than continuing unprotected` — `that` has no antecedent, and a builder reading it as the packet's verification commands stops instead of building.",
+      "minimal_fix": "delete line 50",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-24",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-00c99873",
+      "line": 93,
+      "message": "The README's cycle line `packet → builder → lenses → refinement → docs → gate` and the orchestrator's loop block both stop where the loop no longer stops.",
+      "minimal_fix": "append `→ commit → land` here and two lines (`git commit`, `aegis land`) to agents/aegis-orchestrator.md:60",
+      "path": "README.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-24",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-04476eed",
+      "line": 156,
+      "message": "`review_rounds` in RISK_TIERS is compiled into policy.json and read by nothing since `min_review_rounds` went; the comment at flow.py:721 still says the tier `says how many rounds a change of this kind needs at minimum`.",
+      "minimal_fix": "delete the key from the three tiers and the sentence at flow.py:723–724",
+      "path": "scripts/aegis/aegis_cli/config.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-1df44e1c",
+      "line": 512,
+      "message": "`task_claim` docstring: `focus it so the lease is enforced` — `focus` was deleted and the lease is a declaration.",
+      "minimal_fix": "`Start a task: move it to building under the parallel-builder limit, fix its base, and record what its packet costs.`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-24",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-1ecff5eb",
+      "line": 635,
+      "message": "Docstring claims compiled rules `live under generated/, where the write hook refuses agent edits`; only `check drift` at commit catches an edit now.",
+      "minimal_fix": "`… under generated/, where check drift catches a hand edit at commit`",
+      "path": "scripts/aegis/aegis_cli/config.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-364eeb0e",
+      "line": 11,
+      "message": "The CI template triggers on `branches: [main, master]`; an adopter who names `develop` per R-30 copies a workflow that never runs the gate on a push to their mainline.",
+      "minimal_fix": "comment: `add your mainline here if it is not main or master (policy.mainline)`",
+      "path": "templates/ci/aegis-gate.yml",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-30",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-5f492a99",
+      "line": 1692,
+      "message": "`_land_pending` docstring says `the default branch is behind HEAD`, but on the mainline it returns True with nothing behind.",
+      "minimal_fix": "`A gated task exists and either the mainline is behind HEAD or HEAD is the mainline.`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-31",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-608c7ffa",
+      "line": 1580,
+      "message": "Comment `typing merged into a manifest buys nothing, because without a merge receipt the task owns no file` — merge receipts were deleted, and R-22 said this comment goes.",
+      "minimal_fix": "`a merged task holds no lease, so its files are orphans and trace says so`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-90d53b0b",
+      "line": 261,
+      "message": "After the by-hand refusal of `gated`/`merged`, the receipt check, the gated-only check and the gate run in `task_status` are unreachable; `test_merged_requires_a_receipt_not_just_a_status` now passes on the by-hand refusal, so its name describes a mechanism it no longer exercises.",
+      "minimal_fix": "delete the dead lines; rename the test to say `merged` is refused by hand",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-24",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-a1337b10",
+      "line": 146,
+      "message": "Error text `the write hook would refuse every edit this lease appears to permit` names a hook that no longer exists; the real reason is that `.aegis/` is exempt from `trace` and cannot be attributed.",
+      "minimal_fix": "`… never by a task — trace exempts it, so the lease would attribute nothing`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-ba073c20",
+      "line": 192,
+      "message": "Orphan comment `The lease forbids writes under .aegis/; the doc-manager's whole job is there.` explained the `task focus` release that was deleted beneath it; nothing follows it now.",
+      "minimal_fix": "delete the comment",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-24",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-c95180d9",
+      "line": 127,
+      "message": "§2.8 diagram ends `pure function → drift-checked → write-hook-protected`, and line 140 reads `caught by check drift at commit, restored by aegis compile, caught by check drift, restored by aegis compile` — a half-edited sentence.",
+      "minimal_fix": "drop `→ write-hook-protected`; delete the duplicated clause",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-dd5cc68f",
+      "line": 135,
+      "message": "§6 `Not fixed, deliberately` lists `Bash bypasses the write hook … the hook is an early, useful error` as a present limitation; the hook is gone.",
+      "minimal_fix": "delete the bullet or mark it historical",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "design",
+  "recorded": "2026-09-19T15:21:04",
+  "reopened": [],
+  "report_tokens": 1792,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-SIMPLE-01",
+  "verdict": "pass-with-notes"
+}

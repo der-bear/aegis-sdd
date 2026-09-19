@@ -1,0 +1,43 @@
+{
+  "diff_digest": "c79cfaf9798c3437",
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-6f103bb9",
+      "line": 220,
+      "message": "Under **Guarantees**, `Exclusive write leases, with real glob intersection and a hook that refuses the write` — the write hook was deleted and ARCHITECTURE §3 says nothing refuses a write mid-task; a reader plans two builders on one branch relying on a control that does not exist.",
+      "minimal_fix": "`… a declaration `check trace` reads at the merge boundary; nothing refuses a write mid-task`",
+      "path": "README.md",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-22",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-7d9e59ab",
+      "line": 632,
+      "message": "No path found in the ordinary flow that lands code without attribution and a current receipt: code committed after the task gate moves the digest, invalidates the receipt, and `next`/`land` both re-gate, where `trace` fails it. The stated edge: a path under `generated_paths` outside any held lease lands unattributed, though inside the digest and every lens's diff — R-18's design, noted, not raised.",
+      "minimal_fix": "none",
+      "path": "scripts/aegis/aegis_cli/checks.py",
+      "raised_digest": "c79cfaf9798c3437",
+      "requirement": "R-18",
+      "rounds": [
+        1
+      ],
+      "severity": 0
+    }
+  ],
+  "lens": "security",
+  "recorded": "2026-09-19T15:21:03",
+  "reopened": [],
+  "report_tokens": 372,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-SIMPLE-01",
+  "verdict": "pass-with-notes"
+}

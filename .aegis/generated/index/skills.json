@@ -7,7 +7,7 @@
     "path": ".aegis/protocols/audit.md"
   },
   {
-    "body_tokens": 2374,
+    "body_tokens": 2337,
     "change_kinds": [],
     "description": "Run the full Aegis cycle for one task — packet, builder, lenses, refinement, documentation sync, gate. Use to implement a task that already has a manifest.",
     "name": "build",

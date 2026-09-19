@@ -1,2 +1,5 @@
 {"at": "2026-09-19T14:30:09", "event": "status", "task": "TASK-SIMPLE-01", "value": "building"}
 {"at": "2026-09-19T14:30:09", "event": "packet", "risk_tier": "A", "task": "TASK-SIMPLE-01", "tokens": 5176}
+{"at": "2026-09-19T15:21:03", "blocking": 1, "event": "lens", "findings": 7, "lens": "correctness", "round": 1, "task": "TASK-SIMPLE-01", "verdict": "fail"}
+{"at": "2026-09-19T15:21:03", "blocking": 0, "event": "lens", "findings": 2, "lens": "security", "round": 1, "task": "TASK-SIMPLE-01", "verdict": "pass-with-notes"}
+{"at": "2026-09-19T15:21:04", "blocking": 0, "event": "lens", "findings": 13, "lens": "design", "round": 1, "task": "TASK-SIMPLE-01", "verdict": "pass-with-notes"}

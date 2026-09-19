@@ -124,7 +124,7 @@ CLAUDE.md   →  @.aegis/generated/rules.md     (Claude Code expands imports at 
 AGENTS.md   →  "read .aegis/generated/rules.md first"  (the LF standard has no imports)
                         │
                         └─ compiled by `aegis compile` from answers.json:
-                           pure function → drift-checked → write-hook-protected
+                           pure function → drift-checked at commit
 ```
 
 Three properties fall out:
@@ -137,8 +137,7 @@ Three properties fall out:
   first task gate, not before) fails when the import line is gone; `aegis migrate` re-appends it
 without touching
   whatever else the file now contains.
-- **Tampering with the rules is tampering with `generated/`** — caught by `check drift` at commit, restored by `aegis compile`,
-  caught by `check drift`, restored by `aegis compile`.
+- **Tampering with the rules is tampering with `generated/`** — caught by `check drift` at commit, restored by `aegis compile`.
 
 Considered and rejected:
 
@@ -180,7 +179,7 @@ the agent can write, and says so.
 2. A path the **adoption baseline** records belongs to adoption while the repository still holds
    what was recorded (below).
 3. A path a task **holding its lease** names in `owns` belongs to that task. Holding is `claim`
-   to `land`: `building`, `review`, `refine`, `docs`, `gated`. A *planned* task is a row in a
+   to `land`: `building`, `gated`. A *planned* task is a row in a
    backlog and owns nothing, so several may name the same globs and none blocks a merge; an
    *abandoned* or *merged* task holds nothing either. Two holding tasks naming one path is a
    failure, and it is refused earlier, at claim.
@@ -255,9 +254,9 @@ that would have caught the problem. Detectors read the diff — including **remo
 because deleting an authorisation call is exactly what a security lens is for and reading
 only the surviving file cannot see it.
 
-The risk tier (A/B/C) derives from the same kinds and decides the **minimum** number of
-review rounds and whether an independent reviewer is required; `policy.refinement_rounds`
-is the cap. Both are printed by `aegis lens plan`, and `check_reviews` enforces both.
+The risk tier (A/B/C) derives from the same kinds and decides whether an independent reviewer
+is required; `policy.refinement_rounds` is the round budget, and past it the gate warns. A
+second round for the count is not required — a finding is.
 
 ## 5. Findings live across rounds
 

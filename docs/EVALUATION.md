@@ -132,9 +132,9 @@ is "no over-engineering" applied to the guarantees themselves.
 
 ## 6. Not fixed, deliberately
 
-- **`Bash` bypasses the write hook.** A regex parser for shell would be neither complete nor
-  free of false positives on ordinary `mkdir`. The structural containment is the builder's
-  `isolation: worktree`; the hook is an early, useful error inside it.
+- **`Bash` bypassed the write hook** — historical: the hook was deleted on 2026-09-19 (ADR-5),
+  and the lease is a declaration `check trace` reads at the merge boundary. The containment is
+  the builder's `isolation: worktree` and attribution at landing.
 - **`autonomy_limits` and `nfr_priorities` remain context.** They change *how* an agent
   decides, which no script can check. They are delivered into the task packet — an answer
   that never reaches the agent changed nothing — but not verified.

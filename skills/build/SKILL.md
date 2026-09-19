@@ -121,8 +121,7 @@ at the mainline.
 Three rules govern this loop:
 
 - **The builder is not the final judge of its own work.** For risk tier A the reviewer must
-  be a different context, and ideally a different model — and tier A needs the minimum
-  number of review rounds `aegis lens plan` prints, even when the first is clean.
+  be a different context, and ideally a different model.
 - **A finding that returns after being marked fixed stops the loop.** It stays flagged on
   the finding itself, the gate fails on it, and only a human disposition closes it. It means
   the mechanism is wrong; propose the simpler design instead of a third patch.

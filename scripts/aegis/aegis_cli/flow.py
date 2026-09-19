@@ -143,8 +143,8 @@ def _task_new_locked(ctx: Ctx, task_id: str, *, feature: str, objective: str, ow
     if framework:
         raise AegisError(
             f"a task cannot lease framework state: {framework}. `.aegis/` is written by the "
-            "framework and by humans, never by a task — the write hook would refuse every "
-            "edit this lease appears to permit."
+            "framework and by humans, never by a task — `trace` exempts it, so the lease would "
+            "attribute nothing."
         )
     if not owns:
         raise AegisError(
@@ -256,38 +256,6 @@ def task_status(ctx: Ctx, task_id: str, status: str) -> dict:
             raise AegisError(
                 f"profile {policy.get('profile')} allows {limit} task(s) in flight and "
                 f"{len(in_flight)} already are ({', '.join(t['id'] for t in in_flight)})."
-            )
-
-    if status == "merged" and not gate_receipt_valid(ctx, task_id):
-        raise AegisError(
-            f"{task_id} has no passing gate receipt for its current code. "
-            f"Run `aegis gate --stage task --task {task_id}`; a status alone is not a gate."
-        )
-
-    if status == "merged":
-        current = current_status
-        if current != "gated":
-            # Otherwise a task walks straight from `planned` to `merged`, and every check
-            # that skips terminal statuses skips it — which is the whole gate, bypassed by
-            # one status write.
-            raise AegisError(
-                f"{task_id} is {current!r}; only a gated task can be marked merged. "
-                f"Run `aegis gate --stage task --task {task_id}` first."
-            )
-
-    if status == "gated":
-        # `gated` is a claim that the gate passed, and `aegis next` reads it as permission to
-        # merge. A status anyone can assert would let a red gate be marked green and then
-        # advise merging — so the transition proves itself instead of being trusted.
-        # The project's own commands run too: skipping them would let a task be declared
-        # finished without its tests having executed even once.
-        verdict = gate(ctx, "task", task_id, run_commands=True)
-        if verdict.failed:
-            failures = [f for f in verdict.findings if f.severity == "fail"]
-            raise AegisError(
-                f"cannot mark {task_id} gated: {len(failures)} check(s) still failing.\n  "
-                + "\n  ".join(f"{f.check}: {f.message}" for f in failures[:4])
-                + f"\nRun `aegis gate --stage task --task {task_id}` for the full report."
             )
 
     return _set_status(ctx, task_id, status)
@@ -509,8 +477,8 @@ def _refuse_lease_clash(ctx: Ctx, task_id: str, owns: list[str]) -> None:
 
 
 def task_claim(ctx: Ctx, task_id: str) -> dict:
-    """Start a task: focus it so the lease is enforced, move it to `building` under the
-    parallel-builder limit, and record what its packet costs.
+    """Start a task: move it to `building` under the parallel-builder limit, fix its base at
+    the branch point, and record what its packet costs.
 
     One command, because the three used to be scattered: focus was a separate step nobody
     remembered, the status moved as a side effect of printing the packet, and the metric
@@ -718,10 +686,8 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
         "detected_kinds": detected,
         "effective_kinds": kinds,
         "risk_tier": tier["id"],
-        # One round budget. The tier used to publish its own `review_rounds`, the workflow
-        # read that as the cap, and tiers B and C got zero refinement iterations while the
-        # gate counted against `policy.refinement_rounds`. The policy is the cap; the tier
-        # only says how many rounds a change of this kind needs at minimum.
+        # One round budget, the policy's. The tier decides the independent reviewer, nothing
+        # about counts: a second round "for the count" is ceremony.
         "refinement_rounds": policy.get("refinement_rounds", 3),
         "independent_reviewer": tier.get("independent_reviewer", False),
         "lenses": selected,
@@ -1577,9 +1543,8 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
         # written under its globs fails `trace` as belonging to no task until someone claims
         # it — one rule instead of two, and the strict side of it.
         for task in checks.active_tasks(ctx):
-            # Only tasks holding their lease. A merged task's gate receipt is bound to a
-            # digest that never recurs, so demanding it here failed the gate for anyone
-            # else's later change under the same globs; and typing `merged` into a manifest
+            # Only tasks holding their lease. A merged task holds none, so its files are
+            # orphans and `trace` says so; a `merged` typed into a manifest
             # buys nothing, because without a merge receipt the task owns no file and
             # `trace` says so. A planned task owns nothing either, for the same reason.
             if task.get("status") not in checks.HOLDING:
@@ -1674,22 +1639,25 @@ def land(ctx: Ctx) -> list[str]:
         failing = [f.render() for f in report.findings if f.severity == "fail"]
         raise AegisError("the full merge gate is red at HEAD:\n" + "\n".join(failing[:12]))
     lines = [f"gated: {', '.join(gated)}"]
-    if current != default:
-        git(ctx, "branch", "-f", default, head, check=True)
-        lines.append(f"landed: {default} -> {head[:12]}")
-    else:
-        lines.append(f"on {default} already; nothing to move")
+    # Record first, move second: the mainline must carry the commit that says what landed,
+    # or `next` on the mainline lands it again and the branch diverges from its own record.
     for task_id in gated:
         _set_status(ctx, task_id, "merged")
     git(ctx, "add", "--", ".aegis/runs", check=True)
     git(ctx, "commit", "-q", "-m", f"chore: land {', '.join(gated)}", check=True)
-    lines.append(f"merged: {', '.join(gated)} — recorded in {head_sha(ctx)[:12]}")
+    landed = head_sha(ctx) or head
+    if current != default:
+        git(ctx, "branch", "-f", default, landed, check=True)
+        lines.append(f"landed: {default} -> {landed[:12]}")
+    else:
+        lines.append(f"on {default} already; nothing to move")
+    lines.append(f"merged: {', '.join(gated)} — recorded in {landed[:12]}")
     return lines
 
 
 
 def _land_pending(ctx: Ctx) -> bool:
-    """A gated task exists and the default branch is behind HEAD."""
+    """A gated task exists, and either the mainline is behind HEAD or HEAD is the mainline."""
     try:
         head = head_sha(ctx)
         if not head:
@@ -1771,9 +1739,21 @@ def next_action(ctx: Ctx) -> dict:
                     "git add -A && git commit", note="the message is yours; the pre-commit hook "
                                                      "checks drift and structure and nothing else")
 
+    if gated and not building:
+        # What the profile still owes, said here — the merge gate at `land` would refuse on it
+        # and only its stderr would name the cause.
+        for t in gated:
+            docs = [f for f in checks.check_docs(ctx, changed_files(ctx, t.get("base_sha")),
+                                                 closing_feature=True).findings if f.severity == "fail"]
+            if docs:
+                return step("write the documentation the profile requires", docs[0].message, None,
+                            note=docs[0].hint or "then `aegis docs attest <id> --by <who>`")
     if gated and not building and _land_pending(ctx):
-        return step("land the branch", "a gated task is committed and the default branch is "
-                    "behind it", "aegis land", "cli",
+        on_mainline = git(ctx, "branch", "--show-current").strip() == _default_branch(ctx)
+        return step("land the branch", "a gated task is committed on the mainline; the gate "
+                    "runs and it is marked merged in place" if on_mainline else
+                    "a gated task is committed and the default branch is behind it",
+                    "aegis land", "cli",
                     note="runs the full merge gate at HEAD, moves the ref as a fast-forward, marks "
                          "the gated tasks merged and commits that")
 
@@ -1879,17 +1859,8 @@ def next_action(ctx: Ctx) -> dict:
                     "the manifest says gated but no passing gate wrote a receipt for this code",
                     f"aegis gate --stage task --task {task_id}", "cli")
 
-    # The doc profile fails the merge gate once code is in scope; say so here rather than
-    # letting the hook say it on push with a reason this loop never mentioned.
-    scope = changed_files(ctx, task.get("base_sha"))
-    docs = [f for f in checks.check_docs(ctx, scope, closing_feature=True).findings
-            if f.severity == "fail"]
-    if docs:
-        return step("write the documentation the profile requires", docs[0].message, None,
-                    note=docs[0].hint or "then `aegis docs attest <id> --by <who>`")
-
-    return step("merge the branch", f"{task_id} is gated", "aegis gate --stage merge", "cli",
-                note="a check; it writes nothing. Then commit, then `aegis land`")
+    return step("land the branch", f"{task_id} is gated", "aegis land", "cli",
+                note="the full merge gate at HEAD, the ref moved, merged written and committed")
 
 
 def _open_adr_question(ctx: Ctx) -> tuple[str, str] | None:
