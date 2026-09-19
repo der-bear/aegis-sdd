@@ -1281,6 +1281,46 @@ class NextAgreesWithTheGate(ProjectFixture):
         self.assertIn("T-1", step["command"] or "", step)  # re-review T-1, not build T-LATER
         self.assertNotIn("T-LATER", step["do"], step)
 
+class TheSecondProjectsFirstHour(ProjectFixture):
+    """What a real brownfield project (domain-hunter, 2026-09-19) hit in its first hour."""
+
+    def test_an_adopters_large_claude_md_warns_and_does_not_fail(self):
+        # Their CLAUDE.md was 3,247 tokens before Aegis touched it; the bootstrap gate failed.
+        self.write("CLAUDE.md", ("# Project\n\n" + "A long paragraph of the project's own rules. " * 700
+                                 + "\n@.aegis/generated/rules.md\n"))
+        report = checks.check_budget(core.Ctx(self.dir))
+        claude = [f for f in report.findings if f.path == "CLAUDE.md"]
+        self.assertTrue(claude and all(f.severity == "warn" for f in claude),
+                        [f.render() for f in claude])
+
+    def test_the_loop_never_waits_for_a_constitution(self):
+        # `next` said "write the constitution [human]" as the first step on a project whose
+        # README already said what it was for.
+        self.write("README.md", "# Widgets\n\nWidgets turns orders into invoices and never charges twice.\n\n## Quick start\n")
+        run(["init", "--profile", "S", "--yes", "--force"], self.dir)
+        text = open(os.path.join(self.dir, ".aegis/constitution.md")).read()
+        self.assertIn("turns orders into invoices", text)
+        self.assertNotIn("<one paragraph", text)
+        self.assertIn("Drafted by the agent", text)
+        self.clear_human_gates()
+        step = flow.next_action(core.Ctx(self.dir))
+        self.assertNotIn("constitution", step["do"], step)
+
+    def test_init_scaffolds_no_standards_stub(self):
+        self.assertFalse(os.path.exists(os.path.join(self.dir, ".aegis", "standards")))
+
+    def test_a_justfile_is_the_front_door_like_a_makefile(self):
+        # `just test` ran pytest alone; detection also proposed `mypy .`, which had 338 errors
+        # the team had never run against. Only what the front door defines is claimed.
+        from aegis_cli import detect
+        self.write("justfile", "test:\n    uv run pytest -q\n\nlint:\n    ruff check .\n\ndb-up:\n    docker compose up -d\n")
+        self.write("pyproject.toml", '[project]\nname = "fx"\n[tool.mypy]\nstrict = true\n')
+        found = detect.detect(core.Ctx(self.dir))
+        pkg = found["packages"][found["default_package"]]
+        self.assertEqual(pkg.get("test"), "just test")
+        self.assertEqual(pkg.get("lint"), "just lint")
+        self.assertNotIn("typecheck", pkg, pkg)
+
 class ACommitBeforeTheClaimIsReviewedNotRefused(ProjectFixture):
     """A task's base is where the branch left the mainline, so anything committed on the branch
     before the claim is inside its diff, digest and packet: reviewed, not refused. The rule that
@@ -2493,12 +2533,15 @@ class TheAgentsChainIsMeasured(ProjectFixture):
     """R-31. AGENTS.md is the bootstrap surface for every runner that is not Claude Code, and
     Codex truncates the chain at 32 KiB."""
 
-    def test_a_chain_over_the_limit_fails(self):
+    def test_a_chain_over_the_limit_warns(self):
+        # A warning since R-32: the chain is the adopter's, and Codex truncating it at 32 KiB
+        # is worth saying, not worth refusing their first commit over.
         self.write("AGENTS.md", "# Project\n\nRead `.agents/big.md` first.\n")
         self.write(".agents/big.md", "x" * 40000)
         report = checks.check_budget(core.Ctx(self.dir))
-        self.assertTrue(any(f.path == "AGENTS.md" and f.severity == "fail" for f in report.findings),
+        self.assertTrue(any(f.path == "AGENTS.md" and f.severity == "warn" for f in report.findings),
                         [f.message for f in report.findings])
+        self.assertFalse(any(f.path == "AGENTS.md" and f.severity == "fail" for f in report.findings))
 
     def test_a_nested_agents_file_counts_toward_it(self):
         self.write("AGENTS.md", "# Project\n")

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import os
+import re
 
 from . import checks
 from .core import Ctx, read_json, read_text, write_json, write_text
@@ -37,9 +38,10 @@ CONSTITUTION = """# Constitution
 Authoritative for: the principles below, and nothing else.
 References only: everything in `.aegis/generated/` (compiled — see `answers.json`).
 
-**This file is written and changed by a human. Agents may open a pull request against it;
-they may not edit it.** Generated configuration lives in `.aegis/generated/policy.json`
-and is referenced from here rather than copied, so the two can never disagree.
+**Drafted by the agent at `aegis init` from the README; a person amends it at any time, and an
+agent amends it only through a task.** Generated configuration lives in
+`.aegis/generated/policy.json` and is referenced from here rather than copied, so the two can
+never disagree.
 
 ## Purpose
 
@@ -104,14 +106,6 @@ Authoritative for: milestones and their measurable outcomes.
 | Milestone | Outcome (measurable) | Status |
 |---|---|---|
 | M1 | | planned |
-"""
-
-STANDARDS_INDEX = """# Standards index
-
-One line per standard. Agents read the line, then the file only if it applies.
-
-| File | Applies to | One-line rule |
-|---|---|---|
 """
 
 REGISTRY_SEEDS = {
@@ -335,6 +329,32 @@ def install_git_hooks(ctx: Ctx, force: bool = False) -> dict[str, str]:
         os.chmod(path, 0o755)
         out[name] = "installed"
     return out
+
+
+def _constitution_draft(ctx: Ctx) -> str:
+    """The constitution, with its purpose drafted from the README's first paragraph.
+
+    A template with `<one paragraph …>` in it stopped the loop at its first step for a person —
+    on a project whose README already said what it was for. The draft says where it came from;
+    a person rewrites it whenever they like, and nothing waits on them.
+    """
+    purpose = ""
+    for name in ("README.md", "README.rst", "README.txt", "README"):
+        text = read_text(os.path.join(ctx.root, name), default="")
+        if not text:
+            continue
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+        prose = [p for p in paragraphs if not p.startswith(("#", "```", "|", "-", "*", "[", "!"))]
+        if prose:
+            purpose = " ".join(prose[0].split())
+            break
+    if not purpose:
+        purpose = (f"{os.path.basename(ctx.root)} — no README paragraph to draft from; state what "
+                   "this project is for and what would make it a failure.")
+    else:
+        purpose += " (drafted from the README; what would make it a failure is still to be said)"
+    return CONSTITUTION.replace(
+        "<one paragraph: what this project is for, and what would make it a failure>", purpose, 1)
 
 
 def initialise(ctx: Ctx, mode: str = "hybrid", profile: str | None = None,
@@ -561,11 +581,10 @@ def scaffold(ctx: Ctx, profile: str, doc_profile: str, force: bool = False) -> l
                       "— the compiled agent rules.\n<!-- aegis:pointer -->\n")
     put_text("CLAUDE.md", CLAUDE_MD.format(name=name), claude_pointer)
     put_text("AGENTS.md", AGENTS_MD.format(name=name), agents_pointer)
-    put_text(".aegis/constitution.md", CONSTITUTION)
+    put_text(".aegis/constitution.md", _constitution_draft(ctx))
     put_text(".aegis/memory/NOTES.md", NOTES)
     put_text(".aegis/product/mission.md", MISSION)
     put_text(".aegis/product/roadmap.md", ROADMAP)
-    put_text(".aegis/standards/index.md", STANDARDS_INDEX)
 
     put_json(".aegis/answers.json", {
         "mode": "hybrid",

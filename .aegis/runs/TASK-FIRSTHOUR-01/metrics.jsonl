@@ -1,0 +1,2 @@
+{"at": "2026-09-20T01:17:53", "event": "status", "task": "TASK-FIRSTHOUR-01", "value": "building"}
+{"at": "2026-09-20T01:17:54", "event": "packet", "risk_tier": "C", "task": "TASK-FIRSTHOUR-01", "tokens": 1061}

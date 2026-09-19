@@ -506,7 +506,8 @@ def check_testing_mandate(ctx: Ctx, scope: list[str] | None = None) -> Report:
             and not f.startswith(".aegis/") and not f.endswith((".md", ".json", ".yml", ".yaml", ".toml", ".txt"))
             # A file with no suffix is not source for this mandate: LICENSE, NOTICE, Makefile,
             # justfile, Dockerfile. Adding a licence to a repository asked for a test.
-            and os.path.splitext(f)[1] != ""]
+            and (os.path.splitext(f)[1] != ""
+                 or read_text(os.path.join(ctx.root, f), default="").startswith("#!"))]
     tests = [f for f in scope if matches_any(f, test_globs)
              or matches_any(f.lower(), [g.lower() for g in test_globs])
              or re.search(r"(?i)(^|/)tests?/|_test\.|\.test\.|\.spec\.|test_[^/]+\.py$", f)]
@@ -1187,7 +1188,9 @@ def check_budget(ctx: Ctx) -> Report:
         cap = budgets.get("claude_md", 2000)
         message = f"≈{used} tokens incl. imported rules (cap {cap})"
         if used > cap:
-            report.fail("budget", message, "CLAUDE.md",
+            # A warning: the file is the adopter's, and a 3,000-token CLAUDE.md that was there
+            # before Aegis failed the bootstrap gate on the first hour of the second project.
+            report.warn("budget", message, "CLAUDE.md",
                         hint="move detail into a skill or a registry; CLAUDE.md is an index")
         else:
             report.info("budget", message, "CLAUDE.md")
@@ -1201,7 +1204,7 @@ def check_budget(ctx: Ctx) -> Report:
         cap = budgets.get("agents_md_bytes", 32768)
         detail = f"{size} bytes across {len([p for p in chain if os.path.isfile(p)])} file(s) (cap {cap})"
         if size > cap:
-            report.fail("budget", detail, "AGENTS.md",
+            report.warn("budget", detail, "AGENTS.md",
                         hint="a runner reading this chain is truncated at the cap: move detail "
                              "into .agents/skills/ and reference it by path")
         else:

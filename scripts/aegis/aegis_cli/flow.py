@@ -1707,11 +1707,6 @@ def next_action(ctx: Ctx) -> dict:
                     "cat .aegis/answers.json", "human",
                     note="`aegis answer <qid> <value>` for each row")
 
-    if not os.path.exists(ctx.path("constitution.md")) or "<one paragraph" in read_text(
-            ctx.path("constitution.md"), default=""):
-        return step("write the constitution", "it is still the scaffolded template",
-                    "$EDITOR .aegis/constitution.md", "human")
-
     # Who a step needs is derived from one rule, stated in the build protocol: a person is
     # needed for an irreversible outward-facing act, for a change to what the framework
     # measures work against that a person owns, for a question a proposed ADR records, for a

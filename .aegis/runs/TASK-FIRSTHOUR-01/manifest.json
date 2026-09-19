@@ -1,0 +1,28 @@
+{
+  "acceptance": [],
+  "base_sha": "a3256f2e0953d9ab0bab4e785c0783586f749760",
+  "change_kinds": [
+    "code",
+    "test"
+  ],
+  "created": "2026-09-20T01:17:53",
+  "feature": "simple-reliable",
+  "id": "TASK-FIRSTHOUR-01",
+  "objective": "The second project's first hour: budgets warn, no constitution stop, justfile as the front door, no standards stub, shebang scripts are code",
+  "owns": [
+    "scripts/aegis/aegis_cli/**",
+    "tests/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-32",
+    "R-33",
+    "R-34",
+    "R-35",
+    "R-36"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "building",
+  "updated": "2026-09-20T01:17:53"
+}

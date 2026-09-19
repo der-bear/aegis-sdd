@@ -344,9 +344,13 @@ def _packages(ctx: Ctx, files: list[str], fileset: set[str]) -> tuple[dict[str, 
         # an inferred host `pytest -q` are not two commands to run, they are one command and
         # a wrong guess.
         for spec in packages.values():
+            # Replace, not merge: a `mypy .` inferred from pyproject that the team's `just test`
+            # never runs is a wrong guess the gate would fail on, not a second command.
+            for key in ("test", "lint", "typecheck", "build"):
+                spec.pop(key, None)
             spec.update(root_make)
-        evidence.append({"fact": f"Makefile targets override inferred {', '.join(sorted(root_make))}",
-                         "source": "Makefile", "confidence": 0.9})
+        evidence.append({"fact": f"front-door targets replace inferred commands: {', '.join(sorted(root_make))}",
+                         "source": "Makefile/justfile", "confidence": 0.9})
 
     # Last resort, and only for gaps: CI states how the project is really built, but a
     # manifest states it more precisely and a Makefile states it more deliberately.
@@ -416,10 +420,23 @@ def _has_tests(files: list[str], prefix: str) -> bool:
 MAKE_TARGET = re.compile(r"^([A-Za-z0-9_.-]+):", re.MULTILINE)
 
 
+JUST_RECIPE = re.compile(r"^([A-Za-z_][\w-]*)(?:\s+[^:\n]*)?:(?!=)", re.MULTILINE)
+
+
 def _make_targets(ctx: Ctx, fileset: set[str]) -> dict[str, str]:
-    if "Makefile" not in fileset:
+    """The project's own front door: `make <target>` or `just <recipe>` for the standard names.
+
+    Only what the front door defines is claimed. On the second project a detected `mypy .` that
+    the team never ran failed the first task gate with 338 pre-existing errors; `just test` ran
+    pytest alone, and that is the command the gate should run.
+    """
+    if "Makefile" in fileset:
+        runner, targets = "make", set(MAKE_TARGET.findall(read_text(os.path.join(ctx.root, "Makefile"), default="")))
+    elif "justfile" in fileset or "Justfile" in fileset:
+        name = "justfile" if "justfile" in fileset else "Justfile"
+        runner, targets = "just", set(JUST_RECIPE.findall(read_text(os.path.join(ctx.root, name), default="")))
+    else:
         return {}
-    targets = set(MAKE_TARGET.findall(read_text(os.path.join(ctx.root, "Makefile"), default="")))
     out = {}
     for key, candidates in (("test", ("test", "tests", "check")),
                             ("lint", ("lint", "fmt-check")),
@@ -427,7 +444,7 @@ def _make_targets(ctx: Ctx, fileset: set[str]) -> dict[str, str]:
                             ("build", ("build", "all"))):
         for candidate in candidates:
             if candidate in targets:
-                out[key] = f"make {candidate}"
+                out[key] = f"{runner} {candidate}"
                 break
     return out
 

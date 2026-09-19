@@ -48,10 +48,15 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
 
 ## What is still open
 
-- **Project 2.** Until the framework runs on a project of a different kind, universality is a
-  claim. This is the single most important thing left.
+- **Project 2 ran** — `domain-hunter`, a brownfield Python service, on branch `aegis-adopt`, 2026-09-19:
+  init → detect → constitution → spec → task → claim → build → handoff → review (pass), with no
+  engine change; four first-hour frictions became R-32..R-36. The task gate then met another
+  agent's concurrent uncommitted work in the same tree and reported it as unowned, with that
+  agent's tests red — the two-builders-one-tree collision, shown rather than absorbed. Nothing was
+  committed or landed there.
 - ADR-3. TASK-STABLE-02 (R-9, R-10) and TASK-STABLE-03 (R-11..R-15) are planned and small.
-- Push and pull request for `adopt-aegis` and `stable-01`: the owner's.
+- Published: https://github.com/der-bear/aegis-sdd (public, MIT); `main` pushed through the
+  pre-push gate on 2026-09-19, and the first CI run of the merge gate was green in 1m12s.
 - Constitution signature: the owner's.
 - The adoption baseline: 15 recorded paths, 4 still attributed. Retire by committing them as
   they are, or delete the mechanism (retro 0001's argument) — the owner's.

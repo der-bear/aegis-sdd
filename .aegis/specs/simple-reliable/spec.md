@@ -221,6 +221,31 @@ R-28. **One rule in one place.** A reader shall answer "who owns this changed fi
 
 ---
 
+# Task 4 — the second project's first hour
+
+Reproduced on `domain-hunter` (a brownfield Python service, 128 commits, 13 uncommitted files) on
+2026-09-19, within the first hour of `aegis init`. Each is one condition, and each stopped an adopter.
+
+R-32. **An adopter's own `CLAUDE.md` and `AGENTS.md` chain shall warn past their budgets, never
+      fail.** Their CLAUDE.md was 3,247 tokens before Aegis added four lines; the bootstrap gate
+      failed on it. The framework's own skill and role budgets keep failing — those are ours.
+
+R-33. **The loop shall never wait for a constitution.** `init` drafts its purpose from the README's
+      first paragraph and says so in the file; the header says a person amends it at any time and an
+      agent only through a task; `next` has no constitution step. The owner: a person should not be
+      needed in that equation at all.
+
+R-34. **A `justfile` is a front door like a `Makefile`, and the front door replaces the inferred
+      commands rather than adding to them.** Detection proposed `mypy .` from `pyproject`; the team's
+      `just test` ran pytest alone, and `mypy .` had 338 errors they had never run against — the first
+      task gate would have failed on nothing the task did.
+
+R-35. **`init` shall not scaffold `.aegis/standards/`** — the placeholder R-26 deleted here was still
+      being written into every new project.
+
+R-36. **A no-suffix file that starts with `#!` is code for the testing mandate** — the security lens's
+      severity-2 on TASK-PUBLISH-01, declined there to keep its digest and fixed here.
+
 R-27. **Every test added or changed in any of the three tasks shall be shown to fail on the behaviour
       it forbids before it counts.** Two of the previous cycle's document locks passed on the exact
       text they were written to correct; both were found by a lens, not by me. In particular: R-17
