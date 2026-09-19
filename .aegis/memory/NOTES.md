@@ -62,6 +62,15 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
   adopter's CLAUDE.md warns, the constitution carries the README's first paragraph, the gate runs
   `just test`/`just lint` and no `mypy`, no standards stub, and the first `next` is "specify the
   first feature [agent]".
+- TASK-LAND-01 (R-37): the push of TASK-FIRSTHOUR-01's landing was refused by the framework's own
+  pre-push gate — after `land` the task is merged and `origin/main` is behind until the push, so
+  the landed files belonged to no task. `default_base` now prefers the local mainline when it is
+  ahead of the remote one; two review rounds; landed 9f9787f and pushed; CI green (35477214032).
+- Declined in writing (TASK-FIRSTHOUR-01, round 3, sev 1/0, all in scaffold.py, one line each):
+  `***`/`___` thematic breaks in the rule regex; the CLAUDE.md pointer test should be the marker
+  (`@.aegis/generated/rules.md`) as `migrate` uses, not the word "aegis"; the constitution
+  template's `## Amendment` section still asks for a human-reviewed PR; drop `islink` and keep the
+  realpath test. No task carries them yet; TASK-STABLE-03 (the correctness leftovers of retro 0002) is the natural carrier.
 - ADR-3. TASK-STABLE-02 (R-9, R-10) and TASK-STABLE-03 (R-11..R-15) are planned and small.
 - Published: https://github.com/der-bear/aegis-sdd (public, MIT); `main` pushed through the
   pre-push gate on 2026-09-19, and the first CI run of the merge gate was green in 1m12s.
@@ -71,7 +80,7 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
 
 ## How to verify the current state
 
-    make check                          # 248 tests + bootstrap gate
-    python3 tests/test_aegis.py         # the same 248
+    make check                          # 249 tests + bootstrap gate
+    python3 tests/test_aegis.py         # the same 249
     scripts/aegis/aegis next
     scripts/aegis/aegis status
