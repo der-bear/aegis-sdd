@@ -30,37 +30,36 @@ code review re-runs one lens, not three.
 
 ### Task 1 — friction
 
-R-1. Size budgets on lens reports, handoffs and NOTES shall be warnings at every gate stage,
+~~R-1.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* Size budgets on lens reports, handoffs and NOTES shall be warnings at every gate stage,
      never failures; the thresholds stay as the warning line. No protocol, prompt or hint shall
      tell a lens to drop, shorten or reorder a finding for size.
-R-2. When the next review round would exceed `policy.refinement_rounds`, `aegis next` shall
+~~R-2.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* When the next review round would exceed `policy.refinement_rounds`, `aegis next` shall
      emit a `human` step that says what was tried, never a step to re-run a lens.
-R-3. The Claude Code commit hook shall be deleted — `hooks/pre-commit-gate.sh`, its entry in
+~~R-3.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* The Claude Code commit hook shall be deleted — `hooks/pre-commit-gate.sh`, its entry in
      `hooks/hooks.json`, `commit_scope` and its tests, and the workflow's reference — so that
      the git pre-commit hook and CI are the one barrier every runner shares.
-R-4. *(Deleted 2026-09-19, ADR-5 — no merge receipt exists; `merged` is written by `aegis land`.)*
-     ~~A green full merge gate shall record a merge receipt holding the commit it ran on and,~~
+~~R-4.~~ *(deleted 2026-09-19, ADR-5 — no merge receipt exists; `merged` is written by `aegis land`)* A green full merge gate shall record a merge receipt holding the commit it ran on and,
      for each file the task owns in that candidate, the content it saw. A merged task shall own
      a scope file only while the file still holds that content, so its own commits stay
      attributed to it before the branch lands and a new edit to the same file belongs to no
      task. `aegis land` shall print the command that moves the default branch, and run it only
      when asked to, only with a merge receipt at or before HEAD, and only on a clean tree.
-R-5. Delegation shall be data: a core interview question shall write `policy.delegation` with
+~~R-5.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* Delegation shall be data: a core interview question shall write `policy.delegation` with
      the owner's name and the checks an agent may waive in that name. A waiver's owner shall
      pass the same person test as a finding disposition; an agent may record a waiver in the
      delegated owner's name only for a listed check, and only with an expiry and a reason.
      Every existing agent-owned waiver shall be re-owned under the delegation or deleted.
-R-6. A task shall hold its write lease from `claim` to `merge`, and not before: several planned
+~~R-6.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* A task shall hold its write lease from `claim` to `merge`, and not before: several planned
      tasks may name overlapping globs, a planned task shall own no file and shall be asked for
      neither a handoff nor a review, and claiming a lease another task holds shall be refused.
      Code under a planned task's globs therefore belongs to no task until it is claimed. At the
      merge stage a requirement an open task cites shall be reported as pending, not uncovered;
      uncovered shall mean that no live task cites it.
-R-7. `aegis diff` shall show every file the digest covers, `.aegis/answers.json` included; the
+~~R-7.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* `aegis diff` shall show every file the digest covers, `.aegis/answers.json` included; the
      installed git hooks' run-directory exemption shall not cover `gate-receipt.json` or
      `merge-receipt.json`; `--by` and a waiver's owner shall share one validator that refuses a
      name shorter than three characters or one the framework knows as an agent.
-R-8. The documents shall say what the code does: the three claims in `docs/ARCHITECTURE.md`
+~~R-8.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* The documents shall say what the code does: the three claims in `docs/ARCHITECTURE.md`
      that retro 0002 records as false are corrected; `docs/EVALUATION.md` §8 records three
      rounds and how the third cycle ended; `README.md` lists `compile`, `scaffold`,
      `lease check --path`, `lease show`, `check all`, `--root`, `gate --task|--no-run` and
@@ -70,7 +69,7 @@ R-8. The documents shall say what the code does: the three claims in `docs/ARCHI
      verification pass found that the bare form raises "`aegis lease check` needs --path", so the
      spelling the requirement asked for was the misleading one. The requirement changed on
      evidence, and the evidence is this sentence.)
-R-16. The build protocol shall state that the tree is not edited between dispatching a round of
+~~R-16.~~ *(delivered 2026-09-19 by TASK-SIMPLE-01 under SPEC-3)* The build protocol shall state that the tree is not edited between dispatching a round of
      lenses and the last of them reporting, and shall say why in one sentence, because a lens
      report is bound to a digest and an edit made while a lens is reading refuses the report it
      is about to write. Receipt: in this task's second round, two complete reports — correctness
