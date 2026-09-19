@@ -1187,6 +1187,46 @@ class TheFirstHour(ProjectFixture):
         self.assertIn("nothing to move", out.stdout)
         self.assertEqual(checks.load_task(core.Ctx(self.dir), "T-1")["status"], "merged")
 
+class LandRefusesBeforeItRecords(ProjectFixture):
+    """Every refusal in `land` comes before anything is written: a record the mainline does not
+    carry has no command that recovers it."""
+
+    def test_a_mainline_checked_out_elsewhere_is_refused_before_merged_is_written(self):
+        _green_merge(self)
+        default = subprocess.run(["git", "-C", self.dir, "branch", "--show-current"],
+                                 capture_output=True, text=True).stdout.strip()
+        subprocess.run(["git", "-C", self.dir, "switch", "-qc", "feature"], check=True)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "everything"], check=True)
+        other = tempfile.mkdtemp(prefix="aegis-wt-")
+        subprocess.run(["git", "-C", self.dir, "worktree", "add", "-q", other, default], check=True)
+        out = run(["land"], self.dir)
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("another worktree", out.stderr)
+        # Nothing was recorded: still gated, tree still clean, HEAD unchanged.
+        self.assertEqual(checks.load_task(core.Ctx(self.dir), "T-1")["status"], "gated")
+        self.assertEqual(subprocess.run(["git", "-C", self.dir, "status", "--porcelain"],
+                                        capture_output=True, text=True).stdout.strip(), "")
+
+    def test_the_docs_step_judges_as_the_merge_gate_does(self):
+        # A waived document must not keep `next` off `land` while `land` itself passes.
+        ctx = _green_merge(self)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "gated"], check=True)
+        self.write("src/orders/a.py", "A = 1\n")  # unchanged content; tree stays clean
+        registry = os.path.join(self.dir, ".aegis/registry/diagrams.json")
+        entries = json.load(open(registry)); entries[0]["verified_source_digest"] = "stale"
+        json.dump(entries, open(registry, "w"))
+        subprocess.run(["git", "-C", self.dir, "commit", "-qam", "stale the diagram"], check=True)
+        step = flow.next_action(ctx)
+        self.assertIn("documentation", step["do"], step)
+        self.write(".aegis/waivers.json", json.dumps([{
+            "id": "W-doc", "check": "docs", "scope": ["docs/API.md"], "reason": "known stale",
+            "owner": "Test Owner", "expires": "2099-01-01"}]))
+        subprocess.run(["git", "-C", self.dir, "commit", "-qam", "waive it"], check=True)
+        step = flow.next_action(ctx)
+        self.assertNotIn("documentation", step["do"], step)
+
 class ACommitBeforeTheClaimIsReviewedNotRefused(ProjectFixture):
     """A task's base is where the branch left the mainline, so anything committed on the branch
     before the claim is inside its diff, digest and packet: reviewed, not refused. The rule that
