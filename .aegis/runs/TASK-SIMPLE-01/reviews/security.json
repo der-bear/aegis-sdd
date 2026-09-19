@@ -1,8 +1,11 @@
 {
-  "diff_digest": "c79cfaf9798c3437",
+  "diff_digest": "c59f227c4488308a",
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-security",
+      "disposition_reason": "lens-security round 2: README.md:221-222: a declaration check trace reads at the merge boundary; nothing refuses a write mid-task",
       "first_seen_round": 1,
       "id": "F-6f103bb9",
       "line": 220,
@@ -17,7 +20,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-security",
+      "disposition_reason": "lens-security round 2: severity 0, no fix asked; `land` takes only tasks with a valid receipt (flow.py:1626-1627) and re-runs the merge gate with `check_trace` before recording",
       "first_seen_round": 1,
       "id": "F-7d9e59ab",
       "line": 632,
@@ -33,11 +39,11 @@
     }
   ],
   "lens": "security",
-  "recorded": "2026-09-19T15:21:03",
+  "recorded": "2026-09-19T20:39:37",
   "reopened": [],
-  "report_tokens": 372,
+  "report_tokens": 155,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-SIMPLE-01",
-  "verdict": "pass-with-notes"
+  "verdict": "pass"
 }

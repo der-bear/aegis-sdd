@@ -109,7 +109,7 @@ delegate — it silently degrades into a builder holding the wrong prompt.
 
 | Problem | Mechanism |
 |---|---|
-| Agents edit the same files and collide | An exclusive **write lease** per task, held from `claim` to `merge`; claiming a lease another task holds is refused, and a write outside one is refused by a hook |
+| Agents edit the same files and collide | An exclusive **write lease** per task, held from `claim` to `merge`; claiming a lease another task holds is refused, and a write outside one is caught by `check trace` at the merge boundary |
 | Every builder gets a differently worded brief | `aegis packet` **generates** the task packet from the spec and the manifest |
 | "Which reviews should run" is a judgement call | `aegis lens plan` computes it from declared **and** detected change kinds |
 | Review findings get lost between rounds | Stable finding ids, carried dispositions, and detection of a "fixed" finding that came back |

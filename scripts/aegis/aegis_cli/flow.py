@@ -545,7 +545,7 @@ def _risk_tier(policy: dict, kinds: list[str]) -> dict:
         spec = tiers.get(tier_id)
         if spec and set(spec.get("match_change_kinds") or []) & set(kinds):
             return {"id": tier_id, **spec}
-    return {"id": "C", "description": "mechanical", "review_rounds": 1, "independent_reviewer": False}
+    return {"id": "C", "description": "mechanical", "independent_reviewer": False}
 
 
 # ------------------------------------------------------------------------- lenses
@@ -574,15 +574,15 @@ def diff_text(ctx: Ctx, base: str | None) -> str:
 
 
 def detect_change_kinds(ctx: Ctx, scope: list[str], base: str | None = None) -> list[str]:
-    # The change, as the review-scope filter defines it. `.aegis/runs/**` is bookkeeping, and
-    # a handoff whose `agent` field said "session" raised a documentation change to tier A.
-    scope = [rel for rel in scope if in_review_scope(rel)]
     """Conservative detectors over the diff, unioned with the task's declared kinds.
 
     Declared kinds alone are a self-report; detectors alone miss intent. Their union is what
     keeps a security lens from being skipped because authorisation moved through middleware
     rather than a visibly new route.
     """
+    # The change, as the review-scope filter defines it. `.aegis/runs/**` is bookkeeping, and
+    # a handoff whose `agent` field said "session" raised a documentation change to tier A.
+    scope = [rel for rel in scope if in_review_scope(rel)]
     kinds: set[str] = set()
     caps = checks.capabilities(ctx)
     migration_globs = caps.get("migration_paths") or ["**/migrations/**", "**/migrate/**", "db/**"]
@@ -1544,9 +1544,8 @@ def gate(ctx: Ctx, stage: str, task_id: str | None = None, run_commands: bool = 
         # it — one rule instead of two, and the strict side of it.
         for task in checks.active_tasks(ctx):
             # Only tasks holding their lease. A merged task holds none, so its files are
-            # orphans and `trace` says so; a `merged` typed into a manifest
-            # buys nothing, because without a merge receipt the task owns no file and
-            # `trace` says so. A planned task owns nothing either, for the same reason.
+            # orphans and `trace` says so — and `task status` refuses to write `merged` by
+            # hand anyway. A planned task owns nothing either, for the same reason.
             if task.get("status") not in checks.HOLDING:
                 continue
             if not _task_touched_scope(ctx, task, scope):
@@ -1634,6 +1633,14 @@ def land(ctx: Ctx) -> list[str]:
     tip = git(ctx, "rev-parse", "--verify", "-q", f"refs/heads/{default}").strip()
     if current != default and tip and not is_ancestor(ctx, tip, head):
         raise AegisError(f"{default} has commits HEAD does not; rebase or merge them first")
+    if current != default:
+        # Every refusal before anything is recorded. git refuses to move a branch that is
+        # checked out in another worktree; discovering that after `merged` was written and
+        # committed left a record the mainline did not carry and nothing to recover it with.
+        worktrees = git(ctx, "worktree", "list", "--porcelain")
+        if f"branch refs/heads/{default}\n" in worktrees + "\n":
+            raise AegisError(f"{default} is checked out in another worktree, so git will refuse "
+                             f"to move it; land from that checkout, or detach it first")
     report = gate(ctx, "merge", run_commands=True)
     if report.failed:
         failing = [f.render() for f in report.findings if f.severity == "fail"]
@@ -1743,8 +1750,9 @@ def next_action(ctx: Ctx) -> dict:
         # What the profile still owes, said here — the merge gate at `land` would refuse on it
         # and only its stderr would name the cause.
         for t in gated:
-            docs = [f for f in checks.check_docs(ctx, changed_files(ctx, t.get("base_sha")),
-                                                 closing_feature=True).findings if f.severity == "fail"]
+            judged = checks.apply_waivers(ctx, checks.check_docs(
+                ctx, changed_files(ctx, t.get("base_sha")), closing_feature=True))
+            docs = [f for f in judged.findings if f.severity == "fail"]
             if docs:
                 return step("write the documentation the profile requires", docs[0].message, None,
                             note=docs[0].hint or "then `aegis docs attest <id> --by <who>`")

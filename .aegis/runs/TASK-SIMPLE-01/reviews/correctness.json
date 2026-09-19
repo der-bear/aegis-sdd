@@ -1,8 +1,11 @@
 {
-  "diff_digest": "c79cfaf9798c3437",
+  "diff_digest": "c59f227c4488308a",
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: flow.py:1645-1650 records and commits, then moves the ref to `landed`; driven on a feature branch, solo and `develop`: main == HEAD == chore: land T-1",
       "first_seen_round": 1,
       "id": "F-3e1edd64",
       "line": 1680,
@@ -18,6 +21,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-f8b17f0f",
+      "line": 1645,
+      "message": "`land` marks the tasks merged and commits before `git branch -f`, so when git refuses the move — the mainline checked out in another worktree — the record says merged and the mainline never carries the work. Afterwards `land` says `nothing to land`, `next` says plan the next feature, and no `aegis` command recovers it.",
+      "minimal_fix": "before `_set_status`, refuse when `git worktree list --porcelain` lists `branch refs/heads/<default>` at another path",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c59f227c4488308a",
+      "requirement": "R-20",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: skills/build/SKILL.md:124 and .aegis/protocols/build.md:124 end at `ideally a different model.`",
       "first_seen_round": 1,
       "id": "F-42b74895",
       "line": 124,
@@ -32,7 +53,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: docs/ARCHITECTURE.md:182 lists `building`, `gated`",
       "first_seen_round": 1,
       "id": "F-4cda3bc9",
       "line": 182,
@@ -48,6 +72,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-6eda474f",
+      "line": 1746,
+      "message": "The docs step reads `check_docs` without `apply_waivers` while the merge gate applies them, so with a `docs` waiver `next` says `write the documentation` on every run while `aegis land` passes. `next --run` never reaches land.",
+      "minimal_fix": "`checks.apply_waivers(ctx, checks.check_docs(…))` before filtering on `fail`",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c59f227c4488308a",
+      "requirement": "R-31",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: flow.py:1746 runs `check_docs(closing_feature=True)` over each gated task before the land step",
       "first_seen_round": 1,
       "id": "F-de11d543",
       "line": 1773,
@@ -62,7 +104,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: README.md:85-86 names the task gate, the merge gate and `aegis land`",
       "first_seen_round": 1,
       "id": "F-e4252975",
       "line": 85,
@@ -77,7 +122,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: docs/ARCHITECTURE.md:257-259: the tier decides the independent reviewer; a second round for the count is not required",
       "first_seen_round": 1,
       "id": "F-fded4808",
       "line": 258,
@@ -92,7 +140,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: flow.py:1752-1754 branches the `why` on the mainline",
       "first_seen_round": 1,
       "id": "F-0cd8b0bf",
       "line": 1775,
@@ -108,11 +159,11 @@
     }
   ],
   "lens": "correctness",
-  "recorded": "2026-09-19T15:21:03",
+  "recorded": "2026-09-19T20:39:37",
   "reopened": [],
-  "report_tokens": 1169,
+  "report_tokens": 772,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-SIMPLE-01",
   "verdict": "fail"
 }

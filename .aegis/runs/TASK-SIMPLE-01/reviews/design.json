@@ -1,8 +1,26 @@
 {
-  "diff_digest": "c79cfaf9798c3437",
+  "diff_digest": "c59f227c4488308a",
   "findings": [
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-22b740b7",
+      "line": 112,
+      "message": "The `What it does for you` table still says `a write outside one is refused by a hook`, while line 222 and Known limits say nothing refuses a write mid-task; an adopter reads the control the fix deleted as present.",
+      "minimal_fix": "`… claiming a lease another task holds is refused, and a write outside one is caught by check trace at the merge boundary`",
+      "path": "README.md",
+      "raised_digest": "c59f227c4488308a",
+      "requirement": "R-22",
+      "rounds": [
+        2
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: workflows/aegis-task.js:49-50: `${packet}` is followed by `Then carry out that packet exactly`",
       "first_seen_round": 1,
       "id": "F-f0e65246",
       "line": 50,
@@ -17,7 +35,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: README.md:95 ends `→ gate → commit → land`; agents/aegis-orchestrator.md:61-62 add the two lines",
       "first_seen_round": 1,
       "id": "F-00c99873",
       "line": 93,
@@ -32,7 +53,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: config.py:154-168 tiers carry no `review_rounds`; flow.py:689 says the tier decides the reviewer and nothing about counts",
       "first_seen_round": 1,
       "id": "F-04476eed",
       "line": 156,
@@ -48,6 +72,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-1aeac90d",
+      "line": 579,
+      "message": "`detect_change_kinds`'s docstring sits below the new `scope = …` statement, so Python treats it as a no-op expression and `__doc__` is None.",
+      "minimal_fix": "move the comment and the `scope = …` line below the docstring",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c59f227c4488308a",
+      "requirement": "R-23",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: flow.py:480-481: move it to building under the parallel-builder limit, fix its base at the branch point",
       "first_seen_round": 1,
       "id": "F-1df44e1c",
       "line": 512,
@@ -62,7 +104,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: config.py:632: where check drift catches a hand edit at commit",
       "first_seen_round": 1,
       "id": "F-1ecff5eb",
       "line": 635,
@@ -77,7 +122,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: templates/ci/aegis-gate.yml:12 comments the mainline note",
       "first_seen_round": 1,
       "id": "F-364eeb0e",
       "line": 11,
@@ -92,7 +140,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: flow.py:1660: either the mainline is behind HEAD or HEAD is the mainline",
       "first_seen_round": 1,
       "id": "F-5f492a99",
       "line": 1692,
@@ -114,15 +165,34 @@
       "message": "Comment `typing merged into a manifest buys nothing, because without a merge receipt the task owns no file` — merge receipts were deleted, and R-22 said this comment goes.",
       "minimal_fix": "`a merged task holds no lease, so its files are orphans and trace says so`",
       "path": "scripts/aegis/aegis_cli/flow.py",
-      "raised_digest": "c79cfaf9798c3437",
+      "raised_digest": "c59f227c4488308a",
       "requirement": "R-22",
       "rounds": [
-        1
+        1,
+        2
       ],
       "severity": 1
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-86bd34c0",
+      "line": 9,
+      "message": "The `exists and must not be rebuilt` table names `checks.merge_receipt_files`, `_holds_recorded`, `FRAMEWORK_AGENT` and `_NAMES_NOBODY`, all deleted in this diff; spec.md's preamble records the overshoot and this file does not.",
+      "minimal_fix": "one preamble line as spec.md has, or strike the two rows and the clause at line 20",
+      "path": ".aegis/specs/simple-reliable/architecture.md",
+      "raised_digest": "c59f227c4488308a",
+      "requirement": "R-17",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: flow.py:218-222 refuses gated/merged by hand and the tail is gone; test renamed `test_merged_is_refused_by_hand`",
       "first_seen_round": 1,
       "id": "F-90d53b0b",
       "line": 261,
@@ -137,7 +207,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: flow.py:146-147: trace exempts it, so the lease would attribute nothing",
       "first_seen_round": 1,
       "id": "F-a1337b10",
       "line": 146,
@@ -153,6 +226,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-a4c05eb1",
+      "line": 548,
+      "message": "The fallback tier still carries `\"review_rounds\": 1`, the key the fix deleted from the three tiers; nothing reads it.",
+      "minimal_fix": "delete the key",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "c59f227c4488308a",
+      "requirement": "R-22",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: workflows/aegis-task.js:189: the orphan lease comment is gone",
       "first_seen_round": 1,
       "id": "F-ba073c20",
       "line": 192,
@@ -167,7 +258,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: docs/ARCHITECTURE.md:127 pure function → drift-checked at commit; :140 states the clause once",
       "first_seen_round": 1,
       "id": "F-c95180d9",
       "line": 127,
@@ -182,7 +276,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-19T20:39:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: docs/EVALUATION.md:135 marks the bullet historical",
       "first_seen_round": 1,
       "id": "F-dd5cc68f",
       "line": 135,
@@ -198,11 +295,11 @@
     }
   ],
   "lens": "design",
-  "recorded": "2026-09-19T15:21:04",
+  "recorded": "2026-09-19T20:39:37",
   "reopened": [],
-  "report_tokens": 1792,
+  "report_tokens": 1300,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-SIMPLE-01",
   "verdict": "pass-with-notes"
 }

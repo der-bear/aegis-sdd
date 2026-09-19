@@ -1,5 +1,9 @@
 # SPEC-3 — where the parts live, and what is deliberately not built
 
+> Written before the work; the deletion went further than planned (see spec.md's preamble), so
+> two rows below name symbols that no longer exist — `merge_receipt_files`, `_holds_recorded`,
+> `FRAMEWORK_AGENT`, `_NAMES_NOBODY` — and R-26's receipt clause was moot. Kept as the plan it was.
+
 ## What already exists and must not be rebuilt
 
 | It exists | Where | Used by R- |
