@@ -9,8 +9,8 @@
     "status": "proposed",
     "verified_at": "2026-09-19",
     "verified_by": "Claude Fable 5.1",
-    "verified_note": "verified against the code by three independent review rounds on 2026-09-19; every false sentence they named is corrected",
-    "verified_source_digest": "4a0f7bcdc71c8b88",
+    "verified_note": "rounds 5-6 changed next_action's sort key and check_requirements' hint only; §3 and §6 re-read against 78124f9",
+    "verified_source_digest": "94ec3572b18e0a8e",
     "watches": [
       "scripts/aegis/aegis_cli/**",
       "hooks/**",
