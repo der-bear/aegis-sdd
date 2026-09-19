@@ -596,6 +596,12 @@ def default_base(ctx: Ctx) -> str | None:
     two common names on the remote, and the two common names locally. `origin/master` is in
     the list because `git remote add`, unlike `git clone`, leaves no `origin/HEAD` symref, and
     a master-default remote then rooted at the *local* `master`.
+
+    The local mainline wins over the remote one when it is ahead of it. `aegis land` moves the
+    local ref and the push comes after; between the two, what sits between `origin/main` and
+    `main` is landed work with its task marked merged, not a candidate. Diffing against the
+    remote there made the pre-push gate refuse the push of the landing it had just passed, and
+    gave the next task the landed files as its own diff.
     """
     refs = list(MAINLINE_REFS)
     named = (read_json(os.path.join(ctx.root, ".aegis", "generated", "policy.json"),
@@ -604,9 +610,24 @@ def default_base(ctx: Ctx) -> str | None:
         refs = [f"origin/{named}", named] + refs
     for ref in refs:
         base = merge_base(ctx, ref)
-        if base:
-            return base
+        if not base:
+            continue
+        local = _local_mainline(ctx, ref)
+        if local and local != ref and is_ancestor(ctx, git(ctx, "rev-parse", ref).strip(), local):
+            return merge_base(ctx, local) or base
+        return base
     return None
+
+
+def _local_mainline(ctx: Ctx, ref: str) -> str | None:
+    """`origin/main` -> `main`; `origin/HEAD` -> the branch it points at; a local ref -> itself."""
+    if not ref.startswith("origin/"):
+        return ref
+    if ref == "origin/HEAD":
+        target = git(ctx, "symbolic-ref", "-q", "refs/remotes/origin/HEAD").strip()
+        prefix = "refs/remotes/origin/"
+        return target[len(prefix):] if target.startswith(prefix) else None
+    return ref[len("origin/"):]
 
 
 def require_base(ctx: Ctx) -> str | None:

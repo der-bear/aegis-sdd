@@ -251,6 +251,13 @@ R-35. **`init` shall not scaffold `.aegis/standards/`** — the placeholder R-26
 R-36. **A no-suffix file that starts with `#!` is code for the testing mandate** — the security lens's
       severity-2 on TASK-PUBLISH-01, declined there to keep its digest and fixed here.
 
+R-37. **The base is the local mainline when it is ahead of the remote one.** `aegis land` moves the
+      local ref and the push comes after; between the two, what sits between `origin/main` and `main`
+      is landed work with its task marked merged, not a candidate. Diffing against the remote there
+      made the framework's own pre-push gate refuse the push of the first landing it ever met
+      (2026-09-20, TASK-FIRSTHOUR-01: eight files "belong to no task"), and would have handed the
+      next task the landed files as its own diff. One rule in `default_base`; no new state.
+
 R-27. **Every test added or changed in any of the three tasks shall be shown to fail on the behaviour
       it forbids before it counts.** Two of the previous cycle's document locks passed on the exact
       text they were written to correct; both were found by a lens, not by me. In particular: R-17

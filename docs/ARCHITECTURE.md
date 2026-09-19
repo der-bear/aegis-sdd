@@ -195,9 +195,11 @@ for three cycles.
 
 **The base is where the branch left the mainline.** At `claim`, `base_sha` becomes
 `default_base` — `policy.mainline` if the project named its branch, else `origin/HEAD`,
-`origin/main`, `origin/master`, `main`, `master`. On a branch with history that matches none
-of them, `claim` refuses until `q.core.mainline` names the branch; only an unborn branch falls
-back to HEAD. So a commit made on the branch before the claim is inside `base..worktree`: in the
+`origin/main`, `origin/master`, `main`, `master` — and the local one of a pair when it is ahead
+of the remote one, because `land` moves the local ref and the push comes after, so what lies
+between the two is landed work, not a candidate (the pre-push gate refused the first landing it
+met by diffing against the remote). On a branch with history that matches none of them, `claim`
+refuses until `q.core.mainline` names the branch; only an unborn branch falls back to HEAD. So a commit made on the branch before the claim is inside `base..worktree`: in the
 diff, in the digest, in front of every lens. **Reviewed, not refused.** A rule that refused it
 instead failed in both directions at once — it barred the first task of a branch that diverged
 before adoption, and its trust root was a local ref one command could move (ADR-5). The edge:
@@ -365,8 +367,12 @@ otherwise. What it does: a change to `answers.json` or `waivers.json` is inside 
 and re-takes every review of the candidate, and `trace` says out loud that the candidate changed
 what may be waived. **With no remote, every record is self-attested and the agent is trusted**;
 nothing in v1 or v2 can distinguish the agent moving the mainline ref from the owner moving it.
-**With a remote, the remote's mainline ref is the root and CI is the barrier.** Which of the two
-a reader is looking at is decided by `git remote`, not by anything in this document.
+**With a remote, the remote's mainline ref is the root and CI is the barrier** — on a pull
+request, where the candidate is the branch; a push of the mainline itself is transport of what
+`land` already judged, and its candidate is empty on both sides. So is a commit made on the
+local mainline by hand, outside `land`: it rides through the hook the same way, and only branch
+protection on the remote sees it — a local ref is one command from moving (ADR-5). Which of
+the two a reader is looking at is decided by `git remote`, not by anything in this document.
 
 Two things stay a person's, and the build protocol states the rule they derive from: dismissing
 a blocking review finding — `--by` may not be the task's builder, the lens that raised it, or a

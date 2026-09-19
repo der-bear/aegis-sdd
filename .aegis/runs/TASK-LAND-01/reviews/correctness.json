@@ -1,0 +1,31 @@
+{
+  "diff_digest": "b6f4af2ea95989f8",
+  "findings": [
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-20T02:44:15",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: docs/ARCHITECTURE.md:372-374 names the hand-made local-mainline commit, says it rides the hook with an empty candidate like a landed push, and names remote branch protection as the only check that sees it; matches default_base in scripts/aegis/aegis_cli/core.py:596-620, which prefers the local mainline when it is ahead of the remote",
+      "first_seen_round": 1,
+      "id": "F-2f09dae7",
+      "line": 371,
+      "message": "The trust-model sentence says a push of the mainline is transport of what `land` already judged, but the base now trusts anything on the local mainline: a commit made there by hand with no task passes the pre-push hook with an empty candidate (it was refused as 'belongs to no task' before), and CI on a push of main is empty too, so that case is now unseen by the framework end to end.",
+      "minimal_fix": "Add one clause: a commit made on the local mainline outside `land` rides through the hook the same way; only branch protection on the remote sees it.",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "7e2d30520ff70fc8",
+      "requirement": "R-37",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-20T02:44:15",
+  "reopened": [],
+  "report_tokens": 151,
+  "reviewer": "fable-5.1",
+  "round": 2,
+  "task": "TASK-LAND-01",
+  "verdict": "pass"
+}

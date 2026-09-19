@@ -1,0 +1,29 @@
+{
+  "acceptance": [
+    "after land and before push, gate --stage merge has no trace failure",
+    "a task claimed then has base_sha at the landed commit",
+    "default_base on a branch behind the remote is unchanged"
+  ],
+  "base_sha": "137f64ae3ba8965177e9b00f69d540189e56290f",
+  "change_kinds": [
+    "code",
+    "test"
+  ],
+  "created": "2026-09-20T02:31:47",
+  "feature": "simple-reliable",
+  "id": "TASK-LAND-01",
+  "objective": "The base is the local mainline when it is ahead of the remote one: the push of a landing passes the pre-push gate",
+  "owns": [
+    "docs/ARCHITECTURE.md",
+    "scripts/aegis/aegis_cli/**",
+    "tests/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-37"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "gated",
+  "updated": "2026-09-20T02:46:36"
+}

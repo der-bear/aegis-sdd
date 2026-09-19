@@ -1,0 +1,6 @@
+{"at": "2026-09-20T02:31:47", "event": "status", "task": "TASK-LAND-01", "value": "building"}
+{"at": "2026-09-20T02:31:47", "event": "packet", "risk_tier": "C", "task": "TASK-LAND-01", "tokens": 915}
+{"at": "2026-09-20T02:41:54", "blocking": 0, "event": "lens", "findings": 1, "lens": "correctness", "round": 1, "task": "TASK-LAND-01", "verdict": "pass"}
+{"at": "2026-09-20T02:44:15", "blocking": 0, "event": "lens", "findings": 0, "lens": "correctness", "round": 2, "task": "TASK-LAND-01", "verdict": "pass"}
+{"at": "2026-09-20T02:46:36", "event": "status", "task": "TASK-LAND-01", "value": "gated"}
+{"at": "2026-09-20T02:46:36", "event": "gate", "failing_checks": [], "passed": true, "seconds": 141.3, "stage": "task", "task": "TASK-LAND-01"}

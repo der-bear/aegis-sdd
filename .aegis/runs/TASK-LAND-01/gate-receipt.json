@@ -1,0 +1,6 @@
+{
+  "at": "2026-09-20T02:46:36",
+  "diff_digest": "b6f4af2ea95989f8",
+  "note": "written by a passing task gate; `gated` without this is not gated",
+  "task": "TASK-LAND-01"
+}

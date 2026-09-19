@@ -1108,6 +1108,32 @@ class AGatedTaskOwnsItsFilesUntilItLands(ProjectFixture):
         report = checks.check_trace(core.Ctx(self.dir), ["src/orders/a.py"], None)
         self.assertTrue(any("belongs to no task" in f.message for f in report.findings))
 
+    def test_the_push_of_a_landing_passes_the_pre_push_gate(self):
+        # After `land` the task is merged and the local mainline is ahead of the remote one
+        # until the push. Diffing against the remote there orphaned the landed files: the
+        # framework's own pre-push gate refused the first landing it ever met (2026-09-20).
+        remote = tempfile.mkdtemp(prefix="aegis-remote-")
+        subprocess.run(["git", "init", "-q", "--bare", remote], check=True)
+        default = subprocess.run(["git", "-C", self.dir, "branch", "--show-current"],
+                                 capture_output=True, text=True).stdout.strip()
+        subprocess.run(["git", "-C", self.dir, "remote", "add", "origin", remote], check=True)
+        subprocess.run(["git", "-C", self.dir, "push", "-q", "-u", "origin", default], check=True)
+        ctx = _green_merge(self)
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "the task"], check=True)
+        out = run(["land"], self.dir)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        head = core.head_sha(ctx)
+        # origin is still behind; the base is the local mainline and the candidate is empty
+        self.assertEqual(core.default_base(ctx), head)
+        report = flow.gate(ctx, "merge", run_commands=False)
+        self.assertFalse(any(f.check == "trace" and f.severity == "fail" for f in report.findings),
+                         [f.render() for f in report.findings])
+        # and a task claimed before the push does not inherit the landed files as its diff
+        self.make_task(task_id="T-2", owns="src/later/**")
+        run(["task", "claim", "T-2"], self.dir)
+        self.assertEqual(checks.load_task(ctx, "T-2")["base_sha"], head)
+
     def test_a_typed_merged_status_buys_nothing(self):
         # Without a receipt to forge there is nothing to forge: `merged` typed into a manifest
         # means the task holds no lease, so its files are orphans and `trace` says so.

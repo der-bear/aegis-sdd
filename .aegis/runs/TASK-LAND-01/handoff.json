@@ -1,0 +1,41 @@
+{
+  "task": "TASK-LAND-01",
+  "agent": "claude-fable-5.1 (orchestrator and builder)",
+  "summary": "R-37: the base is the local mainline when it is ahead of the remote one. `aegis land` moves the local ref and the push comes after; between the two the landed work sits between `origin/main` and `main` with its task marked merged, and `default_base` diffed against the remote — so the framework's own pre-push gate refused the push of the first landing it ever met (TASK-FIRSTHOUR-01, eight files \"belong to no task\"), and the next task claimed before the push would have inherited the landed files as its diff. One rule in `core.default_base` with a helper that maps `origin/<name>` (and `origin/HEAD` through its symref) to the local name; two ARCHITECTURE passages say it. No new state.",
+  "changed_files": [
+    "scripts/aegis/aegis_cli/core.py",
+    "tests/test_aegis.py",
+    "docs/ARCHITECTURE.md",
+    ".aegis/specs/simple-reliable/spec.md"
+  ],
+  "verification": [
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "python3 tests/test_aegis.py",
+      "result": "pass",
+      "note": "249 tests"
+    },
+    {
+      "command": "R-27 reverse run: test_the_push_of_a_landing_passes_the_pre_push_gate against a git archive of 137f64a",
+      "result": "pass",
+      "note": "red there with \"belongs to no task\""
+    },
+    {
+      "command": "aegis gate --stage merge --no-run on this checkout after the fix",
+      "result": "pass",
+      "note": "no trace failure left; only this task's own receipt/handoff/reviews outstanding"
+    }
+  ],
+  "deviations": [],
+  "open_questions": [],
+  "new_dependencies": [],
+  "invalidated_assumptions": [
+    "\"a merged task owns nothing because its work is behind default_base\" — true only once the landing is pushed; between land and push the remote is behind and the rule orphaned the landed files"
+  ],
+  "next_safe_action": "record the correctness review, gate, commit, attest architecture, land, push main, read the CI run.",
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}
