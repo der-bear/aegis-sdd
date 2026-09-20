@@ -1,0 +1,44 @@
+{
+  "task": "TASK-STABLE-02",
+  "agent": "claude-fable-5.1 (orchestrator and builder)",
+  "summary": "R-9: a lens's record is stale only when a file whose kinds select that lens moved since the record. `lens record` stores a snapshot of the review-scope files and their content keys; `lens_staleness` compares it with the tree at check time and asks `_file_kinds` (extracted from `detect_change_kinds`, one function for the plan and for staleness) which kinds moved; the always-on lens is stale on any move, a record without a snapshot on any digest change. `lens plan` prints `stale` (why) and `run` (missing plus stale); `check_reviews`, `next` and the workflow use it. A file under skills/, .agents/, agents/ or hooks/ is code whatever its suffix, and its prose is not scanned for hints (the framework's own materialised copies contain the word 'session'). R-10: the doc-sync protocol has a verification pass and the doc-manager attests under its own name with a note; no step waits for a person to attest. The SPEC-2 architecture preamble names the deleted contracts.",
+  "changed_files": [
+    "scripts/aegis/aegis_cli/flow.py",
+    "tests/test_aegis.py",
+    "skills/doc-sync/SKILL.md",
+    ".agents/skills/doc-sync/SKILL.md",
+    ".aegis/protocols/doc-sync.md",
+    "agents/aegis-doc-manager.md",
+    "skills/review/SKILL.md",
+    "workflows/aegis-task.js",
+    ".aegis/specs/stable-autonomy/architecture.md"
+  ],
+  "verification": [
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "python3 tests/test_aegis.py",
+      "result": "pass",
+      "note": "255 tests"
+    },
+    {
+      "command": "R-27 reverse run: the six new locks against a git archive of bdd84c0",
+      "result": "pass",
+      "note": "5 of 6 red there; test_attest_by_the_doc_manager_with_a_note passes on the old code because `docs attest --by` already accepted any name — the lock holds the protocol half, the code half was already true"
+    }
+  ],
+  "deviations": [
+    "The lease was widened by hand before the claim to workflows/** and skills/review/** — the two files that dispatch the lenses the plan names.",
+    "Built and verified, not yet reviewed: the owner asked to wrap up the session before the review round. `next` says so; nothing is landed."
+  ],
+  "open_questions": [],
+  "new_dependencies": [],
+  "invalidated_assumptions": [
+    "\"a protocol file counts as code\" cannot mean \"its prose is scanned for auth hints\": the materialised .agents/skills copies raised every fixture to tier A"
+  ],
+  "next_safe_action": "aegis lens plan TASK-STABLE-02 (three lenses: correctness, security, design; tier A) — dispatch, record, gate, land, push.",
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}

@@ -573,6 +573,102 @@ def diff_text(ctx: Ctx, base: str | None) -> str:
     return "\n".join(parts)
 
 
+PROTOCOL_DIRS = ("skills/", ".agents/", "agents/", "hooks/")
+
+
+def _file_kinds(ctx: Ctx, rel: str, caps: dict) -> set[str]:
+    """The change kinds one file carries, from its path and its text.
+
+    One function for the plan and for staleness: which lenses a file selects is the same
+    question as which lens records a change to it invalidates.
+    """
+    kinds: set[str] = set()
+    migration_globs = caps.get("migration_paths") or ["**/migrations/**", "**/migrate/**", "db/**"]
+    test_globs = caps.get("test_paths") or ["**/test/**", "**/tests/**", "**/*_test.*", "**/*.test.*", "**/*.spec.*"]
+    name = os.path.basename(rel)
+    if name in DEP_FILES or name.endswith(".lock"):
+        kinds.add("dependency")
+    if matches_any(rel, migration_globs):
+        kinds.update({"data-migration", "contract"})
+    if matches_any(rel, test_globs):
+        kinds.add("test")
+        return kinds
+    # A protocol, a role or a hook is behaviour whatever its suffix: a `.md` under `skills/`
+    # changes what every agent does, and reading it as documentation lost it its review. Its
+    # prose is not scanned for hints, though: "session" in a protocol's sentences raised every
+    # adopter's first task to tier A through the framework's own materialised copies.
+    if rel.startswith(PROTOCOL_DIRS):
+        kinds.add("code")
+        return kinds
+    if rel.startswith("docs/") or rel.endswith(".md"):
+        kinds.add("docs")
+        return kinds
+    full = os.path.join(ctx.root, rel)
+    if not os.path.isfile(full):
+        # The file is gone. Deleting a middleware or an authorisation helper is exactly
+        # the change a security lens exists for, and reading the file cannot reveal it.
+        kinds.add("code")
+        low = rel.lower()
+        if any(word in low for word in ("auth", "permission", "role", "session", "token", "guard")):
+            kinds.add("auth")
+        if any(word in low for word in ("route", "handler", "controller", "endpoint", "api")):
+            kinds.add("route")
+        return kinds
+    if checks._is_binary(full):
+        return kinds
+    try:
+        text = read_text(full)
+    except (AegisError, UnicodeDecodeError):
+        return kinds
+    kinds.add("code")
+    if any(re.search(p, text) for p in ROUTE_HINTS):
+        kinds.add("route")
+    if any(re.search(p, text) for p in AUTH_HINTS):
+        kinds.add("auth")
+    return kinds
+
+
+def review_snapshot(ctx: Ctx, base: str | None, task_id: str) -> dict[str, str]:
+    """What a lens read, file by file: the review-scope files and their content keys.
+
+    Stored with the record so that a later check can say *which* files moved after the
+    review, and from their kinds whether this lens cares. The digest alone says only that
+    something moved, which re-ran every lens for a docstring."""
+    out = {}
+    for rel in changed_files(ctx, base):
+        if in_review_scope(rel, task_id):
+            out[rel] = content_key(os.path.join(ctx.root, rel)) or ABSENT
+    return out
+
+
+def lens_staleness(ctx: Ctx, task_id: str, lens: str, record: dict, plan: dict) -> str | None:
+    """Why this lens must run again, or None while its record still describes the change.
+
+    A lens is stale only when a file whose kinds trigger it moved since the record (R-9).
+    The always-on lens is stale on any move. A record with no snapshot cannot say what it
+    read, so it is stale the moment the digest differs — no grandfathering.
+    """
+    if record.get("diff_digest") == plan["diff_digest"]:
+        return None
+    snapshot = record.get("files")
+    if not isinstance(snapshot, dict):
+        return "the code moved after that review, and the record cannot say what it read"
+    manifest = checks.load_task(ctx, task_id)
+    current = review_snapshot(ctx, manifest.get("base_sha"), task_id)
+    moved = sorted(rel for rel in set(snapshot) | set(current) if snapshot.get(rel) != current.get(rel))
+    if not moved:
+        return "the digest moved and no file did"  # unreachable in practice; never pass silently
+    matrix = checks.policy(ctx).get("lens_matrix") or {}
+    if lens in (matrix.get("always") or ["correctness"]):
+        return f"{len(moved)} file(s) moved after that review: {', '.join(moved[:3])}"
+    triggers = {kind for kind, lenses in matrix.items() if kind != "always" and lens in (lenses or [])}
+    caps = checks.capabilities(ctx)
+    hits = sorted({kind for rel in moved for kind in _file_kinds(ctx, rel, caps) if kind in triggers})
+    if hits:
+        return f"a file whose change kind ({', '.join(hits)}) selects lens-{lens} moved after that review"
+    return None
+
+
 def detect_change_kinds(ctx: Ctx, scope: list[str], base: str | None = None) -> list[str]:
     """Conservative detectors over the diff, unioned with the task's declared kinds.
 
@@ -585,45 +681,9 @@ def detect_change_kinds(ctx: Ctx, scope: list[str], base: str | None = None) -> 
     scope = [rel for rel in scope if in_review_scope(rel)]
     kinds: set[str] = set()
     caps = checks.capabilities(ctx)
-    migration_globs = caps.get("migration_paths") or ["**/migrations/**", "**/migrate/**", "db/**"]
     test_globs = caps.get("test_paths") or ["**/test/**", "**/tests/**", "**/*_test.*", "**/*.test.*", "**/*.spec.*"]
     for rel in scope:
-        # Not `base`: that is the git ref this function compares against, and shadowing it
-        # made every committed change invisible to the detectors below. A committed deletion
-        # of an authorisation call then read as plain code and lost its security lens.
-        name = os.path.basename(rel)
-        if name in DEP_FILES or name.endswith(".lock"):
-            kinds.add("dependency")
-        if matches_any(rel, migration_globs):
-            kinds.update({"data-migration", "contract"})
-        if matches_any(rel, test_globs):
-            kinds.add("test")
-            continue
-        if rel.startswith("docs/") or rel.endswith(".md"):
-            kinds.add("docs")
-            continue
-        full = os.path.join(ctx.root, rel)
-        if not os.path.isfile(full):
-            # The file is gone. Deleting a middleware or an authorisation helper is exactly
-            # the change a security lens exists for, and reading the file cannot reveal it.
-            kinds.add("code")
-            low = rel.lower()
-            if any(word in low for word in ("auth", "permission", "role", "session", "token", "guard")):
-                kinds.add("auth")
-            if any(word in low for word in ("route", "handler", "controller", "endpoint", "api")):
-                kinds.add("route")
-            continue
-        if checks._is_binary(full):
-            continue
-        try:
-            text = read_text(full)
-        except (AegisError, UnicodeDecodeError):
-            continue
-        kinds.add("code")
-        if any(re.search(p, text) for p in ROUTE_HINTS):
-            kinds.add("route")
-        if any(re.search(p, text) for p in AUTH_HINTS):
-            kinds.add("auth")
+        kinds |= _file_kinds(ctx, rel, caps)
 
     # Removed lines carry the strongest signal there is: a control that used to be here.
     # Reading only what survived the change made deleting an authorisation call invisible
@@ -678,7 +738,7 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
             reasons.setdefault(lens, []).append(kind)
 
     tier = _risk_tier(policy, kinds)
-    return {
+    plan = {
         "task": task_id,
         # The reviewer quotes this back in its report; that is what proves what it read.
         "diff_digest": diff_digest(ctx, manifest.get("base_sha"), task_id),
@@ -694,6 +754,21 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
         "why": {lens: sorted(set(why)) for lens, why in reasons.items()},
         "scope_files": len(scope),
     }
+    # Which of them must actually run now: the ones with no record, and the ones whose
+    # record a moved file of a triggering kind invalidated. A fresh lens is not dispatched.
+    reviews = os.path.join(run_dir(ctx, task_id), "reviews")
+    stale: dict[str, str] = {}
+    for lens in selected:
+        path = os.path.join(reviews, f"{lens}.json")
+        if not os.path.exists(path):
+            stale[lens] = "no record yet"
+            continue
+        why_stale = lens_staleness(ctx, task_id, lens, read_json(path, default={}), plan)
+        if why_stale:
+            stale[lens] = why_stale
+    plan["stale"] = stale
+    plan["run"] = [lens for lens in selected if lens in stale]
+    return plan
 
 
 # The lens name becomes a filename. Untrusted review output is piped into `aegis lens
@@ -942,8 +1017,11 @@ def lens_record(ctx: Ctx, task_id: str, payload: dict, lens: str | None = None) 
         # against the record, which grows with every round by design.
         "report_tokens": estimate_tokens(canonical({"findings": payload["findings"],
                                                     "reconciled": payload.get("reconciled") or []})),
-        # Binds this report to the code it actually read. An edit afterwards invalidates it.
+        # Binds this report to the code it actually read. An edit afterwards invalidates it —
+        # for the lenses the moved files' kinds select (R-9); `files` is what makes that
+        # question answerable.
         "diff_digest": payload["diff_digest"],
+        "files": review_snapshot(ctx, manifest.get("base_sha"), task_id),
         "findings": sorted(findings, key=lambda f: (-f["severity"], f["id"])),
         "reopened": reopened,
     }
@@ -1088,7 +1166,6 @@ def check_reviews(ctx: Ctx, task_id: str) -> Report:
 
     max_rounds = policy.get("refinement_rounds", 3)
     manifest = checks.load_task(ctx, task_id)
-    current_digest = diff_digest(ctx, manifest.get("base_sha"), task_id)
     # Effective kinds, not declared ones: declaring `code` while adding an authorisation
     # route would otherwise duck the independent-review requirement the change earns.
     scope = changed_files(ctx, manifest.get("base_sha"))
@@ -1108,10 +1185,12 @@ def check_reviews(ctx: Ctx, task_id: str) -> Report:
                         f"{record.get('task')!r}", None,
                         hint=f"re-run lens-{lens} and record it; a renamed file is not a review")
             continue
-        if record.get("diff_digest") != current_digest:
-            # No grandfathering: a record without a digest is a record that cannot say what
-            # it read, which is indistinguishable from one that read something else.
-            report.fail("reviews", f"{lens} did not review this version of the change", None,
+        why_stale = lens_staleness(ctx, task_id, lens, record, plan)
+        if why_stale:
+            # Per lens, by the kinds of the files that moved: a docstring after a security
+            # review does not re-run security. No grandfathering for a record that cannot
+            # say what it read.
+            report.fail("reviews", f"{lens} did not review this version of the change: {why_stale}", None,
                         hint=f"re-run lens-{lens} against the current diff and record it again")
         came_back = [f["id"] for f in record.get("findings", [])
                      if f.get("reopened_in") and not _closed_by_a_person(f, builder, lens)]
@@ -1762,7 +1841,8 @@ def next_action(ctx: Ctx) -> dict:
             docs = [f for f in judged.findings if f.severity == "fail"]
             if docs:
                 return step("write the documentation the profile requires", docs[0].message, None,
-                            note=docs[0].hint or "then `aegis docs attest <id> --by <who>`")
+                            note=docs[0].hint or "the doc-manager verifies it against its sources, "
+                                                 "then `aegis docs attest <id> --by aegis-doc-manager --note <what was checked>`")
     if gated and not building:
         # The merge gate refuses a landing over an uncovered requirement; say it here rather
         # than advising a land the gate will refuse — the loop and the gate must not disagree.
@@ -1849,8 +1929,9 @@ def next_action(ctx: Ctx) -> dict:
     for lens in sorted(recorded):
         record = read_json(os.path.join(reviews, f"{lens}.json"))
         rounds = record.get("round", 0)
-        if record.get("diff_digest") != plan["diff_digest"]:
-            return step(f"re-run lens-{lens}", "the code moved after that review, so it no longer describes this change",
+        why_stale = lens_staleness(ctx, task_id, lens, record, plan)
+        if why_stale:
+            return step(f"re-run lens-{lens}", why_stale,
                         f"aegis lens plan {task_id}", note=f"dispatch lens-{lens} again"
                         + (f" — round {rounds + 1}, past the {cap} the policy expects: a finding "
                            f"surviving this many rounds usually means the mechanism is wrong, so "

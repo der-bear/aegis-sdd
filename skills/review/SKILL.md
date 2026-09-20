@@ -13,9 +13,12 @@ allowed-tools: Read, Grep, Glob, Bash, Agent
 aegis lens plan <TASK-ID>          # add --closing when finishing a feature
 ```
 
-Run exactly what it names. Not fewer because the change looks small — the plan already saw
-the diff. Not more because it looks risky — an extra lens costs a full context and dilutes
-the signal from the ones that mattered.
+Run exactly what its `run` list names: the lenses with no record, and the ones a moved file
+of a triggering kind invalidated (`stale` says why). A lens whose record still describes the
+change is not dispatched again — a docstring after a security review does not re-run
+security. Not fewer because the change looks small — the plan already saw the diff. Not more
+because it looks risky — an extra lens costs a full context and dilutes the signal from the
+ones that mattered.
 
 ## 2. Dispatch
 

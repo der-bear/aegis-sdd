@@ -16,7 +16,8 @@ a case they cover. Most tasks do not.
 
 Two rules the protocol depends on and that nothing may override:
 
-- Attest a diagram only after you have actually brought it up to date. The digest exists so
-  that green means someone looked.
+- Attest a diagram only after you have actually verified it against its watched sources —
+  `--by aegis-doc-manager --note "<what was checked>"`. The digest exists so that green
+  means someone looked; the note says what.
 - Create nothing the documentation profile does not require. Unrequested documentation is a
   gate finding, not a contribution.

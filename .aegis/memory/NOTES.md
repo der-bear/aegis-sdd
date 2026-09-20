@@ -71,7 +71,12 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
   (`@.aegis/generated/rules.md`) as `migrate` uses, not the word "aegis"; the constitution
   template's `## Amendment` section still asks for a human-reviewed PR; drop `islink` and keep the
   realpath test. No task carries them yet; TASK-STABLE-03 (the correctness leftovers of retro 0002) is the natural carrier.
-- ADR-3. TASK-STABLE-02 (R-9, R-10) and TASK-STABLE-03 (R-11..R-15) are planned and small.
+- TASK-STABLE-02 (R-9, R-10): built and verified (255 tests), **not reviewed, not landed** — the
+  owner closed the session before the review round. Resume with `aegis next`: it says review;
+  the plan names correctness, security and design at tier A. Then STABLE-03 (R-11..R-15 plus the
+  four scaffold lines), then ADR-3 — the historical patch for it is at commit 1277dbe under
+  `.aegis/changes/universal-01/` (written against the pre-deletion code; anchors will need redoing).
+- TASK-STABLE-03 (R-11..R-15) planned and small.
 - Published: https://github.com/der-bear/aegis-sdd (public, MIT); `main` pushed through the
   pre-push gate on 2026-09-19, and the first CI run of the merge gate was green in 1m12s.
 - Constitution signature: the owner's.
@@ -80,7 +85,7 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
 
 ## How to verify the current state
 
-    make check                          # 249 tests + bootstrap gate
-    python3 tests/test_aegis.py         # the same 249
+    make check                          # 255 tests + bootstrap gate
+    python3 tests/test_aegis.py         # the same 255
     scripts/aegis/aegis next
     scripts/aegis/aegis status

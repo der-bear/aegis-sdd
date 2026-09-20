@@ -4,7 +4,7 @@ export const meta = {
   whenToUse: 'Implementing a task that already has a manifest, when you want the loop driven deterministically rather than by the orchestrator remembering it',
   phases: [
     { title: 'Build', detail: 'one builder in an isolated worktree, from the generated packet' },
-    { title: 'Review', detail: 'exactly the lenses `aegis lens plan` selected, in parallel' },
+    { title: 'Review', detail: 'exactly the lenses `aegis lens plan` says to run, in parallel' },
     { title: 'Refine', detail: 'fix blocking findings and re-review, up to the round limit' },
     { title: 'Documentation', detail: 'registry drafts and diagrams, applied by the single writer' },
     { title: 'Gate', detail: 'deterministic checks and the affected packages\' commands' },
@@ -142,7 +142,8 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
       .match(/\{[\s\S]*\}/)?.[0] || '{}',
   )
   const digest = replan.diff_digest
-  const roundLenses = replan.lenses || plan.lenses
+  // Only the lenses the moved files invalidated (R-9); a fresh record is not re-run.
+  const roundLenses = replan.run || replan.lenses || plan.lenses
   await parallel(roundLenses.map((lens) => async () => {
     // Each lens is handed the prior findings *it* raised, from its own record. One shared
     // list built from every record told each lens to reconcile ids the recorder then

@@ -5,7 +5,7 @@
     "TheDocManagerAttests",
     "make check green"
   ],
-  "base_sha": "458eb783d703de410e3316a01f24c60c45244f5e",
+  "base_sha": "9f9787f524e12a1acdcd04418992249e1acab832",
   "change_kinds": [
     "code",
     "docs",
@@ -20,7 +20,9 @@
     "agents/aegis-doc-manager.md",
     "scripts/aegis/aegis_cli/**",
     "skills/doc-sync/**",
-    "tests/**"
+    "tests/**",
+    "workflows/**",
+    "skills/review/**"
   ],
   "reads": [],
   "requirements": [
@@ -29,5 +31,6 @@
   ],
   "risk_tier": "C",
   "size": "M",
-  "status": "planned"
+  "status": "building",
+  "updated": "2026-09-21T01:39:06"
 }

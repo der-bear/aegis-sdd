@@ -187,6 +187,82 @@ class ScopeCoversUncommittedWork(ProjectFixture):
         self.assertIn("src/orders/b.py", scope)
 
 
+class AReviewIsStaleOnlyForTheKindsThatMoved(ProjectFixture):
+    """R-9. A lens's record is stale only when a file whose kinds select that lens moved since
+    the record; the always-on lens is stale on any move. Every lens re-ran for a docstring."""
+
+    def _reviewed_auth_and_pricing(self):
+        self.make_task()
+        self.write("src/orders/auth.py", "def authorize(user):\n    return user.is_admin\n")
+        self.write("src/orders/pricing.py", "PRICE = 1\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertIn("security", plan["lenses"], plan)
+        for lens in plan["lenses"]:
+            out = self.record("T-1", {"lens": lens, "verdict": "pass", "findings": []})
+            self.assertEqual(out.returncode, 0, out.stderr)
+        return core.Ctx(self.dir)
+
+    def test_a_pricing_edit_after_a_security_review_does_not_re_run_security(self):
+        ctx = self._reviewed_auth_and_pricing()
+        self.write("src/orders/pricing.py", "PRICE = 2  # a docstring's worth of change\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertEqual(plan["run"], ["correctness"], plan["stale"])
+        report = flow.check_reviews(ctx, "T-1")
+        stale = [f.message for f in report.findings if "did not review this version" in f.message]
+        self.assertEqual(len(stale), 1, stale)
+        self.assertTrue(stale[0].startswith("correctness"), stale)
+        _handoff(self)  # the loop asks for the handoff before it looks at the reviews
+        self.assertEqual(flow.next_action(ctx)["do"], "re-run lens-correctness")
+
+    def test_an_auth_edit_re_runs_security_too(self):
+        ctx = self._reviewed_auth_and_pricing()
+        self.write("src/orders/auth.py", "def authorize(user):\n    return True  # oops\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertEqual(sorted(plan["run"]), ["correctness", "security"], plan["stale"])
+        self.assertIn("auth", plan["stale"]["security"])
+
+    def test_a_record_without_a_snapshot_is_stale_on_any_move(self):
+        ctx = self._reviewed_auth_and_pricing()
+        path = os.path.join(self.dir, ".aegis/runs/T-1/reviews/security.json")
+        record = json.load(open(path)); del record["files"]; json.dump(record, open(path, "w"))
+        self.write("src/orders/pricing.py", "PRICE = 3\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertIn("security", plan["run"], plan["stale"])  # no grandfathering
+
+    def test_a_protocol_file_is_code_whatever_its_suffix(self):
+        ctx = core.Ctx(self.dir)
+        caps = checks.capabilities(ctx)
+        self.write("skills/x/SKILL.md", "# x\n")
+        self.write("docs/x.md", "# x\n")
+        self.assertIn("code", flow._file_kinds(ctx, "skills/x/SKILL.md", caps))
+        self.assertNotIn("docs", flow._file_kinds(ctx, "skills/x/SKILL.md", caps))
+        self.assertEqual(flow._file_kinds(ctx, "docs/x.md", caps), {"docs"})
+
+
+class TheDocManagerAttestsUnderItsOwnName(ProjectFixture):
+    """R-10. An attestation records who verified a document and what; it is not a person's
+    signature, and no routine step waits for one."""
+
+    def test_attest_by_the_doc_manager_with_a_note(self):
+        self.write("docs/API.md", "# API\n")
+        self.write(".aegis/registry/diagrams.json", json.dumps([{
+            "id": "api", "kind": "api-reference", "path": "docs/API.md", "watches": ["src/**"],
+            "generated": False, "origin": "TASK-T-1", "owner": "fixture", "status": "proposed"}]))
+        out = run(["docs", "attest", "api", "--by", "aegis-doc-manager", "--note", "routes in src/orders checked against §2"], self.dir)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        entry = json.load(open(os.path.join(self.dir, ".aegis/registry/diagrams.json")))[0]
+        self.assertEqual(entry["verified_by"], "aegis-doc-manager")
+        self.assertIn("checked", entry["verified_note"])
+
+    def test_the_protocol_says_verify_then_attest_under_its_own_name(self):
+        text = open(os.path.join(ROOT, "skills/doc-sync/SKILL.md"), encoding="utf-8").read()
+        self.assertIn("--by aegis-doc-manager", text)
+        self.assertIn("verify, then attest", text)
+        self.assertNotIn("pull request for a human", text)
+        step = open(os.path.join(ROOT, "agents/aegis-doc-manager.md"), encoding="utf-8").read()
+        self.assertIn("--by aegis-doc-manager", step)
+
+
 class ReviewsAreEvidence(ProjectFixture):
     def test_an_edit_after_review_invalidates_it(self):
         self.make_task()

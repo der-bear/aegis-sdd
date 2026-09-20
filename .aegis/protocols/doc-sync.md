@@ -29,13 +29,19 @@ Input: the task's `handoff.json` and its diff. Nothing else.
    ```
 
    Generated ones: run the generator, confirm the result is diff-clean. Hand-written ones:
-   read the diff and update them to match what is now true. Then:
+   **verify, then attest.** For each stale document, read what moved in its watched sources
+   since it was last verified (`git diff <verified commit> -- <watched globs>`, or the task's
+   `aegis diff`) and check every claim the document makes about those sources against the
+   code as it is now; update what is no longer true. Then:
 
    ```bash
-   aegis docs attest <diagram-id> --by <you>
+   aegis docs attest <diagram-id> --by aegis-doc-manager --note "<what was checked, one line>"
    ```
 
-   **Never attest a diagram you did not actually update.** The digest exists so that a green
+   You attest under your own name. An attestation records who verified and what; it is not a
+   person's signature, and no step here waits for one.
+
+   **Never attest a diagram you did not actually verify.** The digest exists so that a green
    check means someone looked. Attesting blindly turns a working invariant into a green
    light that means nothing, and nobody downstream can tell the difference.
 
@@ -59,8 +65,9 @@ Input: the task's `handoff.json` and its diff. Nothing else.
   intent no generator can produce.
 - **Nothing outside the profile.** If `doc-profile.json` does not require it, do not create
   it, however useful it looks. The gate reports unrequested documentation as a finding.
-- Never edit `.aegis/generated/`, `constitution.md`, `standards/` or any skill. A change
-  needed there is a pull request for a human — say so instead of making it.
+- Never edit `.aegis/generated/` or any skill; `constitution.md` only when the task's
+  objective calls for it. A change needed in a skill is a task of its own — say so instead
+  of making it.
 
 Report in under 200 words: entries applied, diagrams attested, documents touched, and what
 you deliberately did not write.

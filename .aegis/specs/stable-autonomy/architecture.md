@@ -1,5 +1,11 @@
 # Architecture: stable-autonomy
 
+> Written before the work. SPEC-3's deletion (2026-09-19) then removed four of the contracts named
+> below — the merge receipt, `aegis waive`, `policy.delegation` and the pre-commit gate script — so
+> the rows and the "Contracts" entries for R-3, R-4, R-5 and R-7 describe mechanisms that no longer
+> exist; R-1, R-2, R-3, R-5, R-6, R-7, R-8 and R-16 are struck as delivered or deleted in spec.md.
+> Kept as the plan it was; what remains live is R-9..R-15 and the `HOLDING` contract.
+
 ## Components and responsibilities
 
 - `scripts/aegis/aegis_cli/checks.py` — budget severities (R-1), waiver validation and the
