@@ -3325,6 +3325,33 @@ class LensesAreData(ProjectFixture):
         self.assertEqual(plan["external_reviewer"], "gemini -p")
 
 
+class ALensFileIsCheckedWhereItIsRead(ProjectFixture):
+    def test_a_bad_lens_name_is_refused_at_the_file(self):
+        self.write(".aegis/lenses/My_Lens.md", "---\nname: My_Lens\nkinds: {auth: minimal}\n---\nlook\n")
+        out = run(["compile"], self.dir)
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("My_Lens", out.stderr)
+
+    def test_the_three_tables_are_the_former_constant_byte_for_byte(self):
+        # The constant LENS_MATRIX as it stood at de5d662, the commit before lenses became files.
+        from aegis_cli import config
+        former = {
+            "minimal": {"always": ["correctness"], "route": ["security"], "auth": ["security"],
+                        "dependency": ["security"], "data-migration": ["security"], "feature-close": ["design"]},
+            "standard": {"always": ["correctness"], "route": ["security"], "auth": ["security"],
+                         "dependency": ["security"], "contract": ["design"], "cross-module": ["design"],
+                         "data-migration": ["security", "design"], "money": ["security", "design"],
+                         "concurrency": ["design"], "feature-close": ["design"]},
+            "strict": {"always": ["correctness", "security"], "contract": ["design"], "cross-module": ["design"],
+                       "auth": ["design"], "data-migration": ["design"], "money": ["design"],
+                       "concurrency": ["design"], "feature-close": ["design"]},
+        }
+        for level, table in former.items():
+            matrix, _paths, _profiles = config.derive_lens_matrix(core.Ctx(self.dir), level, None)
+            self.assertEqual({k: sorted(v) for k, v in matrix.items()},
+                             {k: sorted(v) for k, v in table.items()}, level)
+
+
 class NoLensOrEngineIsHardWired(unittest.TestCase):
     def read(self, rel):
         with open(os.path.join(ROOT, rel), encoding="utf-8") as fh:

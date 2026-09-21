@@ -119,6 +119,9 @@ PROFILE_DEFAULTS: dict[str, dict[str, Any]] = {
 STRICTNESS_ORDER = {"minimal": 0, "standard": 1, "strict": 2}
 
 
+LENS_FILE_NAME = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
+
+
 def load_lenses(ctx: Ctx) -> dict[str, dict[str, Any]]:
     """Lens files: the framework's `lenses/`, then a project's `.aegis/lenses/`, which wins.
 
@@ -133,7 +136,11 @@ def load_lenses(ctx: Ctx) -> dict[str, dict[str, Any]]:
                 continue
             path = os.path.join(base, filename)
             front, body = parse_frontmatter(read_text(path))
-            name = front.get("name") or filename[:-3]
+            name = str(front.get("name") or filename[:-3])
+            # The name becomes a filename under reviews/ and a dispatch target; the same rule
+            # as `lens record`, refused here, at the file, rather than one stage later.
+            if not LENS_FILE_NAME.match(name):
+                raise AegisError(f"lens {path}: name {name!r} must match {LENS_FILE_NAME.pattern}")
             lenses[name] = {**front, "name": name, "body": body.strip(), "path": path}
     return lenses
 
@@ -162,6 +169,10 @@ def derive_lens_matrix(ctx: Ctx, strictness: str, project_type: str | None
             matrix["always"].append(name)
         kinds = lens.get("kinds") if isinstance(lens.get("kinds"), dict) else {}
         for kind, from_level in kinds.items():
+            # A lens that is always on is not listed under a kind as well: the three tables
+            # the constant held were byte-equal to this, and "exactly" means exactly.
+            if name in matrix["always"]:
+                continue
             if from_level in STRICTNESS_ORDER and STRICTNESS_ORDER[from_level] <= level:
                 matrix.setdefault(kind, []).append(name)
         globs = lens.get("paths") if isinstance(lens.get("paths"), list) else []

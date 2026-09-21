@@ -2025,7 +2025,7 @@ def next_action(ctx: Ctx) -> dict:
     missing = [lens for lens in plan["lenses"] if lens not in recorded]
     if missing:
         return step(f"review {task_id}", f"required lenses have not run: {', '.join(missing)}",
-                    f"aegis lens plan {task_id}", note=f"dispatch lens-{missing[0]}")
+                    f"aegis lens plan {task_id}", note=f"dispatch the {missing[0]} lens to its plan profile, briefed by `aegis lens prompt {task_id} {missing[0]}`")
 
     cap = checks.policy(ctx).get("refinement_rounds") or 3
     for lens in sorted(recorded):
@@ -2034,7 +2034,7 @@ def next_action(ctx: Ctx) -> dict:
         why_stale = lens_staleness(ctx, task_id, lens, record, plan)
         if why_stale:
             return step(f"re-run lens-{lens}", why_stale,
-                        f"aegis lens plan {task_id}", note=f"dispatch lens-{lens} again"
+                        f"aegis lens plan {task_id}", note=f"dispatch the {lens} lens again, to its plan profile"
                         + (f" — round {rounds + 1}, past the {cap} the policy expects: a finding "
                            f"surviving this many rounds usually means the mechanism is wrong, so "
                            f"simplify before patching again" if rounds >= cap else ""))

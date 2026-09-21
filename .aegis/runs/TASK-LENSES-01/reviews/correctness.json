@@ -1,0 +1,157 @@
+{
+  "diff_digest": "ea15f4ab24a1fc5d",
+  "files": {
+    ".aegis/runs/TASK-LENSES-01/manifest.json": "contract:793d372f4840098bf6640449db6d03f2850824c98d7191269baeffd444464b14",
+    ".aegis/specs/simple-reliable/spec.md": "fdce606b1190c141cbc773d693ed9f88c8fa5ebcfc9f7897920e5cb8f03008f7",
+    "README.md": "8dfab80639ef7328a34234005df07b96ae5eafee1922fc29dad0eba9fdda22c7",
+    "agents/aegis-orchestrator.md": "a735914dd8b1f31a74052e62b77cb1d430a467d25acd201c94259590e447e50e",
+    "agents/lens-auditor.md": "d816740a5f47a0a58bb008f316e5e28c0be8e63e0b40a459f723144ecc3a8116",
+    "agents/lens-correctness.md": "absent",
+    "agents/lens-design.md": "absent",
+    "agents/lens-runner.md": "f6835fba5eac57259f53618ae19ff24514a4e62a7ce4d6b93006010744a49015",
+    "agents/lens-security.md": "absent",
+    "docs/ARCHITECTURE.md": "d914ffc8afd33072f58bc552982b41fbd4a621f10e5362bb20b34739e95893ed",
+    "interview/core.json": "6e54d2eb99981332d087e027ae8d9208d045314c2e5d49e44dfad4e69eb26fcd",
+    "lenses/accessibility.md": "82f05f0d293a7154fefe439307e7dd4308bc25b79ce686e418dea477ad5c7add",
+    "lenses/correctness.md": "e30194d0d5af737605741dc9e26d986a8704badace24e8f42f057256e0bc5aaf",
+    "lenses/data-integrity.md": "e6cc9719ff7cd1bdeb137a00cd709537b63cb556724b97a56c4f7ae467770aa7",
+    "lenses/design.md": "951d6b53c080e42a02c75a2d2724dd8144050eeab43715e363255459bf3b0683",
+    "lenses/security.md": "a3fe2f4e9dc5d4ad57a5fb64b82dad439865544e7d787e6e02154db07bddbef7",
+    "scripts/aegis/aegis_cli/__main__.py": "c09aa15544466b1922a1db18f5689d27c9467ff61409e0ba81b3f5142df428fb",
+    "scripts/aegis/aegis_cli/config.py": "4bcce62a1832d459008a951caa364eb6f8d0de86c8c097e6cc413a2eae3507a5",
+    "scripts/aegis/aegis_cli/flow.py": "75b7dee22479355091a80af3fc57d21373ac449e8d2c40542902c16048eaed13",
+    "scripts/aegis/codex-lens.sh": "exec:33a5c1e065be3a53e5afce71fcdcfd05a5b4b3e13432ab6699c7299adc3871db",
+    "scripts/aegis/external-lens.sh": "exec:2dc836a302654a7bb5c0ff56708bf57c8c843b4d7920c4fcdd28761c157d25fd",
+    "skills/build/SKILL.md": "2d039d2894390706ec94ae3b411273495c8e638d9a0ccc7a2c7c9ee1cf67a598",
+    "skills/plan/SKILL.md": "506d4c498c1d12c0068701e42ff3ebb48c8fde0bf314cf014c299a0ae5b13419",
+    "skills/review/SKILL.md": "f9d7907ca1eccd2a4acee1adb7a1a0cd7736666c4ff2d79c79bc715a15012818",
+    "skills/spec/SKILL.md": "ebd1278084fbe63e69c5795b8153fe639228706f9bc580e10227b1cad4433778",
+    "tests/test_aegis.py": "31a73497e33513c0004a60a44ae1c6ef5f88f4d52a3587ec7f2cb5c179bf3c2a",
+    "workflows/aegis-task.js": "c3d51b89b35c56dabf9249d7f74de3e8c66f69cfa44b35381653bdef7f958335"
+  },
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-70213329",
+      "line": 165,
+      "message": "derive_lens_matrix at strict lists security under route/auth/dependency/data-migration/money although it is already in always, so the strict table is not the former constant and R-38's 'exactly' (and the lock's name) overclaim; selection and staleness are unaffected because both consumers dedup.",
+      "minimal_fix": "skip a kind entry for a lens already in matrix['always'] (one clause), which makes all three tables byte-equal",
+      "path": "scripts/aegis/aegis_cli/config.py",
+      "raised_digest": "ea15f4ab24a1fc5d",
+      "requirement": "R-38",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-83c5ce24",
+      "line": 136,
+      "message": "load_lenses accepts any name: a project lens named My_Lens (or ../../evil) compiles silently, is planned and enters plan.run, and lens record then refuses it, so the task cannot gate until the file is renamed; the rejection comes one stage too late and the plan reads a reviews/ path built from the unvalidated name.",
+      "minimal_fix": "apply LENS_NAME in load_lenses and raise AegisError naming the file",
+      "path": "scripts/aegis/aegis_cli/config.py",
+      "raised_digest": "ea15f4ab24a1fc5d",
+      "requirement": "R-38",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    }
+  ],
+  "kinds": {
+    ".aegis/runs/TASK-LENSES-01/manifest.json": [
+      "code"
+    ],
+    ".aegis/specs/simple-reliable/spec.md": [
+      "docs"
+    ],
+    "README.md": [
+      "docs"
+    ],
+    "agents/aegis-orchestrator.md": [
+      "code"
+    ],
+    "agents/lens-auditor.md": [
+      "code"
+    ],
+    "agents/lens-correctness.md": [
+      "code"
+    ],
+    "agents/lens-design.md": [
+      "code"
+    ],
+    "agents/lens-runner.md": [
+      "code"
+    ],
+    "agents/lens-security.md": [
+      "code"
+    ],
+    "docs/ARCHITECTURE.md": [
+      "docs"
+    ],
+    "interview/core.json": [
+      "code"
+    ],
+    "lenses/accessibility.md": [
+      "docs"
+    ],
+    "lenses/correctness.md": [
+      "docs"
+    ],
+    "lenses/data-integrity.md": [
+      "docs"
+    ],
+    "lenses/design.md": [
+      "docs"
+    ],
+    "lenses/security.md": [
+      "docs"
+    ],
+    "scripts/aegis/aegis_cli/__main__.py": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/config.py": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/flow.py": [
+      "auth",
+      "code"
+    ],
+    "scripts/aegis/codex-lens.sh": [
+      "code"
+    ],
+    "scripts/aegis/external-lens.sh": [
+      "code"
+    ],
+    "skills/build/SKILL.md": [
+      "code"
+    ],
+    "skills/plan/SKILL.md": [
+      "code"
+    ],
+    "skills/review/SKILL.md": [
+      "code"
+    ],
+    "skills/spec/SKILL.md": [
+      "code"
+    ],
+    "tests/test_aegis.py": [
+      "test"
+    ],
+    "workflows/aegis-task.js": [
+      "auth",
+      "code"
+    ]
+  },
+  "lens": "correctness",
+  "recorded": "2026-09-21T15:17:50",
+  "reopened": [],
+  "report_tokens": 383,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-LENSES-01",
+  "verdict": "pass"
+}

@@ -34,10 +34,13 @@ aegis="$(command -v aegis || echo "$plugin/scripts/aegis/aegis")"
 digest="$("$aegis" --root "$root" lens plan "$task" | python3 -c 'import json,sys;print(json.load(sys.stdin)["diff_digest"])')"
 prompt="$("$aegis" --root "$root" lens prompt "$task" "$lens" --with-contract)"
 
-if [ "$mode" = "stdin" ]; then
-  reply="$(printf '%s' "$prompt" | "$@" 2>/dev/null)"
+# The engine's stderr stays visible: an auth error, a missing binary or an argument over the
+# platform's limit must say so, not exit silently with the engine's code. A prompt over
+# ~100 KB goes on stdin whatever the mode: a single argv is capped at 128 KiB on Linux.
+if [ "$mode" = "stdin" ] || [ "${#prompt}" -gt 100000 ]; then
+  reply="$(printf '%s' "$prompt" | "$@")" || { echo "$label: the engine failed (exit $?) — see its output above" >&2; exit 1; }
 else
-  reply="$("$@" "$prompt" 2>/dev/null)"
+  reply="$("$@" "$prompt")" || { echo "$label: the engine failed (exit $?) — see its output above" >&2; exit 1; }
 fi
 report="$(printf '%s' "$reply" | python3 -c 'import re,sys; t=sys.stdin.read(); m=re.search(r"\{[\s\S]*\}", t); print(m.group(0) if m else "")')"
 [ -n "$report" ] || { echo "$label returned no JSON report" >&2; exit 1; }

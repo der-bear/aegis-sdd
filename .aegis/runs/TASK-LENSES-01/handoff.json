@@ -1,7 +1,7 @@
 {
   "task": "TASK-LENSES-01",
   "agent": "claude-fable-5.1 (orchestrator and builder)",
-  "summary": "ADR-3 implemented (R-38). A lens is a file: five shipped under lenses/ (correctness, security, design, accessibility, data-integrity) with frontmatter naming the strictness from which each change kind, path glob or project type selects it; a project's .aegis/lenses/<name>.md wins on a name clash. The compiler derives policy.lens_matrix, lens_paths and lens_profiles from the files — the shipped files reproduce the former LENS_MATRIX constant exactly, locked by a test. Two auditor profiles (lens-auditor read-only, lens-runner may execute) replace the three per-lens profiles. `aegis lens prompt <TASK> <lens> [--with-contract]` assembles the review contract, the lens focus, that lens's own prior findings, the packet and the diff for any engine. The second engine is an answer (q.core.second-engine → capabilities.external_reviewer) that may be empty; scripts/aegis/external-lens.sh runs any CLI and records with --lens/--reviewer/--digest; codex-lens.sh is a thin wrapper over it. The workflow dispatches each lens to its plan profile with the assembled prompt. Documents lose the vendor names. The package was prepared on 2026-09-17 against the pre-deletion code (commit 1277dbe); two anchors were redone and two old tests updated for the deleted profiles and script.",
+  "summary": "ADR-3 implemented (R-38). A lens is a file: five shipped under lenses/ (correctness, security, design, accessibility, data-integrity) with frontmatter naming the strictness from which each change kind, path glob or project type selects it; a project's .aegis/lenses/<name>.md wins on a name clash. The compiler derives policy.lens_matrix, lens_paths and lens_profiles from the files — the shipped files reproduce the former LENS_MATRIX constant exactly, locked by a test. Two auditor profiles (lens-auditor read-only, lens-runner may execute) replace the three per-lens profiles. `aegis lens prompt <TASK> <lens> [--with-contract]` assembles the review contract, the lens focus, that lens's own prior findings, the packet and the diff for any engine. The second engine is an answer (q.core.second-engine → capabilities.external_reviewer) that may be empty; scripts/aegis/external-lens.sh runs any CLI and records with --lens/--reviewer/--digest; codex-lens.sh is a thin wrapper over it. The workflow dispatches each lens to its plan profile with the assembled prompt. Documents lose the vendor names. The package was prepared on 2026-09-17 against the pre-deletion code (commit 1277dbe); two anchors were redone and two old tests updated for the deleted profiles and script. Round 1 (all three pass, five advisories, all fixed): a lens already always-on is not listed under a kind, so the three derived tables equal the former constant byte for byte (locked against the constant recovered from de5d662); a lens file's name is checked where it is read, with the same rule as a review file; external-lens.sh shows the engine's stderr, fails loudly, and sends a prompt over 100 KB on stdin; next's dispatch note and README name the plan profile, not a deleted one; ADR-3 documents the frontmatter as implemented.",
   "changed_files": [
     ".aegis/decisions/ADR-3-lenses-roles-engines-are-data.md",
     ".aegis/generated/capabilities.json",
@@ -45,7 +45,7 @@
     {
       "command": "python3 tests/test_aegis.py",
       "result": "pass",
-      "note": "276 tests"
+      "note": "278 tests"
     },
     {
       "command": "aegis gate --stage bootstrap",
@@ -56,6 +56,11 @@
       "command": "R-27 reverse run: four of the nine ADR-3 locks against a git archive of de5d662",
       "result": "pass",
       "note": "see the log line above the handoff; the matrix-equality lock is red there because load_lenses does not exist"
+    },
+    {
+      "command": "R-27 reverse run: the two round-2 locks against a git archive of e09b2f2",
+      "result": "pass",
+      "note": "2 of 2 red there"
     }
   ],
   "deviations": [
@@ -65,7 +70,7 @@
   "open_questions": [],
   "new_dependencies": [],
   "invalidated_assumptions": [],
-  "next_safe_action": "one review round (the plan decides the lenses), gate, land, push.",
+  "next_safe_action": "round 2, reconciling round 1 by id; then gate, land, push.",
   "registry_drafts": [],
   "lease_expansion_request": []
 }

@@ -79,7 +79,7 @@ context compaction, a different runner, and Monday morning:
 next: review TASK-042-01  [agent]
   why: required lenses have not run: security
   run: aegis lens plan TASK-042-01
-  then: dispatch lens-security
+  then: dispatch the security lens to its plan profile, briefed by `aegis lens prompt TASK-042-01 security`
 ```
 
 `aegis next --run` executes the step when it is a self-contained `aegis` command — the task

@@ -31,10 +31,13 @@ What the sources say:
 ## Decision
 
 1. **A lens is a data file.** `lenses/<name>.md` ships with the framework; `.aegis/lenses/<name>.md`
-   belongs to a project and wins on a name clash. Frontmatter: `name`, `description`, `executes`
-   (whether it must run commands), `applies` (`always`, `kinds`, `paths`), `from_strictness`
-   (`minimal | standard | strict`) and optional `project_types`. The body is the focus: what this
-   lens looks for, in the terms of the review-lens contract.
+   belongs to a project and wins on a name clash. Frontmatter as implemented: `name` (the same
+   rule as a review file name, `^[a-z][a-z0-9-]{0,31}$`), `description`, `executes` (whether it
+   must run commands), `always_from` (the strictness from which it is always on), `kinds` (a map
+   of change kind → the strictness from which that kind selects it), `paths` with `paths_from`
+   (globs that select it), optional `project_types` and `order`. The body is the focus: what this
+   lens looks for, in the terms of the review-lens contract. README's "Lenses are files" is the
+   schema a project author reads.
 2. **Two auditor profiles replace the per-lens profiles**: `lens-auditor` (read-only) and
    `lens-runner` (may execute the test suite). A lens uses the one its `executes` names. The focus
    reaches the auditor through `aegis lens prompt <TASK> <lens>`, which assembles the contract, the
