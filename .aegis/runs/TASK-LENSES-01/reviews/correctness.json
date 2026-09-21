@@ -1,5 +1,5 @@
 {
-  "diff_digest": "56c4ab28d654c72f",
+  "diff_digest": "55f3adb28e044347",
   "files": {
     ".aegis/runs/TASK-LENSES-01/manifest.json": "contract:793d372f4840098bf6640449db6d03f2850824c98d7191269baeffd444464b14",
     ".aegis/specs/simple-reliable/spec.md": "fdce606b1190c141cbc773d693ed9f88c8fa5ebcfc9f7897920e5cb8f03008f7",
@@ -18,6 +18,7 @@
     "lenses/design.md": "951d6b53c080e42a02c75a2d2724dd8144050eeab43715e363255459bf3b0683",
     "lenses/security.md": "a3fe2f4e9dc5d4ad57a5fb64b82dad439865544e7d787e6e02154db07bddbef7",
     "scripts/aegis/aegis_cli/__main__.py": "c09aa15544466b1922a1db18f5689d27c9467ff61409e0ba81b3f5142df428fb",
+    "scripts/aegis/aegis_cli/checks.py": "2b213dd225a1456035254437a2b96b725ad36cd03b44ffe7e2d1986629bae066",
     "scripts/aegis/aegis_cli/config.py": "61b057ccb43bafbf9230d285b1295744053c8517340f729521106b24409a751b",
     "scripts/aegis/aegis_cli/flow.py": "c2cf7cc09f60908ae026c0ebd464156ba8d0d42c66b9bd75a5aa539aa55cfaf1",
     "scripts/aegis/codex-lens.sh": "exec:33a5c1e065be3a53e5afce71fcdcfd05a5b4b3e13432ab6699c7299adc3871db",
@@ -26,7 +27,7 @@
     "skills/plan/SKILL.md": "506d4c498c1d12c0068701e42ff3ebb48c8fde0bf314cf014c299a0ae5b13419",
     "skills/review/SKILL.md": "f9d7907ca1eccd2a4acee1adb7a1a0cd7736666c4ff2d79c79bc715a15012818",
     "skills/spec/SKILL.md": "ebd1278084fbe63e69c5795b8153fe639228706f9bc580e10227b1cad4433778",
-    "tests/test_aegis.py": "c3190c8c3eba1f965a63dc32548fd3823158c6101d28a71abf62205c3aebda1d",
+    "tests/test_aegis.py": "21b470ca30a426fd4804a1cb3437dcb5fdc61bbff5e981b70777ea4e2064449c",
     "workflows/aegis-task.js": "c3d51b89b35c56dabf9249d7f74de3e8c66f69cfa44b35381653bdef7f958335"
   },
   "findings": [
@@ -74,12 +75,28 @@
       "message": "LENS_NAME here is a second compile of the identical pattern config.LENS_FILE_NAME; if either is edited alone, a name accepted at the file is refused at lens record again, which is the round-1 defect. Importing it is cycle-free: config's module-level imports are core and detect only.",
       "minimal_fix": "replace the re.compile with `from .config import LENS_FILE_NAME as LENS_NAME`",
       "path": "scripts/aegis/aegis_cli/flow.py",
-      "raised_digest": "56c4ab28d654c72f",
+      "raised_digest": "55f3adb28e044347",
       "requirement": "R-38",
       "rounds": [
-        2
+        2,
+        3
       ],
       "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 3,
+      "id": "F-58c7a129",
+      "line": 187,
+      "message": "workflows/aegis-task.js:187 pipes `check docs --task` through `grep -c FAIL`, so the new exit-2 named error for a malformed lens file counts as zero doc work and the doc-manager is skipped; the task gate at line 206 then refuses with the same message, so nothing lands wrong.",
+      "minimal_fix": "none required; if wanted, `|| echo 1` on a non-zero exit instead of `|| true`",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "55f3adb28e044347",
+      "requirement": "R-38",
+      "rounds": [
+        3
+      ],
+      "severity": 0
     }
   ],
   "kinds": {
@@ -134,6 +151,10 @@
     "scripts/aegis/aegis_cli/__main__.py": [
       "code"
     ],
+    "scripts/aegis/aegis_cli/checks.py": [
+      "auth",
+      "code"
+    ],
     "scripts/aegis/aegis_cli/config.py": [
       "code"
     ],
@@ -168,11 +189,11 @@
     ]
   },
   "lens": "correctness",
-  "recorded": "2026-09-21T15:29:25",
+  "recorded": "2026-09-21T15:49:43",
   "reopened": [],
-  "report_tokens": 322,
+  "report_tokens": 239,
   "reviewer": "fable-5.1",
-  "round": 2,
+  "round": 3,
   "task": "TASK-LENSES-01",
   "verdict": "pass"
 }
