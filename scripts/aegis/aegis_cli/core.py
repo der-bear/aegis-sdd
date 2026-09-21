@@ -570,7 +570,11 @@ def diff_digest(ctx: Ctx, base: str | None, task_id: str | None = None) -> str:
             # Mode and type matter: making a script executable, or replacing a file with a
             # symlink, changes what runs without changing a byte of content.
             stat = os.lstat(full)
-            hasher.update(f"{stat.st_mode & 0o777}:{'L' if os.path.islink(full) else 'F'}".encode())
+            # What git records and nothing else: the owner's exec bit and the file type. The full
+            # permission bits differ between checkouts of one commit — umask, copies, a
+            # `git checkout` that rewrites a file — so the same code digested differently in CI
+            # than where it was reviewed (R-40).
+            hasher.update(f"{'x' if stat.st_mode & 0o100 else '-'}:{'L' if os.path.islink(full) else 'F'}".encode())
             if os.path.islink(full):
                 hasher.update(os.readlink(full).encode("utf-8"))
             else:

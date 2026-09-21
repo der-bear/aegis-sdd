@@ -273,6 +273,13 @@ R-39. **What a newcomer reads first says what is true.** The version is 0.9.0 â€
       names a deleted profile or one vendor; `aegis metrics` warns about a small sample only when a
       lens has one; and the three one-liners declined in TASK-LENSES-01 are done.
 
+R-40. **The digest hashes what git records.** Content, the file type, and the owner's exec bit â€” not
+      the full permission bits. Hashing `st_mode & 0o777` made the same commit digest differently in
+      two checkouts: this one holds dozens of tracked files at 0600 and 0711, a clone holds them at
+      0644 and 0755, and it worked only because `lens plan` and `lens record` always ran in the same
+      checkout. On a pull request, CI would have found every review stale. Found on 2026-09-22 when a
+      `git checkout` of two files rewrote them at 0644 and a review could no longer be recorded.
+
 R-27. **Every test added or changed in any of the three tasks shall be shown to fail on the behaviour
       it forbids before it counts.** Two of the previous cycle's document locks passed on the exact
       text they were written to correct; both were found by a lens, not by me. In particular: R-17

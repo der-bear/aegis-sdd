@@ -1,7 +1,7 @@
 {
   "task": "TASK-CLEAN-01",
   "agent": "claude-opus-5 (orchestrator and builder)",
-  "summary": "R-39, what a newcomer reads first says what is true. The version is 0.9.0 in the plugin manifest and the package (1.0 after a third project and one full pull-request cycle). docs/EVALUATION.md is retitled, its intro names every reviewer, §8's closing points forward, and a new §9 covers 2026-09-18..21 — seven tasks and the second project — with rounds, findings and blocking counts counted from the records, who reviewed (the same model as the builder, stated as weaker evidence), lens acceptance from `aegis metrics`, and what it still does not prove; README's pointer to it updated. `init` no longer writes .aegis/product/mission.md and roadmap.md, which nothing read (removed from this repository too). Instructions name 'the <x> lens', not the deleted lens-<x> profiles; the recorder identity lens-<x> in disposition_by is kept, since is_person_name refuses it by that name. The .agents/skills message says 'the copy other runners read'. `aegis metrics` shows its small-sample caveat only when a lens has fewer than ten judged findings. The three one-liners declined in TASK-LENSES-01: flow imports LENS_NAME from config; external-lens.sh counts bytes for the stdin threshold; (the workflow's grep -c FAIL sev-0 was 'none required' and is left). Outside the lease, .aegis/ state: the retro's unmeasured 'eleven' is fifteen, a dated NOTES line says it is dated, the waiver's provenance says policy.delegation was deleted. Round 1 (Sonnet 5, a different model from the builder): every number in §9 recomputed from the records and matched; one blocking finding — the caveat test covered only its absence — fixed with a positive-branch test (red on c1da60c); §9 now separates the severity-3 finding that held the cap (a count in §8's table, since corrected) from the severity-2 finding ADR-5 cites; §8's status cell for TASK-UNBLOCK-03 names its status, merged.",
+  "summary": "R-39, what a newcomer reads first says what is true. The version is 0.9.0 in the plugin manifest and the package (1.0 after a third project and one full pull-request cycle). docs/EVALUATION.md is retitled, its intro names every reviewer, §8's closing points forward, and a new §9 covers 2026-09-18..21 — seven tasks and the second project — with rounds, findings and blocking counts counted from the records, who reviewed (the same model as the builder, stated as weaker evidence), lens acceptance from `aegis metrics`, and what it still does not prove; README's pointer to it updated. `init` no longer writes .aegis/product/mission.md and roadmap.md, which nothing read (removed from this repository too). Instructions name 'the <x> lens', not the deleted lens-<x> profiles; the recorder identity lens-<x> in disposition_by is kept, since is_person_name refuses it by that name. The .agents/skills message says 'the copy other runners read'. `aegis metrics` shows its small-sample caveat only when a lens has fewer than ten judged findings. The three one-liners declined in TASK-LENSES-01: flow imports LENS_NAME from config; external-lens.sh counts bytes for the stdin threshold; (the workflow's grep -c FAIL sev-0 was 'none required' and is left). Outside the lease, .aegis/ state: the retro's unmeasured 'eleven' is fifteen, a dated NOTES line says it is dated, the waiver's provenance says policy.delegation was deleted. Round 1 (Sonnet 5, a different model from the builder, after Fable's usage limit ended the first attempt): every number in §9 recomputed from the records and matched; one blocking finding — the caveat test covered only its absence — fixed with a positive-branch test (red on c1da60c); §9 separates the severity-3 finding that held the cap (a count in §8's table, since corrected) from the severity-2 one ADR-5 cites; §8's status cell for TASK-UNBLOCK-03 names its status, merged. R-40, found while recording round 1: I applied the fixes before recording the reports, the records were refused, and restoring the reviewed files with `git checkout` did not reproduce the reviewed digest — git rewrote them at 0644 where they had been 0600. The digest hashed st_mode & 0o777; dozens of tracked files in this checkout are 0600 or 0711, a clone has 0644 and 0755, so the same commit digested differently per checkout, and a pull request's CI run would have found every review stale. The digest now hashes the owner's exec bit and the file type, as git records them; this checkout and a fresh clone agree (540527b573a39a57). Round 1 was recorded at its true digest by recreating the reviewed state exactly — old content, old modes — rather than by editing a record.",
   "changed_files": [
     ".aegis/memory/NOTES.md",
     ".aegis/memory/retros/0003.md",
@@ -27,27 +27,33 @@
     {
       "command": "python3 tests/test_aegis.py",
       "result": "pass",
-      "note": "287 tests"
+      "note": "289 tests"
     },
     {
       "command": "aegis gate --stage bootstrap",
       "result": "pass"
     },
     {
-      "command": "R-27 reverse run: the eight new locks against a git archive of c1da60c",
+      "command": "R-27 reverse runs against a git archive of c1da60c",
       "result": "pass",
-      "note": "8 of 8 red there, after one was found passing on the old code (re.compile caches identical patterns, so an identity check could not see the duplicate) and rewritten"
+      "note": "the nine R-39/R-40 locks red there, one after being rewritten (re.compile caches identical patterns); test_the_exec_bit_still_moves_it passes there by design — it guards the fix against dropping the exec bit, it is not a lock"
+    },
+    {
+      "command": "lens plan in this checkout and in a fresh clone with the same changes",
+      "result": "pass",
+      "note": "540527b573a39a57 in both"
     }
   ],
   "deviations": [
-    "Edited outside any lease, as .aegis/ state: .aegis/memory/retros/0003.md, .aegis/memory/NOTES.md, .aegis/waivers.json (provenance text only; scope, owner and expiry unchanged), and the removal of .aegis/product/."
+    "Edited outside any lease, as .aegis/ state: .aegis/memory/retros/0003.md, .aegis/memory/NOTES.md, .aegis/waivers.json (provenance text only; scope, owner and expiry unchanged), and the removal of .aegis/product/.",
+    "R-40 was added to this task rather than a new one: it is one line in core.diff_digest, it blocked this task's own review record, and it is the defect the 'no pull-request cycle yet' line of §9 names as unproven."
   ],
   "open_questions": [],
   "new_dependencies": [],
   "invalidated_assumptions": [
     "the retro's 'R-33 produced eleven findings' — the records say fifteen"
   ],
-  "next_safe_action": "round 2 (reconcile round 1 by id), gate, land, push, read CI.",
+  "next_safe_action": "round 2 (all lenses: core.py moved), reconciling round 1 by id; gate, land, push, CI.",
   "registry_drafts": [],
   "lease_expansion_request": []
 }

@@ -3405,6 +3405,30 @@ class WhatANewcomerReadsFirstIsTrue(unittest.TestCase):
         self.assertNotIn("the copy Codex reads", self.read("scripts/aegis/aegis_cli/checks.py"))
 
 
+class TheDigestIsTheSameInEveryCheckout(ProjectFixture):
+    """R-40. Two checkouts of one commit agree on its digest; a real exec-bit change still counts."""
+
+    def test_permission_bits_git_does_not_record_do_not_move_the_digest(self):
+        self.make_task()
+        self.write("src/orders/a.py", "A = 1\n")
+        full = os.path.join(self.dir, "src/orders/a.py")
+        os.chmod(full, 0o644)
+        clone_like = self.digest()
+        os.chmod(full, 0o600)
+        self.assertEqual(self.digest(), clone_like)   # the checkout that had 0600 files
+        os.chmod(full, 0o664)
+        self.assertEqual(self.digest(), clone_like)
+
+    def test_the_exec_bit_still_moves_it(self):
+        self.make_task()
+        self.write("src/orders/a.py", "A = 1\n")
+        full = os.path.join(self.dir, "src/orders/a.py")
+        os.chmod(full, 0o644)
+        before = self.digest()
+        os.chmod(full, 0o755)
+        self.assertNotEqual(self.digest(), before)
+
+
 class TheMetricsCaveatIsTrueWhenShown(ProjectFixture):
     def test_no_caveat_without_a_small_sample(self):
         out = json.loads(run(["metrics"], self.dir).stdout)

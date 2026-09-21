@@ -1,0 +1,83 @@
+{
+  "diff_digest": "c82cb425d111644f",
+  "files": {
+    ".aegis/runs/TASK-CLEAN-01/manifest.json": "contract:44b3f56d3ce48052eb7fbfe03134b0e870f3487ce4f5d617a393f95002cc4428",
+    ".aegis/specs/simple-reliable/spec.md": "7b259c6a5c4a2b24cd917876940437777fe5ce0d9ebf56ebd9952d777309611e",
+    ".aegis/waivers.json": "2958d5403e264035abc1ecb42b7f943504c3c35179eb7977fa1ab7c29df0541f",
+    ".claude-plugin/plugin.json": "037a9dfab741facf875735da9ce0ed5c62c200eda1b67253385cb22aa4b16ab6",
+    "README.md": "a7be128bf4692ecd706d502c9f0e33d3c472c64de4a67073531cc86952b0eadd",
+    "docs/EVALUATION.md": "1c8ae6d5d08a355a44c0a030179ccb9f0b9f71b56fc478d61d508ecad7586e7f",
+    "scripts/aegis/aegis_cli/__init__.py": "479c53bcb41e544fa5eb337e3cb42385cb87acf801526b9db039077b4cea4740",
+    "scripts/aegis/aegis_cli/checks.py": "60a7019822c968149ada27217aa4d1822de70614280a6d3ac3b1aa9b60301ae0",
+    "scripts/aegis/aegis_cli/flow.py": "6501c76c52b14385421ebcbbbfd494db4ad24032400e5ed74a2308825d9c20fb",
+    "scripts/aegis/aegis_cli/scaffold.py": "22ef57bf92ba3ca952e5d996235ec1b4d004e1723d9a98f0ab2cf7a6616aa67d",
+    "scripts/aegis/external-lens.sh": "exec:610c26163344de55cf75070a56320fc2100851b56eebabb0e2f0e1903dffed80",
+    "tests/test_aegis.py": "4fcb7ad25bcc4ab722dbaeccebe8c610febcefeb2e6f33cfc8dcfef4004e25b1"
+  },
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-9cccab8f",
+      "line": 275,
+      "message": "§9 places 'a severity-3 finding open' immediately before 'The finding that mattered was design's: the attribution machinery…', reading as the same finding, but the records show two: F-56c9de24 (severity 3, a wrong count in §8's TASK-UNBLOCK-03 cell) forced the round cap, while F-b3c64195 (severity 2) is what ADR-5 actually cites for the attribution-machinery claim. A reader following §9's pointer into ADR-5 meets 'severity 2' and cannot reconcile it against §9's adjacent 'severity-3'.",
+      "minimal_fix": "Name the severity-3 finding as the wrong TASK-UNBLOCK-03 count, separately from the severity-2 attribution-machinery finding ADR-5 cites.",
+      "path": "docs/EVALUATION.md",
+      "raised_digest": "c82cb425d111644f",
+      "requirement": "R-39",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    }
+  ],
+  "kinds": {
+    ".aegis/runs/TASK-CLEAN-01/manifest.json": [
+      "code"
+    ],
+    ".aegis/specs/simple-reliable/spec.md": [
+      "docs"
+    ],
+    ".aegis/waivers.json": [
+      "code"
+    ],
+    ".claude-plugin/plugin.json": [
+      "code"
+    ],
+    "README.md": [
+      "docs"
+    ],
+    "docs/EVALUATION.md": [
+      "docs"
+    ],
+    "scripts/aegis/aegis_cli/__init__.py": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/checks.py": [
+      "auth",
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/flow.py": [
+      "auth",
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/scaffold.py": [
+      "auth",
+      "code"
+    ],
+    "scripts/aegis/external-lens.sh": [
+      "code"
+    ],
+    "tests/test_aegis.py": [
+      "test"
+    ]
+  },
+  "lens": "design",
+  "recorded": "2026-09-22T01:31:07",
+  "reopened": [],
+  "report_tokens": 268,
+  "reviewer": "sonnet-5",
+  "round": 1,
+  "task": "TASK-CLEAN-01",
+  "verdict": "pass"
+}
