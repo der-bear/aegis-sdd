@@ -53,10 +53,10 @@
     "owner": "framework maintainers",
     "path": "README.md",
     "status": "proposed",
-    "verified_at": "2026-09-19",
+    "verified_at": "2026-09-21",
     "verified_by": "Claude Fable 5.1",
     "verified_note": "the loop and the commands it names were driven end to end by three review rounds on 2026-09-19",
-    "verified_source_digest": "1010cfcf6b1f509a",
+    "verified_source_digest": "1335ab628db4a053",
     "watches": [
       "skills/**",
       "agents/**",

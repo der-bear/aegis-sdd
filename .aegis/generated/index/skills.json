@@ -31,7 +31,7 @@
     "path": ".aegis/protocols/doc-authoring.md"
   },
   {
-    "body_tokens": 787,
+    "body_tokens": 947,
     "change_kinds": [],
     "description": "The procedure for applying a task's documentation obligations — registry drafts, diagram attestation, derived indexes. Use after review and before the gate, exactly once per task, in any runner. Not for writing product code.",
     "name": "doc-sync",
@@ -78,7 +78,7 @@
     "path": ".aegis/protocols/retro.md"
   },
   {
-    "body_tokens": 766,
+    "body_tokens": 848,
     "change_kinds": [],
     "description": "Run the Aegis review lenses over a task's diff and record their findings, without implementing anything. Use to review completed work, re-review after fixes, or review a task built elsewhere.",
     "name": "review",
