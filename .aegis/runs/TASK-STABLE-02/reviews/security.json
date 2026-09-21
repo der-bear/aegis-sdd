@@ -1,0 +1,23 @@
+{
+  "diff_digest": "3f4c7cb0d507a4f4",
+  "files": {
+    ".aegis/runs/TASK-STABLE-02/manifest.json": "f0123905a5088fa0cab534f355775b42228b46b7e165653603941a0586c49bcd",
+    ".aegis/specs/stable-autonomy/architecture.md": "9252ba0c099309cc32845552fe922ca76ed6f0ec65bb4229804ded5aef4f95ad",
+    ".agents/skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "agents/aegis-doc-manager.md": "f9cc8d603acf9cde401d68b5c3cd8554c3382aa6bcd983a406b238b7ae3e88c0",
+    "scripts/aegis/aegis_cli/flow.py": "74f5481d9a063fd24be04fdd72e560988b8c454eccc46dcdb7ba695484c8342d",
+    "skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "skills/review/SKILL.md": "67477c74ab95950b1245fd41844d285c091997251efae5d72d81878e675049a0",
+    "tests/test_aegis.py": "71e3baba98d5c2cf7f0554dee133c236541cd54a5541497a26f3704f4a02ac93",
+    "workflows/aegis-task.js": "345dc448654a849045e76714263f140d251315f966e3ff57fd8780aae0d4aac5"
+  },
+  "findings": [],
+  "lens": "security",
+  "recorded": "2026-09-21T13:24:53",
+  "reopened": [],
+  "report_tokens": 13,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-STABLE-02",
+  "verdict": "pass"
+}

@@ -221,6 +221,30 @@ class AReviewIsStaleOnlyForTheKindsThatMoved(ProjectFixture):
         self.assertEqual(sorted(plan["run"]), ["correctness", "security"], plan["stale"])
         self.assertIn("auth", plan["stale"]["security"])
 
+    def test_deleting_the_authorisation_call_re_runs_security(self):
+        # The kinds of a moved file were read from its surviving text; the control that was
+        # removed is exactly what the security lens read, and its record stayed fresh.
+        ctx = self._reviewed_auth_and_pricing()
+        subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.dir, "commit", "-qm", "reviewed"], check=True)
+        self.write("src/orders/auth.py", "def allow(user):\n    return True\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertIn("security", plan["run"], plan["stale"])
+
+    def test_a_contract_change_re_runs_every_lens(self):
+        ctx = self._reviewed_auth_and_pricing()
+        self.write(".aegis/specs/orders/spec.md", "# SPEC-1\n## Requirements\nR-1. The system shall charge once, ever.\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertEqual(sorted(plan["run"]), sorted(plan["lenses"]), plan["stale"])
+        self.assertIn("contract", plan["stale"]["security"])
+
+    def test_source_under_agents_is_still_scanned(self):
+        ctx = core.Ctx(self.dir); caps = checks.capabilities(ctx)
+        self.write("agents/auth.py", "def authorize(user):\n    return user.is_admin\n")
+        self.assertIn("auth", flow._file_kinds(ctx, "agents/auth.py", caps))
+        self.write(".aegis/runs/T-9/manifest.json", json.dumps({"objective": "the session token"}))
+        self.assertEqual(flow._file_kinds(ctx, ".aegis/runs/T-9/manifest.json", caps), {"code"})
+
     def test_a_record_without_a_snapshot_is_stale_on_any_move(self):
         ctx = self._reviewed_auth_and_pricing()
         path = os.path.join(self.dir, ".aegis/runs/T-1/reviews/security.json")

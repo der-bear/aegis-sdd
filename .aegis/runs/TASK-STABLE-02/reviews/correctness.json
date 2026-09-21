@@ -1,0 +1,99 @@
+{
+  "diff_digest": "3f4c7cb0d507a4f4",
+  "files": {
+    ".aegis/runs/TASK-STABLE-02/manifest.json": "f0123905a5088fa0cab534f355775b42228b46b7e165653603941a0586c49bcd",
+    ".aegis/specs/stable-autonomy/architecture.md": "9252ba0c099309cc32845552fe922ca76ed6f0ec65bb4229804ded5aef4f95ad",
+    ".agents/skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "agents/aegis-doc-manager.md": "f9cc8d603acf9cde401d68b5c3cd8554c3382aa6bcd983a406b238b7ae3e88c0",
+    "scripts/aegis/aegis_cli/flow.py": "74f5481d9a063fd24be04fdd72e560988b8c454eccc46dcdb7ba695484c8342d",
+    "skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "skills/review/SKILL.md": "67477c74ab95950b1245fd41844d285c091997251efae5d72d81878e675049a0",
+    "tests/test_aegis.py": "71e3baba98d5c2cf7f0554dee133c236541cd54a5541497a26f3704f4a02ac93",
+    "workflows/aegis-task.js": "345dc448654a849045e76714263f140d251315f966e3ff57fd8780aae0d4aac5"
+  },
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-767ee133",
+      "line": 666,
+      "message": "A moved file's kinds are read from its current text only, so an authorisation call deleted after the security review leaves that record fresh: with `authorize(user)` committed, security recorded, then the line removed, `lens plan` selects security (`why: auth`) but `run` is `['correctness']` and after the correctness re-run `check_reviews` raises no staleness failure for security. The review gate goes green on the removal of the exact control the security lens read, which the digest rule it replaces caught.",
+      "minimal_fix": "In `_file_kinds` (given base) also match AUTH/ROUTE hints against the removed lines of `git diff <base> -- <rel>`, so plan and staleness agree through the one function.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 4
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-38e02d23",
+      "line": 600,
+      "message": "Every file under `skills/`, `.agents/`, `agents/`, `hooks/` returns `code` before the hint scan, so on HEAD `agents/auth.py` containing `def authorize` yields `['code']` where bdd84c0 yielded `['auth','code',...]`. An adopter whose `agents/` or `hooks/` is a source package loses the security lens on an auth change there; R-9 asks for `code`, not for source under those dirs to go unscanned.",
+      "minimal_fix": "Early-return `{code}` only when `rel.endswith(\".md\")`; otherwise add `code` and fall through to the hint scan.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-a8d794af",
+      "line": 658,
+      "message": "A change to `.aegis/waivers.json`, `.aegis/answers.json` or the spec after a review re-runs only the always-on lens (their kind is `code`/`docs`), while docs/ARCHITECTURE.md:321 and :364 state that such a change re-takes every review because the review is the control on a waiver. R-9's letter (kinds decide) and §6's stated control conflict, and the code silently drops the control.",
+      "minimal_fix": "In `lens_staleness`, after computing `moved`, return stale for every lens when any moved path starts with `.aegis/` (contract files), before the always/triggers logic.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-8b98b350",
+      "line": 640,
+      "message": "The task manifest is snapshotted by its full sha while `diff_digest` keys only its contract half, and `_file_kinds` hint-scans its JSON; a `_set_status` bump plus any real move counts the manifest as a moved `code` file whose objective text can carry `session`/`authoriz`. A false re-run of security, only in that conjunction.",
+      "minimal_fix": "Key `_is_task_manifest` paths by the canonical contract half as `diff_digest` does, and skip the hint scan for `.aegis/` paths.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-e1b92464",
+      "line": 660,
+      "message": "The snapshot key omits file mode while `diff_digest` hashes it, so `chmod +x` on a scope file reaches the branch the comment calls unreachable and re-runs every lens. Harmless direction, but the comment is false and a mode change is not scoped by kind.",
+      "minimal_fix": "Fold `st_mode & 0o777` into the snapshot key (or drop the 'unreachable' comment).",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "correctness",
+  "recorded": "2026-09-21T13:24:53",
+  "reopened": [],
+  "report_tokens": 1109,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-STABLE-02",
+  "verdict": "fail"
+}

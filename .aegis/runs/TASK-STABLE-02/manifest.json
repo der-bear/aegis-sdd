@@ -22,7 +22,8 @@
     "skills/doc-sync/**",
     "tests/**",
     "workflows/**",
-    "skills/review/**"
+    "skills/review/**",
+    "README.md"
   ],
   "reads": [],
   "requirements": [

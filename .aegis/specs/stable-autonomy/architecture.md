@@ -3,8 +3,12 @@
 > Written before the work. SPEC-3's deletion (2026-09-19) then removed four of the contracts named
 > below — the merge receipt, `aegis waive`, `policy.delegation` and the pre-commit gate script — so
 > the rows and the "Contracts" entries for R-3, R-4, R-5 and R-7 describe mechanisms that no longer
-> exist; R-1, R-2, R-3, R-5, R-6, R-7, R-8 and R-16 are struck as delivered or deleted in spec.md.
-> Kept as the plan it was; what remains live is R-9..R-15 and the `HOLDING` contract.
+> exist; R-1, R-2, R-3, R-4, R-5, R-6, R-7, R-8 and R-16 are struck as delivered or deleted in
+> spec.md. Kept as the plan it was; what remains live is R-9..R-15 and the `HOLDING` contract.
+> R-9 as built deviates from the formula under "Contracts" and from "nothing here stores new
+> mutable state": a lens record stores the review-scope files and their content keys (not a
+> per-lens scope), because a digest cannot enumerate what moved; staleness is computed from
+> that snapshot at check time, and a moved contract file (`.aegis/`) re-takes every review.
 
 ## Components and responsibilities
 

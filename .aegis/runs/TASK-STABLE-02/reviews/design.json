@@ -1,0 +1,99 @@
+{
+  "diff_digest": "3f4c7cb0d507a4f4",
+  "files": {
+    ".aegis/runs/TASK-STABLE-02/manifest.json": "f0123905a5088fa0cab534f355775b42228b46b7e165653603941a0586c49bcd",
+    ".aegis/specs/stable-autonomy/architecture.md": "9252ba0c099309cc32845552fe922ca76ed6f0ec65bb4229804ded5aef4f95ad",
+    ".agents/skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "agents/aegis-doc-manager.md": "f9cc8d603acf9cde401d68b5c3cd8554c3382aa6bcd983a406b238b7ae3e88c0",
+    "scripts/aegis/aegis_cli/flow.py": "74f5481d9a063fd24be04fdd72e560988b8c454eccc46dcdb7ba695484c8342d",
+    "skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "skills/review/SKILL.md": "67477c74ab95950b1245fd41844d285c091997251efae5d72d81878e675049a0",
+    "tests/test_aegis.py": "71e3baba98d5c2cf7f0554dee133c236541cd54a5541497a26f3704f4a02ac93",
+    "workflows/aegis-task.js": "345dc448654a849045e76714263f140d251315f966e3ff57fd8780aae0d4aac5"
+  },
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-bef8248e",
+      "line": 44,
+      "message": "The record now carries a per-file snapshot (`files`), yet this file's line 44 still says nothing here stores new mutable state except the merge receipt, and line 37's formula iterates files 'changed since record.digest' as if a digest enumerated them. The preamble the diff adds names the deleted contracts but not this deviation from R-9's own design.",
+      "minimal_fix": "Add one preamble sentence: R-9's record stores the review-scope content keys (not per-lens scope) so staleness is answerable per file.",
+      "path": ".aegis/specs/stable-autonomy/architecture.md",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-572f89bd",
+      "line": 88,
+      "message": "The first-round dispatch still iterates `plan.lenses` while the refine loop uses `replan.run`; on a resumed run with fresh records every lens is dispatched again, contradicting the review skill's 'a lens whose record still describes the change is not dispatched again'.",
+      "minimal_fix": "Dispatch `plan.run || plan.lenses` in the first round too.",
+      "path": "workflows/aegis-task.js",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-a6c1683f",
+      "line": 6,
+      "message": "The preamble lists R-1, R-2, R-3, R-5, R-6, R-7, R-8 and R-16 as struck; spec.md:41 also strikes R-4 (deleted, ADR-5). The list is inaccurate by that omission.",
+      "minimal_fix": "Insert R-4 into the struck list.",
+      "path": ".aegis/specs/stable-autonomy/architecture.md",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-bb544bed",
+      "line": 321,
+      "message": "docs/ARCHITECTURE.md:321 and :364 say a change to answers.json/waivers.json re-takes every review; that is true only if correctness F-2 is fixed in code. If F-2 is instead resolved by amending the requirement, these lines must move with it (file not in the lease).",
+      "minimal_fix": "Fix F-2 in `lens_staleness`; otherwise reword both lines to 're-takes the always-on lens'.",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-e843815b",
+      "line": 116,
+      "message": "README says a review is invalidated by 'an edit afterwards' (lines 116 and 223); after R-9 only the lenses the moved files' kinds select are. Not in the lease — named for the follow-up.",
+      "minimal_fix": "'an edit afterwards to a file whose kinds select that lens invalidates it'.",
+      "path": "README.md",
+      "raised_digest": "3f4c7cb0d507a4f4",
+      "requirement": "R-9",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "lens": "design",
+  "recorded": "2026-09-21T13:24:53",
+  "reopened": [],
+  "report_tokens": 812,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-STABLE-02",
+  "verdict": "pass"
+}

@@ -576,13 +576,21 @@ def diff_text(ctx: Ctx, base: str | None) -> str:
 PROTOCOL_DIRS = ("skills/", ".agents/", "agents/", "hooks/")
 
 
-def _file_kinds(ctx: Ctx, rel: str, caps: dict) -> set[str]:
-    """The change kinds one file carries, from its path and its text.
+def _file_kinds(ctx: Ctx, rel: str, caps: dict, base: str | None = None) -> set[str]:
+    """The change kinds one file carries, from its path, its text, and — given a base — the
+    lines removed from it since that base.
 
     One function for the plan and for staleness: which lenses a file selects is the same
-    question as which lens records a change to it invalidates.
+    question as which lens records a change to it invalidates. The removed lines matter to
+    both: an authorisation call deleted after the security review is invisible in the text
+    that survived, and reading only that text left the record fresh.
     """
     kinds: set[str] = set()
+    if rel.startswith(".aegis/"):
+        # Contract state, never hint-scanned: a task objective containing "session" is not
+        # an authorisation change. Its staleness is total (`lens_staleness`), not by kind.
+        kinds.add("docs" if rel.endswith(".md") else "code")
+        return kinds
     migration_globs = caps.get("migration_paths") or ["**/migrations/**", "**/migrate/**", "db/**"]
     test_globs = caps.get("test_paths") or ["**/test/**", "**/tests/**", "**/*_test.*", "**/*.test.*", "**/*.spec.*"]
     name = os.path.basename(rel)
@@ -597,12 +605,19 @@ def _file_kinds(ctx: Ctx, rel: str, caps: dict) -> set[str]:
     # changes what every agent does, and reading it as documentation lost it its review. Its
     # prose is not scanned for hints, though: "session" in a protocol's sentences raised every
     # adopter's first task to tier A through the framework's own materialised copies.
-    if rel.startswith(PROTOCOL_DIRS):
+    if rel.startswith(PROTOCOL_DIRS) and rel.endswith(".md"):
         kinds.add("code")
         return kinds
     if rel.startswith("docs/") or rel.endswith(".md"):
         kinds.add("docs")
         return kinds
+    if base:
+        removed = "\n".join(line for line in git(ctx, "diff", "--unified=0", base, "--", rel).splitlines()
+                            if line.startswith("-") and not line.startswith("---"))
+        if any(re.search(p, removed) for p in AUTH_HINTS):
+            kinds.update({"auth", "code"})
+        if any(re.search(p, removed) for p in ROUTE_HINTS):
+            kinds.update({"route", "code"})
     full = os.path.join(ctx.root, rel)
     if not os.path.isfile(full):
         # The file is gone. Deleting a middleware or an authorisation helper is exactly
@@ -657,13 +672,22 @@ def lens_staleness(ctx: Ctx, task_id: str, lens: str, record: dict, plan: dict) 
     current = review_snapshot(ctx, manifest.get("base_sha"), task_id)
     moved = sorted(rel for rel in set(snapshot) | set(current) if snapshot.get(rel) != current.get(rel))
     if not moved:
-        return "the digest moved and no file did"  # unreachable in practice; never pass silently
+        # A mode change: the digest hashes it, the snapshot does not. Conservative — every lens.
+        return "the digest moved after that review (a mode change; no content did)"
+    contract = [rel for rel in moved if rel.startswith(".aegis/")]
+    if contract:
+        # The review is the control on a waiver, an answer and the spec (ARCHITECTURE §6): a
+        # change there re-takes every review, whatever kinds the files carry.
+        return f"the contract moved after that review: {', '.join(contract[:3])}"
     matrix = checks.policy(ctx).get("lens_matrix") or {}
     if lens in (matrix.get("always") or ["correctness"]):
         return f"{len(moved)} file(s) moved after that review: {', '.join(moved[:3])}"
     triggers = {kind for kind, lenses in matrix.items() if kind != "always" and lens in (lenses or [])}
     caps = checks.capabilities(ctx)
-    hits = sorted({kind for rel in moved for kind in _file_kinds(ctx, rel, caps) if kind in triggers})
+    base = manifest.get("base_sha")
+    then = record.get("kinds") or {}
+    hits = sorted({kind for rel in moved
+                   for kind in set(then.get(rel) or []) | _file_kinds(ctx, rel, caps, base) if kind in triggers})
     if hits:
         return f"a file whose change kind ({', '.join(hits)}) selects lens-{lens} moved after that review"
     return None
@@ -683,7 +707,7 @@ def detect_change_kinds(ctx: Ctx, scope: list[str], base: str | None = None) -> 
     caps = checks.capabilities(ctx)
     test_globs = caps.get("test_paths") or ["**/test/**", "**/tests/**", "**/*_test.*", "**/*.test.*", "**/*.spec.*"]
     for rel in scope:
-        kinds |= _file_kinds(ctx, rel, caps)
+        kinds |= _file_kinds(ctx, rel, caps, base)
 
     # Removed lines carry the strongest signal there is: a control that used to be here.
     # Reading only what survived the change made deleting an authorisation call invisible
@@ -1022,6 +1046,10 @@ def lens_record(ctx: Ctx, task_id: str, payload: dict, lens: str | None = None) 
         # question answerable.
         "diff_digest": payload["diff_digest"],
         "files": review_snapshot(ctx, manifest.get("base_sha"), task_id),
+        # The kinds each file carried when the lens read it. A control deleted afterwards is
+        # invisible in the text that survives, so staleness asks what the file *was* as well.
+        "kinds": {rel: sorted(_file_kinds(ctx, rel, checks.capabilities(ctx), manifest.get("base_sha")))
+                  for rel in review_snapshot(ctx, manifest.get("base_sha"), task_id)},
         "findings": sorted(findings, key=lambda f: (-f["severity"], f["id"])),
         "reopened": reopened,
     }

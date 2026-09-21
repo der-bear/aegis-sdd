@@ -85,7 +85,7 @@ log(`lenses: ${plan.lenses.join(', ')} (risk tier ${plan.risk_tier || '?'})`)
 // looked tidier and was broken: the security and design lenses have no Bash at all, by
 // design, so any task needing one reached the gate with no report at all.
 await pipeline(
-  plan.lenses,
+  plan.run || plan.lenses, // on a resumed run a fresh record is not dispatched again (R-9)
   (lens) => agent(
     `Review task ${task} as the ${lens} lens.\n\nHere is the task packet and the diff:\n\n` +
     `${diff}\n\n` +

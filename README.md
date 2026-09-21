@@ -113,7 +113,7 @@ delegate — it silently degrades into a builder holding the wrong prompt.
 | Every builder gets a differently worded brief | `aegis packet` **generates** the task packet from the spec and the manifest |
 | "Which reviews should run" is a judgement call | `aegis lens plan` computes it from declared **and** detected change kinds |
 | Review findings get lost between rounds | Stable finding ids, carried dispositions, and detection of a "fixed" finding that came back |
-| A review stops describing the code | The report quotes the digest it was given; an edit afterwards invalidates it |
+| A review stops describing the code | The report quotes the digest it was given; an edit afterwards to a file whose kinds select that lens invalidates it, and any edit to the contract under `.aegis/` invalidates every lens |
 | Diagrams drift from the code | Content digest of the sources a diagram watches — a date can be edited, a digest cannot |
 | Documentation accumulates | Anything outside the doc profile is a gate finding, not a bonus |
 | Configuration drifts | `answers.json` → `generated/` by a pure function; hand edits are blocked and detected |
@@ -220,7 +220,7 @@ variable; calling it a guarantee promises more than it can do.
 **Guarantees — properties of artifacts, not requests.**
 Exclusive write leases, with real glob intersection — a declaration `check trace` reads at the
 merge boundary; nothing refuses a write mid-task.
-A review that quotes the digest it was given, so an edit afterwards invalidates it.
+A review that quotes the digest it was given, so an edit afterwards invalidates it — for the lenses the edited files' kinds select, and for every lens when the contract under `.aegis/` moves.
 A status that is earned, not typed: `gated` requires a receipt written by a passing gate that
 actually ran the project's commands, and `merged` requires that receipt to still match. The
 receipt is a file; what stops it being forged is the hierarchy of trust — CI re-derives the
