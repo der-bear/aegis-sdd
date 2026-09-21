@@ -1,15 +1,15 @@
 {
-  "diff_digest": "7174e73e4dcdbb4f",
+  "diff_digest": "aa02c6cc6411b308",
   "files": {
     ".aegis/runs/TASK-STABLE-03/manifest.json": "contract:b4c57ad1c0c66849d157c280e825c3d8d98dc7f4cd006442beeebe0becafa933",
     ".github/workflows/aegis-gate.yml": "00121d148d2e1e65d0bf6324c0a2735786e00d3bda64346a4b80c5c278c33361",
     "docs/ARCHITECTURE.md": "5288b83a511606728645c7403157c4ebfff8ee2301fc236e91c8d48add17db9f",
     "scripts/aegis/aegis_cli/checks.py": "452633df72be990d460b3409bb187c450b22b2bc53b8f412934612d8455eda42",
-    "scripts/aegis/aegis_cli/core.py": "da2c719c45431b2baca28c9a18b804630395af81382644fe2fc2d3b41fcb87be",
+    "scripts/aegis/aegis_cli/core.py": "8c9b4db4ac3ff96c1300e6da7f0a33fe476ce12416ba029049ed613d7c8725fe",
     "scripts/aegis/aegis_cli/flow.py": "55f6c255b72326f9744ba752eb5ef5482d1be65ea97783666accdb74ae0ad39e",
     "scripts/aegis/aegis_cli/scaffold.py": "4006a35aa8ecbf1fabf4aea9214d1b272621088394a48dd13e8b3b36d9af9887",
     "templates/ci/aegis-gate.yml": "fcc96e3c9505bf4369f66c8945f3ef4d259264517b138226e44f734213d64c95",
-    "tests/test_aegis.py": "b3550b2a6960d4d0dcabc2827c211d7674e0404354833071c0c2e5175a30db3a"
+    "tests/test_aegis.py": "40bf8afb97142079442cb9a4e9438e0f824522687feee1d79f48165883cd6d3a"
   },
   "findings": [
     {
@@ -31,7 +31,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T14:53:12",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: core.py:357 `st_mode & 0o100`; probed on the archive: 0655 → bare key == _digest_in_index == _digest_at(HEAD), 0711 → exec: on all three, same_key True for both",
       "first_seen_round": 2,
       "id": "F-e390c102",
       "line": 358,
@@ -100,7 +103,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T14:53:12",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: core.py:352-359 the stat sits inside the try with file_sha256; probed: os.stat raising OSError → content_key returns None",
       "first_seen_round": 2,
       "id": "F-cc016fa8",
       "line": 358,
@@ -148,11 +154,11 @@
     ]
   },
   "lens": "correctness",
-  "recorded": "2026-09-21T14:42:26",
+  "recorded": "2026-09-21T14:53:12",
   "reopened": [],
-  "report_tokens": 640,
+  "report_tokens": 163,
   "reviewer": "fable-5.1",
-  "round": 2,
+  "round": 3,
   "task": "TASK-STABLE-03",
-  "verdict": "fail"
+  "verdict": "pass"
 }
