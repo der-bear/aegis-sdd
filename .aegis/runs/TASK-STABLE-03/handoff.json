@@ -1,7 +1,7 @@
 {
   "task": "TASK-STABLE-03",
   "agent": "claude-fable-5.1 (orchestrator and builder)",
-  "summary": "The correctness leftovers of retro 0002 and the lines declined in the last two tasks. R-11: `tests_ran` reads `ok <pkg> … [no tests to run]` as none, a bare PASS is not a run (only `--- PASS:`), `no tests to run` is a no-run phrase. R-12: `_digest_in_index` queries a literal pathspec; the symlink key decodes with os.fsdecode on both sides. R-13 was already delivered (status reports attribution; its lock at the status test) — cited, not re-implemented. R-14: an executable regular file is keyed exec:<sha256> on disk, in the index and at HEAD; `same_key` accepts a bare hash already recorded. R-15: both CI workflows state which half of the gate a push job runs. Scaffold: thematic breaks are rules for the purpose draft; the CLAUDE.md pointer test is the marker, as migrate uses; the constitution's Amendment section matches its header; an in-checkout symlinked README is read. From STABLE-02 round 3: plan lists only names LENS_NAME accepts. Round 1: the go no-run lookahead spans the -cover text; the exec bit is keyed as git reads it (st_mode & 0o111) and not at all where core.fileMode is false, on both sides; the CLAUDE.md pointer marker is the import line, AGENTS.md's the bare path; only = and - underline a title; the architecture names the three key forms.",
+  "summary": "The correctness leftovers of retro 0002 and the lines declined in the last two tasks. R-11: `tests_ran` reads `ok <pkg> … [no tests to run]` as none, a bare PASS is not a run (only `--- PASS:`), `no tests to run` is a no-run phrase. R-12: `_digest_in_index` queries a literal pathspec; the symlink key decodes with os.fsdecode on both sides. R-13 was already delivered (status reports attribution; its lock at the status test) — cited, not re-implemented. R-14: an executable regular file is keyed exec:<sha256> on disk, in the index and at HEAD; `same_key` accepts a bare hash already recorded. R-15: both CI workflows state which half of the gate a push job runs. Scaffold: thematic breaks are rules for the purpose draft; the CLAUDE.md pointer test is the marker, as migrate uses; the constitution's Amendment section matches its header; an in-checkout symlinked README is read. From STABLE-02 round 3: plan lists only names LENS_NAME accepts. Round 1: the go no-run lookahead spans the -cover text; the exec bit is keyed as git reads it (st_mode & 0o111) and not at all where core.fileMode is false, on both sides; the CLAUDE.md pointer marker is the import line, AGENTS.md's the bare path; only = and - underline a title; the architecture names the three key forms. Round 2: the key tests the owner's exec bit alone (mode & 0o100), which is the one git records, inside the try that guards the hash.",
   "changed_files": [
     ".github/workflows/aegis-gate.yml",
     "docs/ARCHITECTURE.md",
@@ -20,7 +20,7 @@
     {
       "command": "python3 tests/test_aegis.py",
       "result": "pass",
-      "note": "266 tests"
+      "note": "267 tests"
     },
     {
       "command": "R-27 reverse run: the six new or changed locks against a git archive of 9b85641",
@@ -31,6 +31,11 @@
       "command": "R-27 reverse run: the four round-2 locks against a git archive of f306561",
       "result": "pass",
       "note": "4 of 4 red there"
+    },
+    {
+      "command": "R-27 reverse run: test_only_the_owners_exec_bit_is_the_key against a git archive of 7e6bfb4",
+      "result": "pass",
+      "note": "red there"
     }
   ],
   "deviations": [
@@ -40,7 +45,7 @@
   "open_questions": [],
   "new_dependencies": [],
   "invalidated_assumptions": [],
-  "next_safe_action": "round 2, reconciling round 1 by id; then gate, land, push; then ADR-3.",
+  "next_safe_action": "round 3 (the cap), reconciling round 2 by id; then gate, land, push; then ADR-3.",
   "registry_drafts": [],
   "lease_expansion_request": []
 }

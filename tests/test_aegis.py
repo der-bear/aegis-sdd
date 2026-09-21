@@ -2558,6 +2558,14 @@ class TheAdoptionKeyIsLiteralAndCarriesTheExecBit(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "add", "tool"], check=True)
         self.assertEqual(core._digest_in_index(core.Ctx(self.dir), "tool"), executable)
 
+    def test_only_the_owners_exec_bit_is_the_key(self):
+        # git records 100755 on the owner bit alone; a 0655 file is 100644 to git.
+        self.write("tool", "#!/bin/sh\necho hi\n"); full = os.path.join(self.dir, "tool"); os.chmod(full, 0o655)
+        subprocess.run(["git", "-C", self.dir, "add", "tool"], check=True)
+        ctx = core.Ctx(self.dir)
+        self.assertFalse(core.content_key(full).startswith("exec:"))
+        self.assertEqual(core._digest_in_index(ctx, "tool"), core.content_key(full))
+
     def test_where_git_ignores_modes_the_key_ignores_them_too(self):
         # A mount without modes: git sets core.fileMode=false and every file reports +x. Keying
         # the disk side by os.access put `exec:` there and a bare hash in the index, so no

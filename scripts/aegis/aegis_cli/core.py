@@ -347,17 +347,18 @@ def content_key(full: str, exec_bits: bool = True) -> str | None:
     if os.path.islink(full):
         return "symlink:" + os.readlink(full)
     if os.path.isfile(full):
-        try:
-            digest = file_sha256(full)
-        except OSError:
-            return None
         # The exec bit changes what runs without changing a byte, and `diff_digest` already
         # counts it; the adoption key dropped it, so `chmod +x` on a baselined path was invisible.
-        # `st_mode & 0o111`, as git reads it — not `os.access`, which answers whether the
-        # caller may execute and says yes to everything on a mount that has no modes.
-        if exec_bits and os.stat(full).st_mode & 0o111:
-            return "exec:" + digest
-        return digest
+        try:
+            digest = file_sha256(full)
+            # The owner's bit, the one git reads (`ce_permissions`: mode & 0100) — not
+            # `os.access`, which answers whether the caller may execute and says yes to
+            # everything on a mount without modes, and not the group or other bits, which git
+            # records as 100644.
+            executable = bool(os.stat(full).st_mode & 0o100)
+        except OSError:
+            return None
+        return ("exec:" + digest) if exec_bits and executable else digest
     return None
 
 

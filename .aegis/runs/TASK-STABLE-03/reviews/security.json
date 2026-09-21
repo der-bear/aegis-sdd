@@ -1,14 +1,15 @@
 {
-  "diff_digest": "cef04842c8075bfb",
+  "diff_digest": "7174e73e4dcdbb4f",
   "files": {
-    ".aegis/runs/TASK-STABLE-03/manifest.json": "contract:9119241e0271ecc6281cfae095ae3405f6f587f514a3f11a27ae56afc26f9aec",
+    ".aegis/runs/TASK-STABLE-03/manifest.json": "contract:b4c57ad1c0c66849d157c280e825c3d8d98dc7f4cd006442beeebe0becafa933",
     ".github/workflows/aegis-gate.yml": "00121d148d2e1e65d0bf6324c0a2735786e00d3bda64346a4b80c5c278c33361",
-    "scripts/aegis/aegis_cli/checks.py": "e278cd9731e8ced7d2fccb59dc385d4e4405268cc23eb7a87d82951d0d75064b",
-    "scripts/aegis/aegis_cli/core.py": "49fa5a73867050830c4a786c6d5ec10df50f865446b5c5c2255d2188eb8e00a8",
-    "scripts/aegis/aegis_cli/flow.py": "98a1ab8e01899da1f7472aa3fb86d824dc104fae080775deb33e7ff40892bbfb",
-    "scripts/aegis/aegis_cli/scaffold.py": "20ec79e1b20113d26e6173e5cb478e98801bcc9300457e3f8b29365b8dafea3c",
+    "docs/ARCHITECTURE.md": "5288b83a511606728645c7403157c4ebfff8ee2301fc236e91c8d48add17db9f",
+    "scripts/aegis/aegis_cli/checks.py": "452633df72be990d460b3409bb187c450b22b2bc53b8f412934612d8455eda42",
+    "scripts/aegis/aegis_cli/core.py": "da2c719c45431b2baca28c9a18b804630395af81382644fe2fc2d3b41fcb87be",
+    "scripts/aegis/aegis_cli/flow.py": "55f6c255b72326f9744ba752eb5ef5482d1be65ea97783666accdb74ae0ad39e",
+    "scripts/aegis/aegis_cli/scaffold.py": "4006a35aa8ecbf1fabf4aea9214d1b272621088394a48dd13e8b3b36d9af9887",
     "templates/ci/aegis-gate.yml": "fcc96e3c9505bf4369f66c8945f3ef4d259264517b138226e44f734213d64c95",
-    "tests/test_aegis.py": "687e581bcd3d541d39f2fe4b1b337866ccf77452d1ea0dccc78db62a25e00531"
+    "tests/test_aegis.py": "b3550b2a6960d4d0dcabc2827c211d7674e0404354833071c0c2e5175a30db3a"
   },
   "findings": [],
   "kinds": {
@@ -17,6 +18,9 @@
     ],
     ".github/workflows/aegis-gate.yml": [
       "code"
+    ],
+    "docs/ARCHITECTURE.md": [
+      "docs"
     ],
     "scripts/aegis/aegis_cli/checks.py": [
       "auth",
@@ -41,11 +45,11 @@
     ]
   },
   "lens": "security",
-  "recorded": "2026-09-21T14:30:17",
+  "recorded": "2026-09-21T14:42:27",
   "reopened": [],
   "report_tokens": 13,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-STABLE-03",
   "verdict": "pass"
 }
