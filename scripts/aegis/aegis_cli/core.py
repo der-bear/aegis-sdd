@@ -323,7 +323,20 @@ def file_sha256(path: str) -> str:
 ABSENT = "absent"  # what the baseline records for a path that was missing at adoption
 
 
-def content_key(full: str) -> str | None:
+_FILE_MODE: dict[str, bool] = {}
+
+
+def file_mode_tracked(ctx: Ctx) -> bool:
+    """Does this repository record the exec bit? `core.fileMode=false` — git sets it itself on
+    a filesystem that cannot hold modes — means the index keeps whatever it was told and the
+    tree reports every file executable, so the bit must not enter the key on either side."""
+    if ctx.root not in _FILE_MODE:
+        out = git(ctx, "config", "--bool", "core.fileMode").strip()
+        _FILE_MODE[ctx.root] = out != "false"
+    return _FILE_MODE[ctx.root]
+
+
+def content_key(full: str, exec_bits: bool = True) -> str | None:
     """What the baseline records for a path on disk, or None when there is nothing there.
 
     A symlink is recorded as its target, not as the bytes it points at: `file_sha256` follows
@@ -340,7 +353,11 @@ def content_key(full: str) -> str | None:
             return None
         # The exec bit changes what runs without changing a byte, and `diff_digest` already
         # counts it; the adoption key dropped it, so `chmod +x` on a baselined path was invisible.
-        return ("exec:" + digest) if os.access(full, os.X_OK) else digest
+        # `st_mode & 0o111`, as git reads it — not `os.access`, which answers whether the
+        # caller may execute and says yes to everything on a mount that has no modes.
+        if exec_bits and os.stat(full).st_mode & 0o111:
+            return "exec:" + digest
+        return digest
     return None
 
 
@@ -375,7 +392,7 @@ def _blob_key(ctx: Ctx, mode: str, sha: str) -> str | None:
     proc = subprocess.run(("git", "-C", ctx.root, "cat-file", "blob", sha), capture_output=True)
     if proc.returncode != 0:
         return None
-    return _git_key(mode, proc.stdout)
+    return _git_key(mode if file_mode_tracked(ctx) else "100644", proc.stdout)
 
 
 def _digest_at(ctx: Ctx, rev: str, rel: str) -> str | None:
@@ -474,7 +491,7 @@ def _pre_adoption_files(ctx: Ctx, files: set[str]) -> set[str]:
         if record == ABSENT:
             if os.path.lexists(full):
                 continue  # it came back; whoever brought it back owns it
-        elif not same_key(record, content_key(full)):
+        elif not same_key(record, content_key(full, file_mode_tracked(ctx))):
             continue
         at_baseline_head = _digest_at(ctx, head, rel) if known_head else None
         if rel in touched and not _is_adoption_state(

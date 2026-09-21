@@ -1,0 +1,67 @@
+{
+  "diff_digest": "cef04842c8075bfb",
+  "files": {
+    ".aegis/runs/TASK-STABLE-03/manifest.json": "contract:9119241e0271ecc6281cfae095ae3405f6f587f514a3f11a27ae56afc26f9aec",
+    ".github/workflows/aegis-gate.yml": "00121d148d2e1e65d0bf6324c0a2735786e00d3bda64346a4b80c5c278c33361",
+    "scripts/aegis/aegis_cli/checks.py": "e278cd9731e8ced7d2fccb59dc385d4e4405268cc23eb7a87d82951d0d75064b",
+    "scripts/aegis/aegis_cli/core.py": "49fa5a73867050830c4a786c6d5ec10df50f865446b5c5c2255d2188eb8e00a8",
+    "scripts/aegis/aegis_cli/flow.py": "98a1ab8e01899da1f7472aa3fb86d824dc104fae080775deb33e7ff40892bbfb",
+    "scripts/aegis/aegis_cli/scaffold.py": "20ec79e1b20113d26e6173e5cb478e98801bcc9300457e3f8b29365b8dafea3c",
+    "templates/ci/aegis-gate.yml": "fcc96e3c9505bf4369f66c8945f3ef4d259264517b138226e44f734213d64c95",
+    "tests/test_aegis.py": "687e581bcd3d541d39f2fe4b1b337866ccf77452d1ea0dccc78db62a25e00531"
+  },
+  "findings": [
+    {
+      "disposition": "open",
+      "first_seen_round": 1,
+      "id": "F-ff9aec74",
+      "line": 217,
+      "message": "The baseline record now carries three key forms (`<sha256>`, `symlink:<target>`, `exec:<sha256>`) but the architecture still says 'their content hashes'; a reader of the record has no document naming the namespace or the bare-hash acceptance rule.",
+      "minimal_fix": "name the two extra key forms and that a bare hash already recorded still matches an executable (outside this task's lease; a doc-manager line)",
+      "path": "docs/ARCHITECTURE.md",
+      "raised_digest": "cef04842c8075bfb",
+      "requirement": "R-14",
+      "rounds": [
+        1
+      ],
+      "severity": 1
+    }
+  ],
+  "kinds": {
+    ".aegis/runs/TASK-STABLE-03/manifest.json": [
+      "code"
+    ],
+    ".github/workflows/aegis-gate.yml": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/checks.py": [
+      "auth",
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/core.py": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/flow.py": [
+      "auth",
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/scaffold.py": [
+      "auth",
+      "code"
+    ],
+    "templates/ci/aegis-gate.yml": [
+      "code"
+    ],
+    "tests/test_aegis.py": [
+      "test"
+    ]
+  },
+  "lens": "design",
+  "recorded": "2026-09-21T14:30:18",
+  "reopened": [],
+  "report_tokens": 193,
+  "reviewer": "fable-5.1",
+  "round": 1,
+  "task": "TASK-STABLE-03",
+  "verdict": "pass"
+}

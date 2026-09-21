@@ -147,11 +147,11 @@ def _adoption_baseline(ctx: Ctx) -> dict:
     if len(pending) > BASELINE_CAP:
         return {"head": head_sha(ctx), "recorded": recorded, "files": {}, "skipped": len(pending),
                 "note": "too many uncommitted files to baseline; commit them first"}
-    from .core import ABSENT, content_key
+    from .core import ABSENT, content_key, file_mode_tracked
     hashes = {}
     for rel in pending:
         full = os.path.join(ctx.root, rel)
-        key = content_key(full)
+        key = content_key(full, file_mode_tracked(ctx))
         if key is not None:
             hashes[rel] = key
         elif not os.path.lexists(full):
@@ -386,9 +386,12 @@ def _readme_purpose(text: str) -> str:
         # Headings in both spellings (`# Title`, and `Title` over a rule of `=`/`-`/`~`, which
         # is every README.rst), and rst directives, are not prose.
         raw = paragraph.splitlines()
-        rule = [bool(re.fullmatch(r"\s*(=+|-+|~+|\*{3,}|_{3,}|(?:\* ){2,}\*|(?:- ){2,}-)\s*", line)) for line in raw] + [False]
+        rule = [bool(re.fullmatch(r"\s*(=+|-+|~+|\*{3,}|_{3,}|(?:\* ){2,}\*|(?:- ){2,}-)\s*", line)) for line in raw]
+        # Only `=` and `-` underline a title (CommonMark); `***` is a break and the line above
+        # it is prose.
+        underline = [bool(re.fullmatch(r"\s*(=+|-+|~+)\s*", line)) for line in raw] + [False]
         lines = [line.strip() for i, line in enumerate(raw)
-                 if line.strip() and not rule[i] and not rule[i + 1]  # the title over a rule, and the rule
+                 if line.strip() and not rule[i] and not underline[i + 1]  # the title over a rule, and the rule
                  and not line.lstrip().startswith(("#", ".. "))]
         if not lines:
             continue
@@ -603,9 +606,11 @@ def scaffold(ctx: Ctx, profile: str, doc_profile: str, force: bool = False) -> l
             # no idea Aegis was installed. Append a pointer, keep their content.
             if pointer:
                 current = read_text(path, default="")
-                # The marker, as `migrate` tests it: the word "aegis" in any case skipped the
-                # append for a CLAUDE.md that merely mentioned it, and bootstrap then failed.
-                if ".aegis/generated/rules.md" not in current:
+                # The marker, as `migrate` and `check pointers` test it: the import line for
+                # CLAUDE.md, the bare path for AGENTS.md. The word "aegis" in any case skipped
+                # the append for a file that merely mentioned it, and bootstrap then failed.
+                marker = "@.aegis/generated/rules.md" if rel == "CLAUDE.md" else ".aegis/generated/rules.md"
+                if marker not in current:
                     write_text(path, current.rstrip("\n") + "\n\n" + pointer)
                     created.append(f"{rel} (pointer appended)")
             return

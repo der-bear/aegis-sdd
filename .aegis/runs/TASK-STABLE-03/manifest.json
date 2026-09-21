@@ -16,7 +16,8 @@
     ".github/**",
     "scripts/aegis/aegis_cli/**",
     "tests/**",
-    "templates/**"
+    "templates/**",
+    "docs/ARCHITECTURE.md"
   ],
   "reads": [],
   "requirements": [

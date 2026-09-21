@@ -1503,9 +1503,15 @@ class TheSecondProjectsFirstHour(ProjectFixture):
         self.assertEqual(run(["scaffold", "--profile", "S"], self.dir).returncode, 0)
         self.assertIn("@.aegis/generated/rules.md", open(os.path.join(self.dir, "CLAUDE.md")).read())
 
+    def test_a_claude_md_naming_the_path_in_prose_still_gets_the_import(self):
+        self.write("CLAUDE.md", "# Theirs\n\nSee .aegis/generated/rules.md for the compiled rules.\n")
+        self.assertEqual(run(["scaffold", "--profile", "S"], self.dir).returncode, 0)
+        self.assertIn("@.aegis/generated/rules.md", open(os.path.join(self.dir, "CLAUDE.md")).read())
+
     def test_a_thematic_break_and_an_in_repo_symlink_readme(self):
         from aegis_cli.scaffold import _readme_purpose, _constitution_draft
         self.assertEqual(_readme_purpose("# W\n\n***\n\nWidgets turns orders into invoices.\n"), "Widgets turns orders into invoices.")
+        self.assertEqual(_readme_purpose("# W\n\nWidgets turns orders into invoices.\n***\n\npip install\n"), "Widgets turns orders into invoices.")
         self.assertEqual(_readme_purpose("# W\n\n___\n\nWidgets turns orders into invoices.\n"), "Widgets turns orders into invoices.")
         self.write("docs/README.md", "Widgets turns orders into invoices.\n")
         if os.path.exists(os.path.join(self.dir, "README.md")):
@@ -2552,6 +2558,19 @@ class TheAdoptionKeyIsLiteralAndCarriesTheExecBit(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "add", "tool"], check=True)
         self.assertEqual(core._digest_in_index(core.Ctx(self.dir), "tool"), executable)
 
+    def test_where_git_ignores_modes_the_key_ignores_them_too(self):
+        # A mount without modes: git sets core.fileMode=false and every file reports +x. Keying
+        # the disk side by os.access put `exec:` there and a bare hash in the index, so no
+        # baselined path could ever retire by commit.
+        subprocess.run(["git", "-C", self.dir, "config", "core.fileMode", "false"], check=True)
+        core._FILE_MODE.pop(self.dir, None)
+        self.write("tool", "#!/bin/sh\necho hi\n"); full = os.path.join(self.dir, "tool"); os.chmod(full, 0o755)
+        subprocess.run(["git", "-C", self.dir, "add", "tool"], check=True)
+        ctx = core.Ctx(self.dir)
+        disk = core.content_key(full, core.file_mode_tracked(ctx))
+        self.assertFalse(disk.startswith("exec:"), disk)
+        self.assertEqual(core._digest_in_index(ctx, "tool"), disk)
+
     def test_a_symlink_target_decodes_the_same_on_both_sides(self):
         os.symlink("цель.txt", os.path.join(self.dir, "link"))
         subprocess.run(["git", "-C", self.dir, "add", "link"], check=True)
@@ -2738,6 +2757,8 @@ class TestRunEvidenceIsRead(ProjectFixture):
         ("test result: ok. 0 passed; 0 failed", "none"),
         ("--- PASS: TestFoo (0.00s)\nPASS\nok  example 0.1s", "ran"),
         ("ok  \texample.com/a\t0.004s [no tests to run]\nPASS", "none"),   # a filter that matched nothing
+        ("ok  \texample.com/a\t0.004s\tcoverage: 0.0% of statements [no tests to run]", "none"),  # with -cover
+        ("ok  \texample.com/a\t0.004s\tcoverage: 80.0% of statements\nok  \texample.com/b\t0.1s [no tests to run]", "ran"),
         ("PASS\n", "unknown"),                                               # a bare PASS is not a run
         ("no test files", "none"),
         ("12 examples, 0 failures", "ran"),

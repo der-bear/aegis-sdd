@@ -17,7 +17,7 @@ from typing import Any
 
 from . import checks
 from .core import (
-    content_key, ABSENT, git,
+    content_key, file_mode_tracked, ABSENT, git,
     AegisError,
     Ctx,
     EMPTY_TREE,
@@ -663,7 +663,7 @@ def review_snapshot(ctx: Ctx, base: str | None, task_id: str) -> dict[str, str]:
                 continue
             except Exception:
                 pass
-        out[rel] = content_key(os.path.join(ctx.root, rel)) or ABSENT
+        out[rel] = content_key(os.path.join(ctx.root, rel), file_mode_tracked(ctx)) or ABSENT
     return out
 
 

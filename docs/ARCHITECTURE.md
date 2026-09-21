@@ -214,8 +214,10 @@ every untracked file counted as changed by the first task, so trace, the environ
 the lenses all judged code the task never touched.
 
 `aegis init` (or `aegis migrate`, for a project adopted earlier) records the uncommitted files
-once: their content hashes, and `absent` for a path that is missing — a pending deletion, or the
-source side of a staged rename.
+once: their content keys — a sha256 of the bytes, `exec:<sha256>` for an executable where the
+repository records modes, `symlink:<target>` for a link — and `absent` for a path that is
+missing: a pending deletion, or the source side of a staged rename. A bare hash recorded before
+the exec bit joined the key still matches an executable holding those bytes.
 
 Attribution is by content, not by history (ADR-4). A recorded path belongs to adoption while
 the repository still holds what was recorded: the working tree matches it, nothing different is

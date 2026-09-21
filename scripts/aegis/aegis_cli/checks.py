@@ -1076,7 +1076,7 @@ _TESTS_RAN = (
     # "nothing ran" hard-failed a green suite.
     # `ok <pkg> 0.004s [no tests to run]` is a filter that matched nothing, exit 0: the case the
     # docstring below names, and the pattern read it as a run.
-    re.compile(r"^ok\s+\S+\s+(?:[\d.]+m?s|\(cached\))(?! \[no tests to run\])", re.M),  # go test, per package
+    re.compile(r"^ok\s+\S+\s+(?:[\d.]+m?s|\(cached\))(?!.*\[no tests to run\])", re.M),  # go test, per package (-cover text sits before the suffix)
     re.compile(r"^--- PASS:", re.M),                              # go test, per test
     re.compile(r"(\d+) (?:tests?|specs?|assertions?) (?:passed|completed|succeeded)", re.I),
 )
