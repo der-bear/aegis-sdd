@@ -80,7 +80,13 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
   `external-lens.sh` for any engine; the historical package from 1277dbe applied with two anchors
   redone — three rounds). Per-lens staleness paid for itself the same day: two cap rounds ran one
   lens instead of three.
-- Declined in writing, one line each, for the next task that touches the lens tooling:
+- 2026-09-22, TASK-CLEAN-01 (R-39, R-40): version 0.9.0; EVALUATION §9 covers 09-18..21 with
+  numbers counted from the records; `init` writes no product stubs; no live message names a
+  deleted profile or one vendor; the metrics caveat only when true; and the digest now hashes what
+  git records — it had hashed every permission bit, so the same commit digested differently per
+  checkout. Reviewed by Sonnet 5 (a different model from the builder), three rounds.
+- Formerly declined in the lens tooling, now done in TASK-CLEAN-01 except the workflow's
+  `grep -c FAIL` (severity 0, "none required"):
   flow.LENS_NAME duplicates config.LENS_FILE_NAME (import the twin); external-lens.sh's 100 KB
   stdin threshold counts characters, not bytes (`wc -c`); the workflow's `grep -c FAIL` over
   `check docs` reads an exit-2 error as zero doc work (the task gate still refuses).
@@ -92,7 +98,7 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
 
 ## How to verify the current state
 
-    make check                          # 279 tests + bootstrap gate
-    python3 tests/test_aegis.py         # the same 279
+    make check                          # 290 tests + bootstrap gate
+    python3 tests/test_aegis.py         # the same 290
     scripts/aegis/aegis next
     scripts/aegis/aegis status
