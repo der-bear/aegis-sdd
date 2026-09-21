@@ -1,0 +1,34 @@
+{
+  "acceptance": [
+    "the version reads 0.9.0 everywhere",
+    "EVALUATION covers 2026-09-18..21 with measured numbers",
+    "init writes no product stub",
+    "no live string names lens-<x> or Codex as the reader of .agents/skills",
+    "metrics warns on a small sample only when there is one"
+  ],
+  "base_sha": "c1da60c326b05881b3fc7729580fdcd708b33c9f",
+  "change_kinds": [
+    "code",
+    "docs",
+    "test"
+  ],
+  "created": "2026-09-22T00:59:43",
+  "feature": "simple-reliable",
+  "id": "TASK-CLEAN-01",
+  "objective": "What a newcomer reads first says what is true: version, evaluation, no unread stubs, no deleted names",
+  "owns": [
+    ".claude-plugin/**",
+    "README.md",
+    "docs/EVALUATION.md",
+    "scripts/**",
+    "tests/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-39"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "building",
+  "updated": "2026-09-22T00:59:43"
+}

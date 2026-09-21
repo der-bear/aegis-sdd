@@ -27,7 +27,7 @@ docs step and lands as `cli`; `land` on the mainline marks merged in place; the 
 ignores `.aegis/runs/` (a handoff saying "session" made a docs change tier A); a held lease beats
 `**/build/**`.
 
-232 tests on both invocation paths, lint clean, bootstrap gate green. A final review then
+At that point, 232 tests on both invocation paths, lint clean, bootstrap gate green. A final review then
 found two real losses — `land` on the mainline ran no gate, and `task status merged` was a second
 writer of a one-place status — and nine circles in the loop; all closed in `fa30aba`, with the
 `review`/`refine`/`docs` statuses, the dry-run `land` and the minimum review rounds cut on its list. ARCHITECTURE 4,811 →

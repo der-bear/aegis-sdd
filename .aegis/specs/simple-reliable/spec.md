@@ -266,6 +266,13 @@ R-38. **Lenses, roles and engines are data (ADR-3).** A lens is a file — `lens
       answer that may be empty, run through one script. Adding a lens is one file and no engine
       change — the last real gap for public use named in every retro since 0001.
 
+R-39. **What a newcomer reads first says what is true.** The version is 0.9.0 — 1.0 after a third
+      project and one full pull-request cycle; `docs/EVALUATION.md` covers every review cycle, with
+      its reviewer and its numbers measured from the records; `init` writes no file nothing reads
+      (the empty `product/mission.md` and `roadmap.md` stubs, the same class as R-35); no live message
+      names a deleted profile or one vendor; `aegis metrics` warns about a small sample only when a
+      lens has one; and the three one-liners declined in TASK-LENSES-01 are done.
+
 R-27. **Every test added or changed in any of the three tasks shall be shown to fail on the behaviour
       it forbids before it counts.** Two of the previous cycle's document locks passed on the exact
       text they were written to correct; both were found by a lens, not by me. In particular: R-17

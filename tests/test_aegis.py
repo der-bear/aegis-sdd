@@ -212,7 +212,7 @@ class AReviewIsStaleOnlyForTheKindsThatMoved(ProjectFixture):
         self.assertEqual(len(stale), 1, stale)
         self.assertTrue(stale[0].startswith("correctness"), stale)
         _handoff(self)  # the loop asks for the handoff before it looks at the reviews
-        self.assertEqual(flow.next_action(ctx)["do"], "re-run lens-correctness")
+        self.assertEqual(flow.next_action(ctx)["do"], "re-run the correctness lens")
 
     def test_an_auth_edit_re_runs_security_too(self):
         ctx = self._reviewed_auth_and_pricing()
@@ -1588,6 +1588,10 @@ class TheSecondProjectsFirstHour(ProjectFixture):
 
     def test_init_scaffolds_no_standards_stub(self):
         self.assertFalse(os.path.exists(os.path.join(self.dir, ".aegis", "standards")))
+
+    def test_init_writes_no_file_nothing_reads(self):
+        # Two empty templates, mission.md and roadmap.md, in every project; nothing read them.
+        self.assertFalse(os.path.exists(os.path.join(self.dir, ".aegis", "product")))
 
     def test_a_justfile_is_the_front_door_like_a_makefile(self):
         # `just test` ran pytest alone; detection also proposed `mypy .`, which had 338 errors
@@ -3360,6 +3364,52 @@ class ALensFileIsNotADocument(unittest.TestCase):
         report = checks.check_docs(core.Ctx(ROOT), ["lenses/security.md"], closing_feature=True)
         self.assertFalse(any("outside the profile" in f.message for f in report.findings),
                          [f.render() for f in report.findings])
+
+
+class WhatANewcomerReadsFirstIsTrue(unittest.TestCase):
+    """R-39. The version, the evaluation and the messages say what is true."""
+
+    def read(self, rel):
+        return open(os.path.join(ROOT, rel), encoding="utf-8").read()
+
+    def test_the_version_is_one_number_and_not_yet_one(self):
+        from aegis_cli import __version__
+        plugin = json.loads(self.read(".claude-plugin/plugin.json"))["version"]
+        self.assertEqual(plugin, __version__)
+        self.assertTrue(__version__.startswith("0."), "1.0 after a third project and a full pull-request cycle")
+
+    def test_the_evaluation_covers_every_cycle(self):
+        text = self.read("docs/EVALUATION.md")
+        self.assertNotIn("six adversarial rounds found", text)
+        for task in ("TASK-STABLE-01", "TASK-SIMPLE-01", "TASK-FIRSTHOUR-01", "TASK-LAND-01",
+                     "TASK-STABLE-02", "TASK-STABLE-03", "TASK-LENSES-01"):
+            self.assertIn(task, text, task)
+        self.assertNotIn("six adversarial audit rounds", self.read("README.md"))
+
+    def test_one_rule_for_a_lens_name(self):
+        # Not `assertIs` on the two objects: `re.compile` caches, so two identical literals are
+        # the same object and the check passed on the duplicate it exists to forbid. The risk is
+        # one literal edited alone, so the rule is that flow compiles no pattern of its own.
+        flow_text = self.read("scripts/aegis/aegis_cli/flow.py")
+        self.assertNotRegex(flow_text, r"(?m)^LENS_NAME\s*=\s*re\.compile")
+        self.assertIn("from .config import LENS_FILE_NAME as LENS_NAME", flow_text)
+
+    def test_the_engine_prompt_threshold_counts_bytes(self):
+        script = self.read("scripts/aegis/external-lens.sh")
+        self.assertIn("wc -c", script)
+        self.assertNotIn('"${#prompt}"', script)
+
+    def test_no_live_message_names_a_deleted_profile_or_one_vendor(self):
+        flow_text = self.read("scripts/aegis/aegis_cli/flow.py")
+        self.assertNotIn('re-run lens-{lens}', flow_text)
+        self.assertNotIn("the copy Codex reads", self.read("scripts/aegis/aegis_cli/checks.py"))
+
+
+class TheMetricsCaveatIsTrueWhenShown(ProjectFixture):
+    def test_no_caveat_without_a_small_sample(self):
+        out = json.loads(run(["metrics"], self.dir).stdout)
+        small = [name for name, b in out.get("lenses", {}).items() if b.get("sample", 0) < 10]
+        self.assertEqual("caveat" in out, bool(small), out)
 
 
 class NoLensOrEngineIsHardWired(unittest.TestCase):

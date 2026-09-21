@@ -1,11 +1,14 @@
-# Evaluation: what six adversarial rounds found
+# Evaluation: what independent review found
 
 Authoritative for: the results of independent review and the status of each finding.
 References only: the implementation (see [ARCHITECTURE](ARCHITECTURE.md)).
 
-Every claim below was produced by an independent reviewer — `gpt-5.6-sol` at high or extreme
-reasoning effort, read-only, instructed to find defects and not to praise — or by an
-adversarial agent driving the CLI. Nothing here is self-assessment.
+Every claim below was produced by a reviewer instructed to find defects and not to praise,
+read-only, in a context that did not build the change — `gpt-5.6-sol` at high or extreme
+reasoning effort for §1–§7, fresh Claude subagents for §8, Claude Fable 5.1 for §9 — or by an
+adversarial agent driving the CLI. §9 says where the reviewer was the same model as the builder,
+which is weaker evidence than a different vendor's, and says it rather than hiding it behind the
+word "independent".
 
 ---
 
@@ -258,5 +261,81 @@ the second became the merge receipt described then in ARCHITECTURE §6 (since de
 **What this still does not prove.** Nothing here measures whether the framework pays for itself:
 one task, one repository, one day. The lens acceptance rate (0.69–0.73 in the first task) and the
 cost of a warm lens against a cold one are measured but not yet meaningful at this sample size.
-The next honest test is a project of a different kind, which is why ADR-2 makes it the second
-half of §B.
+The next honest test was a project of a different kind, which is why ADR-2 made it the second
+half of §B; §9 is what it found.
+
+## 9. Seven tasks and a second project (2026-09-18 → 2026-09-21)
+
+Numbers in this section are counted from the review records under `.aegis/runs/`, not recalled.
+A "finding" is one entry in a lens's record across all its rounds; "blocking" is severity 3 or
+more when raised.
+
+**The cycle that ended in a decision, not a merge.** TASK-STABLE-01 drew 61 findings from three
+lenses, 15 of them blocking, and was abandoned at the round cap with design at three of three
+rounds and a severity-3 finding open. The finding that mattered was design's: the attribution
+machinery was growing faster than it consolidated. ADR-5 records the decision and, in its own
+*Corrections*, that the framework did not escalate at the cap — the builder did.
+
+**The deletion.** The owner's brief — work stably, need a person rarely, do not over-restrict the
+agent, never make it rewrite a report for its size — became SPEC-3 and TASK-SIMPLE-01. The write
+hooks, the merge receipt, the delegation machinery and the base-agreement rule were deleted: 44
+files, 2,981 lines out and 215 in, in the main commit. The trust model was stated in one paragraph
+of ARCHITECTURE §6 instead of being guarded by records the agent could write anyway. Six rounds,
+the most of any task: 35 findings, 2 blocking.
+
+**Publication and the second project.** TASK-PUBLISH-01 found on its own first gate that a licence
+counted as code owing a test. Then domain-hunter — the owner's brownfield Python service, 128
+commits, a `justfile`, migrations — ran init, spec, task, build and a passing review with no
+engine change. Its first hour produced four frictions, which became TASK-FIRSTHOUR-01 (R-32..R-36):
+21 findings, 5 blocking, three rounds, and 15 of the 21 on one requirement — drafting a purpose
+from a README's first paragraph, which is a Markdown-parsing problem, not one condition. Re-run on
+an archive of that project with the new code, the four frictions were gone. The task gate there
+then met another agent's uncommitted work in the same tree and refused it as unowned: the
+two-builders-one-tree collision the documents describe, shown, not solved. Nothing was committed
+in that repository.
+
+**What only a real landing could find.** The framework's own pre-push gate refused the push of the
+first landing it met: `land` moves the local mainline before the push, and the gate diffed
+against the remote (TASK-LAND-01, R-37: 1 finding, none blocking). The next day the merge gate
+refused the five new lens files as documentation outside the profile. Both are one class — a kind
+of file or state the checks had never seen — and it is the class to expect on the next new
+artefact.
+
+**The last three.** Per-lens staleness (TASK-STABLE-02): 13 findings, 4 blocking; the reviewer,
+probing, found that a control deleted after a review is invisible in the text that survives, and
+that the plan must owe what the gate demands. The leftovers of retro 0002 (TASK-STABLE-03): 7
+findings, 3 blocking; Go prints coverage text before `[no tests to run]`, and git records the
+exec bit from the owner's bit alone. Lenses as data (TASK-LENSES-01, ADR-3): 8 findings, none
+blocking. Per-lens staleness ran two cap rounds with one lens instead of three on the day it
+landed.
+
+| Task | Rounds | Findings | Blocking |
+|---|---|---|---|
+| TASK-SIMPLE-01 | 6 | 35 | 2 |
+| TASK-PUBLISH-01 | 2 | 1 | 0 |
+| TASK-FIRSTHOUR-01 | 3 | 21 | 5 |
+| TASK-LAND-01 | 2 | 1 | 0 |
+| TASK-STABLE-02 | 3 | 13 | 4 |
+| TASK-STABLE-03 | 3 | 7 | 3 |
+| TASK-LENSES-01 | 3 | 8 | 0 |
+
+**Who reviewed.** Every round in this section was Claude Fable 5.1, briefed as all the lenses the
+plan named, in one fresh read-only context per round, and told to run nothing that writes into the
+repository and to execute only against an archive copy. That one sentence is what kept every
+digest still under a review, after three records in one day were refused because the digest had
+moved under one — twice by the builder's own edit while a lens was reading, once by the
+reviewer's test run writing into the tree. The builder was the same model in the orchestrating session. The
+tier-A rule accepts that — a different context, ideally a different model — and it is weaker
+evidence than §2's rounds by another vendor's model.
+
+**Measured.** `aegis metrics` on 2026-09-21, over the eleven tasks then recorded: correctness had
+74 of 92 findings fixed, design 79 of 100, security 32 of 50 — acceptance of 0.80, 0.79 and 0.64,
+all above the 30% line. No finding marked fixed has come back. Of the 57 still open, 18 are
+advisories on merged tasks, declined in writing in their handoffs; the other 39 — 12 of them
+blocking — belong to the three abandoned tasks, whose work was re-issued rather than finished, and
+stay open in those records as what they were.
+
+**What this still does not prove.** Two projects, one of them the framework itself, and one cycle
+on the other, stopped at its gate by a concurrent agent. No measurement of whether the framework
+pays for itself over months. No cycle through a pull request with CI as the only barrier. The
+version is 0.9.0 for those reasons: 1.0 after a third project and one full pull-request cycle.

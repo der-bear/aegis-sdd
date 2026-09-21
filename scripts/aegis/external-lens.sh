@@ -37,7 +37,9 @@ prompt="$("$aegis" --root "$root" lens prompt "$task" "$lens" --with-contract)"
 # The engine's stderr stays visible: an auth error, a missing binary or an argument over the
 # platform's limit must say so, not exit silently with the engine's code. A prompt over
 # ~100 KB goes on stdin whatever the mode: a single argv is capped at 128 KiB on Linux.
-if [ "$mode" = "stdin" ] || [ "${#prompt}" -gt 100000 ]; then
+# Bytes, not characters: under a UTF-8 locale `${#prompt}` counts characters, and a Cyrillic
+# prompt of 92 K characters is 151 KB — past Linux's 128 KiB per-argument cap.
+if [ "$mode" = "stdin" ] || [ "$(printf '%s' "$prompt" | wc -c)" -gt 100000 ]; then
   reply="$(printf '%s' "$prompt" | "$@")" || { echo "$label: the engine failed (exit $?) — see its output above" >&2; exit 1; }
 else
   reply="$("$@" "$prompt")" || { echo "$label: the engine failed (exit $?) — see its output above" >&2; exit 1; }

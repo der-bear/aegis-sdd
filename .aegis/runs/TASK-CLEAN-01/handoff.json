@@ -1,0 +1,53 @@
+{
+  "task": "TASK-CLEAN-01",
+  "agent": "claude-opus-5 (orchestrator and builder)",
+  "summary": "R-39, what a newcomer reads first says what is true. The version is 0.9.0 in the plugin manifest and the package (1.0 after a third project and one full pull-request cycle). docs/EVALUATION.md is retitled, its intro names every reviewer, §8's closing points forward, and a new §9 covers 2026-09-18..21 — seven tasks and the second project — with rounds, findings and blocking counts counted from the records, who reviewed (the same model as the builder, stated as weaker evidence), lens acceptance from `aegis metrics`, and what it still does not prove; README's pointer to it updated. `init` no longer writes .aegis/product/mission.md and roadmap.md, which nothing read (removed from this repository too). Instructions name 'the <x> lens', not the deleted lens-<x> profiles; the recorder identity lens-<x> in disposition_by is kept, since is_person_name refuses it by that name. The .agents/skills message says 'the copy other runners read'. `aegis metrics` shows its small-sample caveat only when a lens has fewer than ten judged findings. The three one-liners declined in TASK-LENSES-01: flow imports LENS_NAME from config; external-lens.sh counts bytes for the stdin threshold; (the workflow's grep -c FAIL sev-0 was 'none required' and is left). Outside the lease, .aegis/ state: the retro's unmeasured 'eleven' is fifteen, a dated NOTES line says it is dated, the waiver's provenance says policy.delegation was deleted.",
+  "changed_files": [
+    ".aegis/memory/NOTES.md",
+    ".aegis/memory/retros/0003.md",
+    ".aegis/product/mission.md",
+    ".aegis/product/roadmap.md",
+    ".aegis/specs/simple-reliable/spec.md",
+    ".aegis/waivers.json",
+    ".claude-plugin/plugin.json",
+    "README.md",
+    "docs/EVALUATION.md",
+    "scripts/aegis/aegis_cli/__init__.py",
+    "scripts/aegis/aegis_cli/checks.py",
+    "scripts/aegis/aegis_cli/flow.py",
+    "scripts/aegis/aegis_cli/scaffold.py",
+    "scripts/aegis/external-lens.sh",
+    "tests/test_aegis.py"
+  ],
+  "verification": [
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "python3 tests/test_aegis.py",
+      "result": "pass",
+      "note": "286 tests"
+    },
+    {
+      "command": "aegis gate --stage bootstrap",
+      "result": "pass"
+    },
+    {
+      "command": "R-27 reverse run: the eight new locks against a git archive of c1da60c",
+      "result": "pass",
+      "note": "8 of 8 red there, after one was found passing on the old code (re.compile caches identical patterns, so an identity check could not see the duplicate) and rewritten"
+    }
+  ],
+  "deviations": [
+    "Edited outside any lease, as .aegis/ state: .aegis/memory/retros/0003.md, .aegis/memory/NOTES.md, .aegis/waivers.json (provenance text only; scope, owner and expiry unchanged), and the removal of .aegis/product/."
+  ],
+  "open_questions": [],
+  "new_dependencies": [],
+  "invalidated_assumptions": [
+    "the retro's 'R-33 produced eleven findings' — the records say fifteen"
+  ],
+  "next_safe_action": "one review round, gate, land, push, read CI.",
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}

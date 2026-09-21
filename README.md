@@ -324,7 +324,7 @@ aegis --root <dir> …                   run against another checkout
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how it works inside: the compiler, gate
   stages, leases, digests, the position on memory, and multi-agent runners.
-- [docs/EVALUATION.md](docs/EVALUATION.md) — six adversarial audit rounds, what they found,
+- [docs/EVALUATION.md](docs/EVALUATION.md) — every review cycle, who reviewed and what they found,
   and what the measurements say about the method itself.
 - [docs/spec-v0.3-original.md](docs/spec-v0.3-original.md) — the original specification,
   kept as the design record.

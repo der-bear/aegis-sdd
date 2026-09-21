@@ -87,28 +87,6 @@ not a log. Keep it under the `notes` token budget in `policy.json`.
 ## How to verify the current state
 """
 
-MISSION = """# Mission
-
-Authoritative for: why this product exists and who it is for.
-
-## Problem
-
-## Who it serves
-
-## What success looks like (measurable)
-
-## Explicitly not doing
-"""
-
-ROADMAP = """# Roadmap
-
-Authoritative for: milestones and their measurable outcomes.
-
-| Milestone | Outcome (measurable) | Status |
-|---|---|---|
-| M1 | | planned |
-"""
-
 REGISTRY_SEEDS = {
     "integrations": [],
     "events": [],
@@ -633,8 +611,8 @@ def scaffold(ctx: Ctx, profile: str, doc_profile: str, force: bool = False) -> l
     put_text("AGENTS.md", AGENTS_MD.format(name=name), agents_pointer)
     put_text(".aegis/constitution.md", _constitution_draft(ctx))
     put_text(".aegis/memory/NOTES.md", NOTES)
-    put_text(".aegis/product/mission.md", MISSION)
-    put_text(".aegis/product/roadmap.md", ROADMAP)
+    # No `product/mission.md` or `roadmap.md`: nothing ever read them, and every project got two
+    # empty templates that read as homework for a person (R-39, the class of R-35).
 
     put_json(".aegis/answers.json", {
         "mode": "hybrid",

@@ -1349,14 +1349,14 @@ def check_protocol_copies(ctx: Ctx) -> Report:
                         ctx.rel(copy),
                         hint="run `aegis migrate`; agents read this copy, so a stale one "
                              "makes them follow rules the gate no longer enforces")
-        codex_copy = os.path.join(agents_dir, name, "SKILL.md")
-        if os.path.isdir(agents_dir) and name in RUNNER_NEUTRAL and not os.path.exists(codex_copy):
+        neutral_copy = os.path.join(agents_dir, name, "SKILL.md")
+        if os.path.isdir(agents_dir) and name in RUNNER_NEUTRAL and not os.path.exists(neutral_copy):
             # Checking it only when present made deleting it the way to stop it being checked.
-            report.fail("protocols", f"{name} is missing from .agents/skills/ (the copy Codex reads)",
+            report.fail("protocols", f"{name} is missing from .agents/skills/ (the copy other runners read)",
                         None, hint="run `aegis migrate`")
-        elif os.path.exists(codex_copy) and read_text(codex_copy) != read_text(source):
-            report.fail("protocols", f"{name} differs in .agents/skills/ (the copy Codex reads)",
-                        ctx.rel(codex_copy), hint="run `aegis migrate`")
+        elif os.path.exists(neutral_copy) and read_text(neutral_copy) != read_text(source):
+            report.fail("protocols", f"{name} differs in .agents/skills/ (the copy other runners read)",
+                        ctx.rel(neutral_copy), hint="run `aegis migrate`")
     return report
 
 

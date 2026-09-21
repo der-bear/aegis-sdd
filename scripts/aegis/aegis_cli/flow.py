@@ -740,7 +740,7 @@ def lens_staleness(ctx: Ctx, task_id: str, lens: str, record: dict, plan: dict) 
     hits = sorted({kind for rel in moved
                    for kind in set(then.get(rel) or []) | _file_kinds(ctx, rel, caps, base) if kind in triggers})
     if hits:
-        return f"a file whose change kind ({', '.join(hits)}) selects lens-{lens} moved after that review"
+        return f"a file whose change kind ({', '.join(hits)}) selects the {lens} lens moved after that review"
     return None
 
 
@@ -873,7 +873,7 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
 # record` by design — including output from a different vendor's model — so the name is
 # validated rather than trusted. Without this, `"lens": "../../../../etc/x"` is an
 # arbitrary file write that reports success.
-LENS_NAME = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
+from .config import LENS_FILE_NAME as LENS_NAME  # one rule for a lens name, where it is read and where it is written
 
 LENS_REPORT_SCHEMA = {
     "type": "object",
@@ -973,7 +973,7 @@ def lens_record(ctx: Ctx, task_id: str, payload: dict, lens: str | None = None) 
         # if that code had been reviewed.
         raise AegisError(
             f"this report was produced against {payload['diff_digest']} but the change is now "
-            f"{current}. The code moved after the review; re-run lens-{lens} against the "
+            f"{current}. The code moved after the review; re-run the {lens} lens against the "
             "current diff. `aegis lens plan` prints the digest to quote."
         )
     round_no = previous.get("round", 0) + 1
@@ -1285,7 +1285,7 @@ def check_reviews(ctx: Ctx, task_id: str) -> Report:
             report.fail("reviews",
                         f"{lens}.json contains a {record.get('lens')!r} report for "
                         f"{record.get('task')!r}", None,
-                        hint=f"re-run lens-{lens} and record it; a renamed file is not a review")
+                        hint=f"re-run the {lens} lens and record it; a renamed file is not a review")
             continue
         why_stale = lens_staleness(ctx, task_id, lens, record, plan)
         if why_stale:
@@ -1293,7 +1293,7 @@ def check_reviews(ctx: Ctx, task_id: str) -> Report:
             # review does not re-run security. No grandfathering for a record that cannot
             # say what it read.
             report.fail("reviews", f"{lens} did not review this version of the change: {why_stale}", None,
-                        hint=f"re-run lens-{lens} against the current diff and record it again")
+                        hint=f"re-run the {lens} lens against the current diff and record it again")
         came_back = [f["id"] for f in record.get("findings", [])
                      if f.get("reopened_in") and not _closed_by_a_person(f, builder, lens)]
         if came_back:
@@ -2033,7 +2033,7 @@ def next_action(ctx: Ctx) -> dict:
         rounds = record.get("round", 0)
         why_stale = lens_staleness(ctx, task_id, lens, record, plan)
         if why_stale:
-            return step(f"re-run lens-{lens}", why_stale,
+            return step(f"re-run the {lens} lens", why_stale,
                         f"aegis lens plan {task_id}", note=f"dispatch the {lens} lens again, to its plan profile"
                         + (f" — round {rounds + 1}, past the {cap} the policy expects: a finding "
                            f"surviving this many rounds usually means the mechanism is wrong, so "
@@ -2055,7 +2055,7 @@ def next_action(ctx: Ctx) -> dict:
                 return step(f"fix {finding['id']} in the code", f"{lens}: {finding['message'][:80]}",
                             None,
                             note=f"{finding.get('minimal_fix') or 'apply the fix'}, then re-run "
-                                 f"lens-{lens} and record it; dismissing it instead — false-positive, "
+                                 f"the {lens} lens and record it; dismissing it instead — false-positive, "
                                  f"waived or deferred — is a person's decision, not the loop's"
                                  + (f". This is round {rounds} of the {cap} the policy expects: a "
                                     f"finding that survives this many rounds usually means the "
@@ -2065,7 +2065,7 @@ def next_action(ctx: Ctx) -> dict:
             problems = _dismissal_problems(ctx, finding, builder, lens)
             if problems:
                 return step(f"a person decides {finding['id']}", problems[0][0], None, "human",
-                            note=f"{problems[0][1]}; or fix the code and re-run lens-{lens}")
+                            note=f"{problems[0][1]}; or fix the code and re-run the {lens} lens")
 
     if task.get("status") != "gated" or not gate_receipt_valid(ctx, task_id):
         return step(f"gate {task_id}",
@@ -2164,8 +2164,10 @@ def metrics(ctx: Ctx) -> dict:
                           "mean": round(sum(rounds) / len(rounds), 2) if rounds else 0},
         "reopened_findings": reopened_total,
         "lenses": per_lens,
-        "caveat": ("fewer than 10 judged findings for a lens: treat its acceptance rate as an "
-                   "observation, not evidence to change a protocol"),
+        # Printed only when it is true: a caveat shown on every run is read by nobody.
+        **({"caveat": f"fewer than 10 judged findings for {', '.join(small)}: treat that acceptance "
+                      "rate as an observation, not evidence to change a protocol"}
+           if (small := sorted(name for name, b in per_lens.items() if b.get("sample", 0) < 10)) else {}),
     }
 
 

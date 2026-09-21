@@ -5,7 +5,7 @@
     "scope": [
       "tests/**"
     ],
-    "reason": "The regression tests embed example source that reads variables, as strings written into temporary fixtures; the scanner cannot tell a fixture string from a read. [re-owned under policy.delegation on 2026-09-18; recorded first by an agent in TASK-UNBLOCK-01]",
+    "reason": "The regression tests embed example source that reads variables, as strings written into temporary fixtures; the scanner cannot tell a fixture string from a read. [recorded first by an agent in TASK-UNBLOCK-01; put in the owner's name on 2026-09-18 under policy.delegation, a rule since deleted (ADR-5)]",
     "owner": "Alex Derkach",
     "expires": "2026-12-31",
     "ticket": "TASK-UNBLOCK-01"
