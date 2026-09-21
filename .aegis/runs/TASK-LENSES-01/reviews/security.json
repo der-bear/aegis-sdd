@@ -1,9 +1,9 @@
 {
-  "diff_digest": "ea15f4ab24a1fc5d",
+  "diff_digest": "56c4ab28d654c72f",
   "files": {
     ".aegis/runs/TASK-LENSES-01/manifest.json": "contract:793d372f4840098bf6640449db6d03f2850824c98d7191269baeffd444464b14",
     ".aegis/specs/simple-reliable/spec.md": "fdce606b1190c141cbc773d693ed9f88c8fa5ebcfc9f7897920e5cb8f03008f7",
-    "README.md": "8dfab80639ef7328a34234005df07b96ae5eafee1922fc29dad0eba9fdda22c7",
+    "README.md": "4eb1237394867847c958e017a72f30e65a81e8b9ef1f320d6f0a0dce8a4c0253",
     "agents/aegis-orchestrator.md": "a735914dd8b1f31a74052e62b77cb1d430a467d25acd201c94259590e447e50e",
     "agents/lens-auditor.md": "d816740a5f47a0a58bb008f316e5e28c0be8e63e0b40a459f723144ecc3a8116",
     "agents/lens-correctness.md": "absent",
@@ -18,20 +18,23 @@
     "lenses/design.md": "951d6b53c080e42a02c75a2d2724dd8144050eeab43715e363255459bf3b0683",
     "lenses/security.md": "a3fe2f4e9dc5d4ad57a5fb64b82dad439865544e7d787e6e02154db07bddbef7",
     "scripts/aegis/aegis_cli/__main__.py": "c09aa15544466b1922a1db18f5689d27c9467ff61409e0ba81b3f5142df428fb",
-    "scripts/aegis/aegis_cli/config.py": "4bcce62a1832d459008a951caa364eb6f8d0de86c8c097e6cc413a2eae3507a5",
-    "scripts/aegis/aegis_cli/flow.py": "75b7dee22479355091a80af3fc57d21373ac449e8d2c40542902c16048eaed13",
+    "scripts/aegis/aegis_cli/config.py": "61b057ccb43bafbf9230d285b1295744053c8517340f729521106b24409a751b",
+    "scripts/aegis/aegis_cli/flow.py": "c2cf7cc09f60908ae026c0ebd464156ba8d0d42c66b9bd75a5aa539aa55cfaf1",
     "scripts/aegis/codex-lens.sh": "exec:33a5c1e065be3a53e5afce71fcdcfd05a5b4b3e13432ab6699c7299adc3871db",
-    "scripts/aegis/external-lens.sh": "exec:2dc836a302654a7bb5c0ff56708bf57c8c843b4d7920c4fcdd28761c157d25fd",
+    "scripts/aegis/external-lens.sh": "exec:84f755fabd2e458b86143c27a3a5ca05b1c6459ef96b4e9339430851ba8b458d",
     "skills/build/SKILL.md": "2d039d2894390706ec94ae3b411273495c8e638d9a0ccc7a2c7c9ee1cf67a598",
     "skills/plan/SKILL.md": "506d4c498c1d12c0068701e42ff3ebb48c8fde0bf314cf014c299a0ae5b13419",
     "skills/review/SKILL.md": "f9d7907ca1eccd2a4acee1adb7a1a0cd7736666c4ff2d79c79bc715a15012818",
     "skills/spec/SKILL.md": "ebd1278084fbe63e69c5795b8153fe639228706f9bc580e10227b1cad4433778",
-    "tests/test_aegis.py": "31a73497e33513c0004a60a44ae1c6ef5f88f4d52a3587ec7f2cb5c179bf3c2a",
+    "tests/test_aegis.py": "c3190c8c3eba1f965a63dc32548fd3823158c6101d28a71abf62205c3aebda1d",
     "workflows/aegis-task.js": "c3d51b89b35c56dabf9249d7f74de3e8c66f69cfa44b35381653bdef7f958335"
   },
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T15:29:26",
+      "disposition_by": "lens-security",
+      "disposition_reason": "lens-security round 2: engine stderr reaches the terminal, a non-zero exit prints the engine's own code and the script exits 1 without recording; a 143 KB ASCII prompt was delivered on stdin in argument mode",
       "first_seen_round": 1,
       "id": "F-371d23fd",
       "line": 40,
@@ -42,6 +45,21 @@
       "requirement": "R-38",
       "rounds": [
         1
+      ],
+      "severity": 2
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-47a5db9e",
+      "line": 40,
+      "message": "`${#prompt}` counts characters under a UTF-8 locale, so a Cyrillic-heavy prompt of 92,271 characters / 151,191 bytes took the argument branch under LC_ALL=en_US.UTF-8 and exceeds Linux's 131,072-byte per-argument cap; the run then fails loudly with 'Argument list too long' instead of the stdin fallback the comment promises.",
+      "minimal_fix": "test bytes, not characters: `(( $(printf %s \"$prompt\" | wc -c) > 100000 ))`",
+      "path": "scripts/aegis/external-lens.sh",
+      "raised_digest": "56c4ab28d654c72f",
+      "requirement": "R-38",
+      "rounds": [
+        2
       ],
       "severity": 2
     }
@@ -132,11 +150,11 @@
     ]
   },
   "lens": "security",
-  "recorded": "2026-09-21T15:17:50",
+  "recorded": "2026-09-21T15:29:26",
   "reopened": [],
-  "report_tokens": 203,
+  "report_tokens": 289,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-LENSES-01",
   "verdict": "pass"
 }
