@@ -10,3 +10,4 @@
 {"at": "2026-09-21T14:03:21", "blocking": 0, "event": "lens", "findings": 0, "lens": "design", "round": 3, "task": "TASK-STABLE-02", "verdict": "pass"}
 {"at": "2026-09-21T14:06:20", "event": "status", "task": "TASK-STABLE-02", "value": "gated"}
 {"at": "2026-09-21T14:06:20", "event": "gate", "failing_checks": [], "passed": true, "seconds": 178.9, "stage": "task", "task": "TASK-STABLE-02"}
+{"at": "2026-09-21T14:15:05", "event": "status", "task": "TASK-STABLE-02", "value": "merged"}
