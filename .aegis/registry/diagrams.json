@@ -10,7 +10,7 @@
     "verified_at": "2026-09-21",
     "verified_by": "Claude Fable 5.1",
     "verified_note": "TASK-PUBLISH-01 changed one condition in the testing mandate; §3 and §6 unaffected, read against 6f9ec7c",
-    "verified_source_digest": "ea4efb581f1bb205",
+    "verified_source_digest": "28f0ff7a2c6ee2c5",
     "watches": [
       "scripts/aegis/aegis_cli/**",
       "hooks/**",
@@ -25,10 +25,10 @@
     "owner": "framework maintainers",
     "path": "README.md",
     "status": "proposed",
-    "verified_at": "2026-09-20",
+    "verified_at": "2026-09-21",
     "verified_by": "Claude Fable 5.1",
     "verified_note": "verified against the code by three independent review rounds on 2026-09-19; every false sentence they named is corrected",
-    "verified_source_digest": "af24cb33cf6c2d65",
+    "verified_source_digest": "b480d5e7b90f06fd",
     "watches": [
       "scripts/aegis/aegis_cli/__main__.py"
     ]
@@ -56,7 +56,7 @@
     "verified_at": "2026-09-21",
     "verified_by": "Claude Fable 5.1",
     "verified_note": "the loop and the commands it names were driven end to end by three review rounds on 2026-09-19",
-    "verified_source_digest": "1335ab628db4a053",
+    "verified_source_digest": "9ab0cd2cf5427ea6",
     "watches": [
       "skills/**",
       "agents/**",
