@@ -25,7 +25,8 @@
   ],
   "reads": [],
   "requirements": [
-    "R-39"
+    "R-39",
+    "R-40"
   ],
   "risk_tier": "C",
   "size": "M",

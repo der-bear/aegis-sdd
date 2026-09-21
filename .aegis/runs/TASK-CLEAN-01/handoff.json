@@ -51,14 +51,15 @@
   ],
   "deviations": [
     "Edited outside any lease, as .aegis/ state: .aegis/memory/retros/0003.md, .aegis/memory/NOTES.md, .aegis/waivers.json (provenance text only; scope, owner and expiry unchanged), and the removal of .aegis/product/.",
-    "R-40 was added to this task rather than a new one: it is one line in core.diff_digest, it blocked this task's own review record, and it is the defect the 'no pull-request cycle yet' line of §9 names as unproven."
+    "R-40 was added to this task rather than a new one: it is one line in core.diff_digest, it blocked this task's own review record, and it is the defect the 'no pull-request cycle yet' line of §9 names as unproven.",
+    "The manifest cited only R-39 after R-40 was added to the spec in round 2; `land`'s merge gate refused on 'R-40 not covered by any task'. R-40 was added to the manifest's requirements, which moves the contract and re-takes every lens: round 4, past the three the policy expects, reviewing only that line."
   ],
   "open_questions": [],
   "new_dependencies": [],
   "invalidated_assumptions": [
     "the retro's 'R-33 produced eleven findings' — the records say fifteen"
   ],
-  "next_safe_action": "gate, land, push, CI.",
+  "next_safe_action": "round 4 (the manifest now cites R-40), gate, land, push, CI.",
   "registry_drafts": [],
   "lease_expansion_request": []
 }
