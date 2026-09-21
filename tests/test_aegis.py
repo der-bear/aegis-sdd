@@ -3408,8 +3408,24 @@ class WhatANewcomerReadsFirstIsTrue(unittest.TestCase):
 class TheMetricsCaveatIsTrueWhenShown(ProjectFixture):
     def test_no_caveat_without_a_small_sample(self):
         out = json.loads(run(["metrics"], self.dir).stdout)
-        small = [name for name, b in out.get("lenses", {}).items() if b.get("sample", 0) < 10]
-        self.assertEqual("caveat" in out, bool(small), out)
+        self.assertEqual(out.get("lenses") or {}, {}, out)
+        self.assertNotIn("caveat", out, out)
+
+    def test_a_small_sample_is_named(self):
+        # The branch that matters: a lens with fewer than ten judged findings is named, and one
+        # with ten or more is not.
+        self.make_task()
+        self.write("src/orders/a.py", "A = 1\n")
+        few = [{"severity": 1, "message": f"small thing {i}", "path": "src/orders/a.py", "line": 1}
+               for i in range(3)]
+        many = [{"severity": 1, "message": f"other thing {i}", "path": "src/orders/a.py", "line": 1}
+                for i in range(12)]
+        self.assertEqual(self.record("T-1", {"lens": "security", "verdict": "pass", "findings": few}).returncode, 0)
+        self.assertEqual(self.record("T-1", {"lens": "correctness", "verdict": "pass", "findings": many}).returncode, 0)
+        out = json.loads(run(["metrics"], self.dir).stdout)
+        self.assertIn("caveat", out, out)
+        self.assertIn("security", out["caveat"])
+        self.assertNotIn("correctness", out["caveat"])
 
 
 class NoLensOrEngineIsHardWired(unittest.TestCase):

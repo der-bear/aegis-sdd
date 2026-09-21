@@ -171,7 +171,7 @@ repository produced a different kind of evidence.
 | Rounds | 3 (the cap) | 3 (the cap) | 3 (the cap) |
 | Findings | 43 | 25 (15 + 4 + 6) | 27 (15 + 6 + 6), after three audits of the session |
 | Blocking left | 7, in three mechanisms | 0 | 0 |
-| Status in its manifest | abandoned | abandoned | the task this document ships with, written before its gate ran |
+| Status in its manifest | abandoned | abandoned | merged; this section was written before its gate ran |
 
 **The gate found what six audits had not.** Six classes surfaced the first time a real task was
 scoped, reviewed and gated: an uncommitted tree made every file the first task's change;
@@ -272,9 +272,11 @@ more when raised.
 
 **The cycle that ended in a decision, not a merge.** TASK-STABLE-01 drew 61 findings from three
 lenses, 15 of them blocking, and was abandoned at the round cap with design at three of three
-rounds and a severity-3 finding open. The finding that mattered was design's: the attribution
-machinery was growing faster than it consolidated. ADR-5 records the decision and, in its own
-*Corrections*, that the framework did not escalate at the cap — the builder did.
+rounds and a severity-3 finding open — a count in §8's own table copied from the wrong column,
+since corrected. The finding that mattered was a severity 2, also design's: the attribution
+machinery was growing faster than it consolidated, and it is the one ADR-5 cites. ADR-5 records
+the decision and, in its own *Corrections*, that the framework did not escalate at the cap — the
+builder did.
 
 **The deletion.** The owner's brief — work stably, need a person rarely, do not over-restrict the
 agent, never make it rewrite a report for its size — became SPEC-3 and TASK-SIMPLE-01. The write
