@@ -953,7 +953,11 @@ def _check_unrequested_docs(ctx: Ctx, scope: list[str], diagrams: list, closing:
     # human-owned; shared paths were declared as such at detection. Flagging the
     # framework's own skills as "unrequested documents" buried the one warning that
     # mattered under twenty that did not.
+    # A lens file is procedure too — a focus and its triggers — whether the framework's or
+    # the project's; the first landing of ADR-3 was refused as five unrequested documents.
+    from .config import load_lenses
     framework = {ctx.rel(p) for p in skill_files(ctx) + role_files(ctx)}
+    framework |= {ctx.rel(lens["path"]) for lens in load_lenses(ctx).values()}
     frozen = read_json(ctx.gen("standards.json"), default={}).get("frozen_zones") or []
     shared = capabilities(ctx).get("shared_paths") or []
     for rel in scope:

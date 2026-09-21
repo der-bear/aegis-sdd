@@ -3352,6 +3352,16 @@ class ALensFileIsCheckedWhereItIsRead(ProjectFixture):
                              {k: sorted(v) for k, v in table.items()}, level)
 
 
+class ALensFileIsNotADocument(unittest.TestCase):
+    def test_a_shipped_lens_is_not_unrequested_documentation(self):
+        # The framework's own five lens files failed the merge gate as documents outside the
+        # profile on ADR-3's first landing. Read-only against this checkout: a lens is
+        # procedure, like a skill, wherever `asset_dirs` finds it.
+        report = checks.check_docs(core.Ctx(ROOT), ["lenses/security.md"], closing_feature=True)
+        self.assertFalse(any("outside the profile" in f.message for f in report.findings),
+                         [f.render() for f in report.findings])
+
+
 class NoLensOrEngineIsHardWired(unittest.TestCase):
     def read(self, rel):
         with open(os.path.join(ROOT, rel), encoding="utf-8") as fh:
