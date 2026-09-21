@@ -1,7 +1,7 @@
 {
   "task": "TASK-STABLE-02",
   "agent": "claude-fable-5.1 (orchestrator and builder)",
-  "summary": "R-9: a lens's record is stale only when a file whose kinds select that lens moved since the record. `lens record` stores a snapshot of the review-scope files and their content keys; `lens_staleness` compares it with the tree at check time and asks `_file_kinds` (extracted from `detect_change_kinds`, one function for the plan and for staleness) which kinds moved; the always-on lens is stale on any move, a record without a snapshot on any digest change. `lens plan` prints `stale` (why) and `run` (missing plus stale); `check_reviews`, `next` and the workflow use it. A file under skills/, .agents/, agents/ or hooks/ is code whatever its suffix, and its prose is not scanned for hints (the framework's own materialised copies contain the word 'session'). R-10: the doc-sync protocol has a verification pass and the doc-manager attests under its own name with a note; no step waits for a person to attest. The SPEC-2 architecture preamble names the deleted contracts. Round 1 (three lenses): three blocking findings fixed — a record now also stores the kinds each file carried when the lens read it, so a control deleted afterwards stales the lens that read it; a moved contract file under .aegis/ re-takes every review; source under agents/ or hooks/ is scanned again and only protocol .md files are code-unscanned. The preamble names R-4 and the snapshot; the workflow's first round dispatches `run`; README says what invalidates a review now.",
+  "summary": "R-9: a lens's record is stale only when a file whose kinds select that lens moved since the record. `lens record` stores a snapshot of the review-scope files and their content keys; `lens_staleness` compares it with the tree at check time and asks `_file_kinds` (extracted from `detect_change_kinds`, one function for the plan and for staleness) which kinds moved; the always-on lens is stale on any move, a record without a snapshot on any digest change. `lens plan` prints `stale` (why) and `run` (missing plus stale); `check_reviews`, `next` and the workflow use it. A file under skills/, .agents/, agents/ or hooks/ is code whatever its suffix, and its prose is not scanned for hints (the framework's own materialised copies contain the word 'session'). R-10: the doc-sync protocol has a verification pass and the doc-manager attests under its own name with a note; no step waits for a person to attest. The SPEC-2 architecture preamble names the deleted contracts. Round 1 (three lenses): three blocking findings fixed — a record now also stores the kinds each file carried when the lens read it, so a control deleted afterwards stales the lens that read it; a moved contract file under .aegis/ re-takes every review; source under agents/ or hooks/ is scanned again and only protocol .md files are code-unscanned. The preamble names R-4 and the snapshot; the workflow's first round dispatches `run`; README says what invalidates a review now. Round 2: the plan's staleness loop now covers recorded lenses the diff no longer selects (a deleted, committed control), so `run` says what the gate demands; the task's own manifest is keyed by its contract half in the snapshot, as the digest keys it, so the gate's status write stales nothing; the preamble names the stored kinds.",
   "changed_files": [
     ".aegis/protocols/doc-sync.md",
     ".aegis/specs/stable-autonomy/architecture.md",
@@ -22,7 +22,7 @@
     {
       "command": "python3 tests/test_aegis.py",
       "result": "pass",
-      "note": "258 tests"
+      "note": "259 tests"
     },
     {
       "command": "R-27 reverse run: the six new locks against a git archive of bdd84c0",
@@ -33,6 +33,11 @@
       "command": "R-27 reverse run: the three round-2 locks against a git archive of a4330ce",
       "result": "pass",
       "note": "3 of 3 red there"
+    },
+    {
+      "command": "R-27 reverse run: the two round-3 locks against a git archive of 2426e54",
+      "result": "pass",
+      "note": "2 of 2 red there"
     }
   ],
   "deviations": [
@@ -43,7 +48,7 @@
   "invalidated_assumptions": [
     "\"a protocol file counts as code\" cannot mean \"its prose is scanned for auth hints\": the materialised .agents/skills copies raised every fixture to tier A"
   ],
-  "next_safe_action": "round 2, all three lenses reconciling round 1 by id; then gate, land, push.",
+  "next_safe_action": "round 3 (the cap), reconciling round 2 by id; then gate, land, push.",
   "registry_drafts": [],
   "lease_expansion_request": []
 }

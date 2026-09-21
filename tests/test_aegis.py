@@ -228,8 +228,19 @@ class AReviewIsStaleOnlyForTheKindsThatMoved(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "reviewed"], check=True)
         self.write("src/orders/auth.py", "def allow(user):\n    return True\n")
+        subprocess.run(["git", "-C", self.dir, "commit", "-qam", "control removed"], check=True)
+        # Committed, the removal is gone from the diff and the plan no longer selects security;
+        # the record remembers what the file was, and the plan must say what the gate demands.
         plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
         self.assertIn("security", plan["run"], plan["stale"])
+        self.assertIn("security", plan["lenses"], plan["why"])
+
+    def test_the_gates_own_status_write_stales_nothing(self):
+        ctx = self._reviewed_auth_and_pricing()
+        flow._set_status(ctx, "T-1", "gated")
+        self.write("src/orders/pricing.py", "PRICE = 4\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertEqual(plan["run"], ["correctness"], plan["stale"])
 
     def test_a_contract_change_re_runs_every_lens(self):
         ctx = self._reviewed_auth_and_pricing()

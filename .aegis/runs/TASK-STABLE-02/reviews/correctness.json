@@ -1,19 +1,23 @@
 {
-  "diff_digest": "3f4c7cb0d507a4f4",
+  "diff_digest": "15a43a87f9484dad",
   "files": {
-    ".aegis/runs/TASK-STABLE-02/manifest.json": "f0123905a5088fa0cab534f355775b42228b46b7e165653603941a0586c49bcd",
-    ".aegis/specs/stable-autonomy/architecture.md": "9252ba0c099309cc32845552fe922ca76ed6f0ec65bb4229804ded5aef4f95ad",
+    ".aegis/runs/TASK-STABLE-02/manifest.json": "b2b98d0dae2c3b6f8759320735da8b42ebff50829bfa270e65b585add6594096",
+    ".aegis/specs/stable-autonomy/architecture.md": "425de39b743cad778ecbc3c9f39ba1f1e5019e1b32ef76ae7ec794dbad9ab586",
     ".agents/skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "README.md": "17b47d08bddb6fa841d2241840b2330c281b70e098ea3864553fd81938a84e79",
     "agents/aegis-doc-manager.md": "f9cc8d603acf9cde401d68b5c3cd8554c3382aa6bcd983a406b238b7ae3e88c0",
-    "scripts/aegis/aegis_cli/flow.py": "74f5481d9a063fd24be04fdd72e560988b8c454eccc46dcdb7ba695484c8342d",
+    "scripts/aegis/aegis_cli/flow.py": "399efa3dc27b3b2b71999863626fde06899803bb78a7098c68992d10273bce2e",
     "skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
     "skills/review/SKILL.md": "67477c74ab95950b1245fd41844d285c091997251efae5d72d81878e675049a0",
-    "tests/test_aegis.py": "71e3baba98d5c2cf7f0554dee133c236541cd54a5541497a26f3704f4a02ac93",
-    "workflows/aegis-task.js": "345dc448654a849045e76714263f140d251315f966e3ff57fd8780aae0d4aac5"
+    "tests/test_aegis.py": "dde500ac8244b0759a8049c2d805a2e0324dc230b094c4bfb0ac860c1bf6881a",
+    "workflows/aegis-task.js": "44b2d60b2c40ca22dd49046b9efc260c0e4af4c8f7f0d8d43546e5d5d91cd395"
   },
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:36",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: probe on the HEAD archive: authorize committed, security recorded, line removed uncommitted -> lens plan run=['correctness','security'], stale.security='(auth) selects lens-security'; never-committed variant -> check_reviews and next both demand security via the record's kinds",
       "first_seen_round": 1,
       "id": "F-767ee133",
       "line": 666,
@@ -28,7 +32,10 @@
       "severity": 4
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:36",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: flow.py:608 early-returns code only for .md under PROTOCOL_DIRS; _file_kinds('agents/auth.py') on HEAD -> {'auth','code'} (lock test_source_under_agents_is_still_scanned)",
       "first_seen_round": 1,
       "id": "F-38e02d23",
       "line": 600,
@@ -43,7 +50,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:36",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: flow.py:677-681: a moved .aegis/ path returns stale for every lens before the always/triggers logic; the lock test_a_contract_change_re_runs_every_lens (spec edit -> run == lenses, 'contract' in stale.security) passes in the 258-green suite on the archive",
       "first_seen_round": 1,
       "id": "F-a8d794af",
       "line": 658,
@@ -59,21 +69,40 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-adc66257",
+      "line": 785,
+      "message": "`lens_plan` evaluates staleness only over `selected`, while `check_reviews` and `next` evaluate every recorded lens with the record's stored `kinds`: with `authorize(user)` reviewed by security and the line then removed and committed (or in a never-committed file), `lens plan` prints lenses=['correctness'] and run=['correctness'] while the gate already fails 'security did not review this version', and once correctness re-runs run=[] with the gate still failing and `next` saying 're-run lens-security'. The workflow dispatches `replan.run`, so the refine loop cannot converge; the new lock at tests/test_aegis.py:224 passes only because its removal is uncommitted (diff_text still sees the `-authorize` line).",
+      "minimal_fix": "In `lens_plan` run the staleness loop over `selected` ∪ recorded lenses (a stale unselected record joins `lenses` and `run`, why `stale-record`) so `run` covers what `check_reviews` fails on; commit the removal in the lock at test_aegis.py:224.",
+      "path": "scripts/aegis/aegis_cli/flow.py",
+      "raised_digest": "15a43a87f9484dad",
+      "requirement": "R-9",
+      "rounds": [
+        2
+      ],
+      "severity": 3
+    },
+    {
+      "disposition": "open",
       "first_seen_round": 1,
       "id": "F-8b98b350",
       "line": 640,
       "message": "The task manifest is snapshotted by its full sha while `diff_digest` keys only its contract half, and `_file_kinds` hint-scans its JSON; a `_set_status` bump plus any real move counts the manifest as a moved `code` file whose objective text can carry `session`/`authoriz`. A false re-run of security, only in that conjunction.",
       "minimal_fix": "Key `_is_task_manifest` paths by the canonical contract half as `diff_digest` does, and skip the hint scan for `.aegis/` paths.",
       "path": "scripts/aegis/aegis_cli/flow.py",
-      "raised_digest": "3f4c7cb0d507a4f4",
+      "raised_digest": "15a43a87f9484dad",
       "requirement": "R-9",
       "rounds": [
-        1
+        1,
+        2
       ],
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:36",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: the 'unreachable' comment replaced (flow.py:674-676); probe 7: chmod +x -> every lens 'the digest moved after that review (a mode change; no content did)' — the alternative the finding offered",
       "first_seen_round": 1,
       "id": "F-e1b92464",
       "line": 660,
@@ -88,12 +117,46 @@
       "severity": 1
     }
   ],
+  "kinds": {
+    ".aegis/runs/TASK-STABLE-02/manifest.json": [
+      "code"
+    ],
+    ".aegis/specs/stable-autonomy/architecture.md": [
+      "docs"
+    ],
+    ".agents/skills/doc-sync/SKILL.md": [
+      "code"
+    ],
+    "README.md": [
+      "docs"
+    ],
+    "agents/aegis-doc-manager.md": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/flow.py": [
+      "auth",
+      "code"
+    ],
+    "skills/doc-sync/SKILL.md": [
+      "code"
+    ],
+    "skills/review/SKILL.md": [
+      "code"
+    ],
+    "tests/test_aegis.py": [
+      "test"
+    ],
+    "workflows/aegis-task.js": [
+      "auth",
+      "code"
+    ]
+  },
   "lens": "correctness",
-  "recorded": "2026-09-21T13:24:53",
+  "recorded": "2026-09-21T13:45:36",
   "reopened": [],
-  "report_tokens": 1109,
+  "report_tokens": 940,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-STABLE-02",
   "verdict": "fail"
 }

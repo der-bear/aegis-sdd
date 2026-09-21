@@ -651,8 +651,19 @@ def review_snapshot(ctx: Ctx, base: str | None, task_id: str) -> dict[str, str]:
     something moved, which re-ran every lens for a docstring."""
     out = {}
     for rel in changed_files(ctx, base):
-        if in_review_scope(rel, task_id):
-            out[rel] = content_key(os.path.join(ctx.root, rel)) or ABSENT
+        if not in_review_scope(rel, task_id):
+            continue
+        if rel == f".aegis/runs/{task_id}/manifest.json":
+            # The contract half only, as `diff_digest` keys it: a status the gate writes is
+            # not a move, and keying the whole file re-ran every lens after every gate.
+            try:
+                data = json.loads(read_text(os.path.join(ctx.root, rel)))
+                out[rel] = "contract:" + hashlib.sha256(canonical({k: data.get(k) for k in
+                    ("requirements", "acceptance", "owns", "feature", "objective")}).encode("utf-8")).hexdigest()
+                continue
+            except Exception:
+                pass
+        out[rel] = content_key(os.path.join(ctx.root, rel)) or ABSENT
     return out
 
 
@@ -781,8 +792,9 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
     # Which of them must actually run now: the ones with no record, and the ones whose
     # record a moved file of a triggering kind invalidated. A fresh lens is not dispatched.
     reviews = os.path.join(run_dir(ctx, task_id), "reviews")
+    recorded = sorted(n[:-5] for n in os.listdir(reviews) if n.endswith(".json")) if os.path.isdir(reviews) else []
     stale: dict[str, str] = {}
-    for lens in selected:
+    for lens in selected + [lens for lens in recorded if lens not in selected]:
         path = os.path.join(reviews, f"{lens}.json")
         if not os.path.exists(path):
             stale[lens] = "no record yet"
@@ -790,6 +802,13 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
         why_stale = lens_staleness(ctx, task_id, lens, read_json(path, default={}), plan)
         if why_stale:
             stale[lens] = why_stale
+            if lens not in selected:
+                # A recorded lens the diff no longer selects — the control it read was deleted
+                # and committed — is still owed a re-run: the gate fails on it, so the plan says so.
+                selected.append(lens)
+                reasons.setdefault(lens, []).append("stale-record")
+    plan["lenses"] = selected
+    plan["why"] = {lens: sorted(set(why)) for lens, why in reasons.items()}
     plan["stale"] = stale
     plan["run"] = [lens for lens in selected if lens in stale]
     return plan

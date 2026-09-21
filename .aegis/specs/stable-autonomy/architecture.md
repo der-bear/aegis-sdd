@@ -7,8 +7,10 @@
 > spec.md. Kept as the plan it was; what remains live is R-9..R-15 and the `HOLDING` contract.
 > R-9 as built deviates from the formula under "Contracts" and from "nothing here stores new
 > mutable state": a lens record stores the review-scope files and their content keys (not a
-> per-lens scope), because a digest cannot enumerate what moved; staleness is computed from
-> that snapshot at check time, and a moved contract file (`.aegis/`) re-takes every review.
+> per-lens scope) and the kinds each file carried when the lens read it, because a digest cannot
+> enumerate what moved and a deleted control is invisible in the text that survives; staleness is
+> computed from that snapshot at check time, unioned with the current kinds, and a moved contract
+> file (`.aegis/`) re-takes every review.
 
 ## Components and responsibilities
 

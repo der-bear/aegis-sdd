@@ -1,23 +1,58 @@
 {
-  "diff_digest": "3f4c7cb0d507a4f4",
+  "diff_digest": "15a43a87f9484dad",
   "files": {
-    ".aegis/runs/TASK-STABLE-02/manifest.json": "f0123905a5088fa0cab534f355775b42228b46b7e165653603941a0586c49bcd",
-    ".aegis/specs/stable-autonomy/architecture.md": "9252ba0c099309cc32845552fe922ca76ed6f0ec65bb4229804ded5aef4f95ad",
+    ".aegis/runs/TASK-STABLE-02/manifest.json": "b2b98d0dae2c3b6f8759320735da8b42ebff50829bfa270e65b585add6594096",
+    ".aegis/specs/stable-autonomy/architecture.md": "425de39b743cad778ecbc3c9f39ba1f1e5019e1b32ef76ae7ec794dbad9ab586",
     ".agents/skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "README.md": "17b47d08bddb6fa841d2241840b2330c281b70e098ea3864553fd81938a84e79",
     "agents/aegis-doc-manager.md": "f9cc8d603acf9cde401d68b5c3cd8554c3382aa6bcd983a406b238b7ae3e88c0",
-    "scripts/aegis/aegis_cli/flow.py": "74f5481d9a063fd24be04fdd72e560988b8c454eccc46dcdb7ba695484c8342d",
+    "scripts/aegis/aegis_cli/flow.py": "399efa3dc27b3b2b71999863626fde06899803bb78a7098c68992d10273bce2e",
     "skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
     "skills/review/SKILL.md": "67477c74ab95950b1245fd41844d285c091997251efae5d72d81878e675049a0",
-    "tests/test_aegis.py": "71e3baba98d5c2cf7f0554dee133c236541cd54a5541497a26f3704f4a02ac93",
-    "workflows/aegis-task.js": "345dc448654a849045e76714263f140d251315f966e3ff57fd8780aae0d4aac5"
+    "tests/test_aegis.py": "dde500ac8244b0759a8049c2d805a2e0324dc230b094c4bfb0ac860c1bf6881a",
+    "workflows/aegis-task.js": "44b2d60b2c40ca22dd49046b9efc260c0e4af4c8f7f0d8d43546e5d5d91cd395"
   },
   "findings": [],
+  "kinds": {
+    ".aegis/runs/TASK-STABLE-02/manifest.json": [
+      "code"
+    ],
+    ".aegis/specs/stable-autonomy/architecture.md": [
+      "docs"
+    ],
+    ".agents/skills/doc-sync/SKILL.md": [
+      "code"
+    ],
+    "README.md": [
+      "docs"
+    ],
+    "agents/aegis-doc-manager.md": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/flow.py": [
+      "auth",
+      "code"
+    ],
+    "skills/doc-sync/SKILL.md": [
+      "code"
+    ],
+    "skills/review/SKILL.md": [
+      "code"
+    ],
+    "tests/test_aegis.py": [
+      "test"
+    ],
+    "workflows/aegis-task.js": [
+      "auth",
+      "code"
+    ]
+  },
   "lens": "security",
-  "recorded": "2026-09-21T13:24:53",
+  "recorded": "2026-09-21T13:45:37",
   "reopened": [],
   "report_tokens": 13,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-STABLE-02",
   "verdict": "pass"
 }

@@ -1,19 +1,23 @@
 {
-  "diff_digest": "3f4c7cb0d507a4f4",
+  "diff_digest": "15a43a87f9484dad",
   "files": {
-    ".aegis/runs/TASK-STABLE-02/manifest.json": "f0123905a5088fa0cab534f355775b42228b46b7e165653603941a0586c49bcd",
-    ".aegis/specs/stable-autonomy/architecture.md": "9252ba0c099309cc32845552fe922ca76ed6f0ec65bb4229804ded5aef4f95ad",
+    ".aegis/runs/TASK-STABLE-02/manifest.json": "b2b98d0dae2c3b6f8759320735da8b42ebff50829bfa270e65b585add6594096",
+    ".aegis/specs/stable-autonomy/architecture.md": "425de39b743cad778ecbc3c9f39ba1f1e5019e1b32ef76ae7ec794dbad9ab586",
     ".agents/skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
+    "README.md": "17b47d08bddb6fa841d2241840b2330c281b70e098ea3864553fd81938a84e79",
     "agents/aegis-doc-manager.md": "f9cc8d603acf9cde401d68b5c3cd8554c3382aa6bcd983a406b238b7ae3e88c0",
-    "scripts/aegis/aegis_cli/flow.py": "74f5481d9a063fd24be04fdd72e560988b8c454eccc46dcdb7ba695484c8342d",
+    "scripts/aegis/aegis_cli/flow.py": "399efa3dc27b3b2b71999863626fde06899803bb78a7098c68992d10273bce2e",
     "skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
     "skills/review/SKILL.md": "67477c74ab95950b1245fd41844d285c091997251efae5d72d81878e675049a0",
-    "tests/test_aegis.py": "71e3baba98d5c2cf7f0554dee133c236541cd54a5541497a26f3704f4a02ac93",
-    "workflows/aegis-task.js": "345dc448654a849045e76714263f140d251315f966e3ff57fd8780aae0d4aac5"
+    "tests/test_aegis.py": "dde500ac8244b0759a8049c2d805a2e0324dc230b094c4bfb0ac860c1bf6881a",
+    "workflows/aegis-task.js": "44b2d60b2c40ca22dd49046b9efc260c0e4af4c8f7f0d8d43546e5d5d91cd395"
   },
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: architecture.md:8-11 now says the record stores the review-scope files and their content keys and that staleness is computed from that snapshot at check time",
       "first_seen_round": 1,
       "id": "F-bef8248e",
       "line": 44,
@@ -28,7 +32,10 @@
       "severity": 2
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: workflows/aegis-task.js:88 dispatches `plan.run || plan.lenses` in the first round",
       "first_seen_round": 1,
       "id": "F-572f89bd",
       "line": 88,
@@ -44,6 +51,24 @@
     },
     {
       "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-80824bc2",
+      "line": 10,
+      "message": "R-9 says per-lens scope is 'derived from the diff at check time, never stored' (spec.md:85); round 2 stores each file's kinds at record time (`kinds`) and unions them with the current kinds at check, and the preamble names the snapshot deviation but not this one. A reader of the spec plus the preamble would not know that a record's own kinds decide staleness.",
+      "minimal_fix": "Extend the preamble sentence: '…and the kinds each file carried when the lens read it, unioned with the current kinds at check time'.",
+      "path": ".aegis/specs/stable-autonomy/architecture.md",
+      "raised_digest": "15a43a87f9484dad",
+      "requirement": "R-9",
+      "rounds": [
+        2
+      ],
+      "severity": 1
+    },
+    {
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: architecture.md:6 lists R-4 among the struck requirements, matching spec.md:41",
       "first_seen_round": 1,
       "id": "F-a6c1683f",
       "line": 6,
@@ -58,7 +83,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: fixed in code (flow.py:677-681, any moved .aegis/ path stales every lens); docs/ARCHITECTURE.md:321 and :364 are true as written and untouched",
       "first_seen_round": 1,
       "id": "F-bb544bed",
       "line": 321,
@@ -73,7 +101,10 @@
       "severity": 1
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T13:45:37",
+      "disposition_by": "lens-design",
+      "disposition_reason": "lens-design round 2: README.md:116 and :223 reworded to 'a file whose kinds select that lens' plus 'every lens when the contract under .aegis/ moves'; README.md added to the lease",
       "first_seen_round": 1,
       "id": "F-e843815b",
       "line": 116,
@@ -88,12 +119,46 @@
       "severity": 1
     }
   ],
+  "kinds": {
+    ".aegis/runs/TASK-STABLE-02/manifest.json": [
+      "code"
+    ],
+    ".aegis/specs/stable-autonomy/architecture.md": [
+      "docs"
+    ],
+    ".agents/skills/doc-sync/SKILL.md": [
+      "code"
+    ],
+    "README.md": [
+      "docs"
+    ],
+    "agents/aegis-doc-manager.md": [
+      "code"
+    ],
+    "scripts/aegis/aegis_cli/flow.py": [
+      "auth",
+      "code"
+    ],
+    "skills/doc-sync/SKILL.md": [
+      "code"
+    ],
+    "skills/review/SKILL.md": [
+      "code"
+    ],
+    "tests/test_aegis.py": [
+      "test"
+    ],
+    "workflows/aegis-task.js": [
+      "auth",
+      "code"
+    ]
+  },
   "lens": "design",
-  "recorded": "2026-09-21T13:24:53",
+  "recorded": "2026-09-21T13:45:37",
   "reopened": [],
-  "report_tokens": 812,
+  "report_tokens": 578,
   "reviewer": "fable-5.1",
-  "round": 1,
+  "round": 2,
   "task": "TASK-STABLE-02",
   "verdict": "pass"
 }
