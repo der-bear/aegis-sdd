@@ -10,7 +10,7 @@
     "verified_at": "2026-09-21",
     "verified_by": "Claude Fable 5.1",
     "verified_note": "TASK-PUBLISH-01 changed one condition in the testing mandate; §3 and §6 unaffected, read against 6f9ec7c",
-    "verified_source_digest": "28f0ff7a2c6ee2c5",
+    "verified_source_digest": "9605c4117860a528",
     "watches": [
       "scripts/aegis/aegis_cli/**",
       "hooks/**",
