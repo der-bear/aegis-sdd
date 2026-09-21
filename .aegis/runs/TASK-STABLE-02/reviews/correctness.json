@@ -1,15 +1,15 @@
 {
-  "diff_digest": "15a43a87f9484dad",
+  "diff_digest": "e447e490fc0347c2",
   "files": {
-    ".aegis/runs/TASK-STABLE-02/manifest.json": "b2b98d0dae2c3b6f8759320735da8b42ebff50829bfa270e65b585add6594096",
-    ".aegis/specs/stable-autonomy/architecture.md": "425de39b743cad778ecbc3c9f39ba1f1e5019e1b32ef76ae7ec794dbad9ab586",
+    ".aegis/runs/TASK-STABLE-02/manifest.json": "contract:afe46b481abca12ce3bbe21871b1dfd00afa7778259f5f1bd742c94b25225162",
+    ".aegis/specs/stable-autonomy/architecture.md": "837a782bb849a58c7b2ef896a8fd505134057c214a8eeabbbee7562da2ca4c62",
     ".agents/skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
     "README.md": "17b47d08bddb6fa841d2241840b2330c281b70e098ea3864553fd81938a84e79",
     "agents/aegis-doc-manager.md": "f9cc8d603acf9cde401d68b5c3cd8554c3382aa6bcd983a406b238b7ae3e88c0",
-    "scripts/aegis/aegis_cli/flow.py": "399efa3dc27b3b2b71999863626fde06899803bb78a7098c68992d10273bce2e",
+    "scripts/aegis/aegis_cli/flow.py": "d595b49727836d758bf6056cebcc91bc4ee8f9cf2d36c098424b2e410c9fdb8e",
     "skills/doc-sync/SKILL.md": "420b67cd3844449b4aac8d6be1f3d442f8b2139eda346262c6314783160bc911",
     "skills/review/SKILL.md": "67477c74ab95950b1245fd41844d285c091997251efae5d72d81878e675049a0",
-    "tests/test_aegis.py": "dde500ac8244b0759a8049c2d805a2e0324dc230b094c4bfb0ac860c1bf6881a",
+    "tests/test_aegis.py": "57923afb3391383bfce20b8d246eb6014b9d090a99e6c88a412a2f64310b4a27",
     "workflows/aegis-task.js": "44b2d60b2c40ca22dd49046b9efc260c0e4af4c8f7f0d8d43546e5d5d91cd395"
   },
   "findings": [
@@ -68,7 +68,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T14:03:20",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: probe on the HEAD archive: removal committed -> plan lenses/run = ['correctness','security'] with why.security=['stale-record'] and check_reviews fails on the same two; after a security re-run both say correctness only; the lock at tests/test_aegis.py:231 commits the removal and fails with the flow.py delta reverted",
       "first_seen_round": 2,
       "id": "F-adc66257",
       "line": 785,
@@ -83,7 +86,10 @@
       "severity": 3
     },
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-21T14:03:20",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 3: review_snapshot keys the manifest 'contract:'+sha256(canonical(contract half)) as diff_digest does; a real passing task gate wrote only gate-receipt.json (out of scope) plus status/updated, then a pricing move -> run=['correctness']",
       "first_seen_round": 1,
       "id": "F-8b98b350",
       "line": 640,
@@ -152,11 +158,11 @@
     ]
   },
   "lens": "correctness",
-  "recorded": "2026-09-21T13:45:36",
+  "recorded": "2026-09-21T14:03:20",
   "reopened": [],
-  "report_tokens": 940,
+  "report_tokens": 249,
   "reviewer": "fable-5.1",
-  "round": 2,
+  "round": 3,
   "task": "TASK-STABLE-02",
-  "verdict": "fail"
+  "verdict": "pass"
 }
