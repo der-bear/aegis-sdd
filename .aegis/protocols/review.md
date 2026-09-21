@@ -27,8 +27,11 @@ All lenses in parallel, each in a clean context, each read-only. Give each one t
 `git diff` misses new untracked files the digest includes. Do not summarise the diff for
 them — a summary hides exactly the detail a reviewer is for.
 
-Only `lens-correctness` has `Bash`. The other two cannot execute anything, which is what
-makes their read-only status a property rather than an instruction.
+Each lens goes to the profile the plan names — `lens-runner` for a lens that executes,
+`lens-auditor` otherwise — briefed by `aegis lens prompt <TASK-ID> <lens>`, which carries its
+focus and its own prior findings. The auditor cannot execute anything, which is what makes its
+read-only status a property rather than an instruction. A second engine, if the project has
+one, runs the same brief through `scripts/aegis/external-lens.sh`.
 
 ## 3. Record
 

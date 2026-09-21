@@ -152,6 +152,16 @@
       "autonomy": "auto-default",
       "severity": "optional",
       "rationale": "The merge gate diffs a branch against where it left the mainline. Aegis tries origin/HEAD, origin/main, origin/master, main and master; a project on develop or trunk names it here once, and nothing else changes."
+    },
+    {
+      "id": "q.core.second-engine",
+      "ask": "Is a second AI engine available for independent review? Give the command that takes a prompt as its last argument and prints the reply (for example `gemini -p`, `codex exec --sandbox read-only`, `claude -p --model <other>`), or leave it empty.",
+      "kind": "free",
+      "default": "",
+      "writes": "capabilities.external_reviewer",
+      "autonomy": "auto-default",
+      "severity": "optional",
+      "rationale": "A reviewer on a different engine strengthens 'the builder is never the final reviewer'. It is never required: a fresh context that did not build the change already satisfies the gate."
     }
   ]
 }

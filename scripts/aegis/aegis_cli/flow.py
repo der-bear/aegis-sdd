@@ -415,6 +415,46 @@ def build_packet(ctx: Ctx, task_id: str) -> tuple[str, dict]:
     return text, meta
 
 
+def lens_prompt(ctx: Ctx, task_id: str, lens: str, with_contract: bool = False,
+                with_diff: bool = True, closing: bool = False) -> str:
+    """Everything one lens needs, for any engine: its focus, its own prior findings with the
+    two-phase reconciliation, the packet and the diff — and the review contract itself when
+    the engine does not preload it. Deterministic, so every runner briefs a lens the same way.
+    """
+    from .config import load_lenses
+    lenses = load_lenses(ctx)
+    if lens not in lenses:
+        raise AegisError(f"no lens {lens!r}; known: {', '.join(sorted(lenses)) or 'none'}. "
+                         "A lens is a file in lenses/ or .aegis/lenses/.")
+    parts = [f"# Review task {task_id} as the {lens} lens" + (" — mode `closing`" if closing else " — mode `task`")]
+    if with_contract:
+        contract = ctx.path("protocols", "review-lens.md")
+        if not os.path.exists(contract):
+            contract = next((p for p in checks.skill_files(ctx) if p.endswith(os.path.join("review-lens", "SKILL.md"))), "")
+        if contract:
+            parts.append(checks.parse_frontmatter(read_text(contract))[1].strip())
+    parts.append("## Your focus\n\n" + lenses[lens]["body"])
+    record_path = os.path.join(run_dir(ctx, task_id), "reviews", f"{lens}.json")
+    prior = read_json(record_path, default={}).get("findings", []) if os.path.exists(record_path) else []
+    if prior:
+        listed = "\n".join(f"- {f['id']} [{f.get('disposition', 'open')}] {f['message'][:160]}" for f in prior)
+        parts.append(
+            "## Two phases, in this order\n\n"
+            "PHASE 1 — review the diff fresh, as if for the first time, and write `findings`.\n"
+            "PHASE 2 — only then reconcile this lens's previous findings in a top-level `reconciled` "
+            "list, one entry per open id: `{\"id\": \"<id>\", \"followup\": \"resolved\" or \"unresolved\", "
+            "\"evidence\": \"<one line>\"}`. Never copy a prior id into `findings`. Reading this list "
+            "first would anchor the fresh scan.\n\n" + listed)
+    if with_diff:
+        packet, _meta = build_packet(ctx, task_id)
+        parts.append("## Task packet\n\n" + packet)
+        parts.append("## Diff under review\n\n" + task_diff(ctx, task_id))
+    parts.append("## Output\n\nReturn only the JSON object the review contract specifies — about "
+                 "1,000 tokens at most. Do not include `lens`, `reviewer` or `diff_digest`: the recorder "
+                 "attaches them.")
+    return "\n\n".join(parts)
+
+
 def task_diff(ctx: Ctx, task_id: str) -> str:
     """The diff a reviewer reads, over exactly the files the digest covers.
 
@@ -772,7 +812,17 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
                 selected.append(lens)
             reasons.setdefault(lens, []).append(kind)
 
+    # Paths select lenses as well as change kinds: an accessibility lens follows the files a
+    # web project's interface lives in, whatever the task declared.
+    for lens, globs in sorted((policy.get("lens_paths") or {}).items()):
+        hits = [rel for rel in scope if matches_any(rel, globs)]
+        if hits:
+            if lens not in selected:
+                selected.append(lens)
+            reasons.setdefault(lens, []).append(f"paths: {hits[0]}" + (f" +{len(hits) - 1}" if len(hits) > 1 else ""))
+
     tier = _risk_tier(policy, kinds)
+    profiles = policy.get("lens_profiles") or {}
     plan = {
         "task": task_id,
         # The reviewer quotes this back in its report; that is what proves what it read.
@@ -786,6 +836,9 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
         "refinement_rounds": policy.get("refinement_rounds", 3),
         "independent_reviewer": tier.get("independent_reviewer", False),
         "lenses": selected,
+        # Which tool profile each lens needs; the focus comes from `aegis lens prompt`.
+        "profiles": {lens: profiles.get(lens, "lens-auditor") for lens in selected},
+        "external_reviewer": checks.capabilities(ctx).get("external_reviewer") or None,
         "why": {lens: sorted(set(why)) for lens, why in reasons.items()},
         "scope_files": len(scope),
     }

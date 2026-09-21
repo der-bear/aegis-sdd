@@ -1,0 +1,71 @@
+{
+  "task": "TASK-LENSES-01",
+  "agent": "claude-fable-5.1 (orchestrator and builder)",
+  "summary": "ADR-3 implemented (R-38). A lens is a file: five shipped under lenses/ (correctness, security, design, accessibility, data-integrity) with frontmatter naming the strictness from which each change kind, path glob or project type selects it; a project's .aegis/lenses/<name>.md wins on a name clash. The compiler derives policy.lens_matrix, lens_paths and lens_profiles from the files — the shipped files reproduce the former LENS_MATRIX constant exactly, locked by a test. Two auditor profiles (lens-auditor read-only, lens-runner may execute) replace the three per-lens profiles. `aegis lens prompt <TASK> <lens> [--with-contract]` assembles the review contract, the lens focus, that lens's own prior findings, the packet and the diff for any engine. The second engine is an answer (q.core.second-engine → capabilities.external_reviewer) that may be empty; scripts/aegis/external-lens.sh runs any CLI and records with --lens/--reviewer/--digest; codex-lens.sh is a thin wrapper over it. The workflow dispatches each lens to its plan profile with the assembled prompt. Documents lose the vendor names. The package was prepared on 2026-09-17 against the pre-deletion code (commit 1277dbe); two anchors were redone and two old tests updated for the deleted profiles and script.",
+  "changed_files": [
+    ".aegis/decisions/ADR-3-lenses-roles-engines-are-data.md",
+    ".aegis/generated/capabilities.json",
+    ".aegis/generated/index/INDEX.md",
+    ".aegis/generated/index/decisions.json",
+    ".aegis/generated/index/skills.json",
+    ".aegis/generated/materialization.json",
+    ".aegis/generated/policy.json",
+    ".aegis/protocols/build.md",
+    ".aegis/protocols/plan.md",
+    ".aegis/protocols/review.md",
+    ".aegis/protocols/spec.md",
+    ".aegis/specs/simple-reliable/spec.md",
+    "README.md",
+    "agents/aegis-orchestrator.md",
+    "agents/lens-auditor.md",
+    "agents/lens-correctness.md",
+    "agents/lens-design.md",
+    "agents/lens-runner.md",
+    "agents/lens-security.md",
+    "docs/ARCHITECTURE.md",
+    "interview/core.json",
+    "lenses/",
+    "scripts/aegis/aegis_cli/__main__.py",
+    "scripts/aegis/aegis_cli/config.py",
+    "scripts/aegis/aegis_cli/flow.py",
+    "scripts/aegis/codex-lens.sh",
+    "scripts/aegis/external-lens.sh",
+    "skills/build/SKILL.md",
+    "skills/plan/SKILL.md",
+    "skills/review/SKILL.md",
+    "skills/spec/SKILL.md",
+    "tests/test_aegis.py",
+    "workflows/aegis-task.js"
+  ],
+  "verification": [
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "python3 tests/test_aegis.py",
+      "result": "pass",
+      "note": "276 tests"
+    },
+    {
+      "command": "aegis gate --stage bootstrap",
+      "result": "pass",
+      "note": "after compile and migrate: the derived matrix equals the former constant for this project"
+    },
+    {
+      "command": "R-27 reverse run: four of the nine ADR-3 locks against a git archive of de5d662",
+      "result": "pass",
+      "note": "see the log line above the handoff; the matrix-equality lock is red there because load_lenses does not exist"
+    }
+  ],
+  "deviations": [
+    "docs/** could not be leased (docs/spec-v0.3-original.md is a frozen zone); the lease names the two documents the package edits.",
+    "Nine locks came with the package; the reverse run covers four of them."
+  ],
+  "open_questions": [],
+  "new_dependencies": [],
+  "invalidated_assumptions": [],
+  "next_safe_action": "one review round (the plan decides the lenses), gate, land, push.",
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}

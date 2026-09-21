@@ -22,9 +22,10 @@ That gives exactly two reasons to create an agent:
    their entire value; a reviewer who helped write the thing cannot find what it did not
    think of the first time.
 
-Everything else is a protocol. The practical consequence: `lens-correctness` exists
-separately not because correctness is important, but because it is **the only lens with
-`Bash`**. The others cannot execute anything, and that cannot be overridden at dispatch.
+Everything else is a protocol. The practical consequence: there are two lens profiles,
+`lens-runner` and `lens-auditor`, and they differ only in `Bash` — the auditor cannot execute
+anything, and that cannot be overridden at dispatch. What a lens looks for is not a profile at
+all: it is a file in `lenses/`, and a project adds one without touching the framework (ADR-3).
 Tooling is what a profile is for.
 
 ## 1. The line between script and model
@@ -254,7 +255,13 @@ before dispatch. Two builders on one branch are kept apart by their worktrees an
 
 ```
 lenses = matrix[always] ∪ ⋃ matrix[kind]   for kind ∈ (declared ∪ detected)
+                        ∪ { lens | its paths match a changed file }
 ```
+
+The matrix is data. Each `lenses/<name>.md` — a project's `.aegis/lenses/` wins — declares
+from which strictness it is always on, from which strictness each change kind or path selects
+it, and for which project types it exists. The compiler turns the files into
+`policy.lens_matrix`, so the fan-out stays a script's answer and a new lens is one file.
 
 Declared kinds are a self-report: understate them and you buy speed by removing the check
 that would have caught the problem. Detectors read the diff — including **removed lines**,
@@ -433,11 +440,12 @@ The result: any role can restart from nothing, and the truth is recoverable from
 `.aegis/`, with a hard budget. Personal memory under `~/.claude/` stays personal; Aegis does
 not write there.
 
-**With Codex and other runners.** `aegis init` also writes `AGENTS.md` and exports the
-runner-neutral protocols to `.agents/skills/`, where Codex discovers them. The runner
-changes; `.aegis/` and the CLI do not. Codex as a reviewer fits naturally: it returns the
-same JSON shape as a lens and is recorded by the same `aegis lens record`, which makes
-"the builder is never the final reviewer" literal — a different engine.
+**With other runners and engines.** `aegis init` also writes `AGENTS.md` and exports the
+runner-neutral protocols to `.agents/skills/`, where Codex and other Agent Skills runners
+discover them. The runner changes; `.aegis/` and the CLI do not. A second reviewing engine —
+any CLI that takes a prompt — runs a lens through `scripts/aegis/external-lens.sh` and is
+recorded by the same `aegis lens record`. None is required: independence means a context that
+did not build the change, and a different engine only strengthens it (ADR-3).
 
 ## 9. Multi-agent runners
 

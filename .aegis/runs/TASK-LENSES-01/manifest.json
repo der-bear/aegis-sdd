@@ -1,0 +1,37 @@
+{
+  "acceptance": [
+    "a project lens file selects itself by kind or path with no engine change",
+    "the shipped lens files reproduce the former matrix",
+    "codex is a wrapper over one engine script"
+  ],
+  "base_sha": "de5d6623dd3c10a25661eff6344162af6f379067",
+  "change_kinds": [
+    "code",
+    "docs",
+    "test"
+  ],
+  "created": "2026-09-21T15:04:14",
+  "feature": "simple-reliable",
+  "id": "TASK-LENSES-01",
+  "objective": "ADR-3: lenses, roles and engines are data; a project adds a lens with one file",
+  "owns": [
+    "README.md",
+    "agents/**",
+    "docs/ARCHITECTURE.md",
+    "docs/EVALUATION.md",
+    "interview/**",
+    "lenses/**",
+    "scripts/**",
+    "skills/**",
+    "tests/**",
+    "workflows/**"
+  ],
+  "reads": [],
+  "requirements": [
+    "R-38"
+  ],
+  "risk_tier": "C",
+  "size": "M",
+  "status": "building",
+  "updated": "2026-09-21T15:04:14"
+}

@@ -22,6 +22,7 @@
     "recorded": "2026-09-17"
   },
   "default_package": "aegis-sdd",
+  "external_reviewer": "",
   "generated_paths": [
     "**/*.lock",
     "**/*.snap",

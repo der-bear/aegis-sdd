@@ -34,7 +34,7 @@ from .core import (
     write_text,
 )
 
-COMPILER_VERSION = 3  # 3: adoption baseline compiled into capabilities
+COMPILER_VERSION = 4  # 4: lens matrix derived from lens files (ADR-3)
 # Targets several questions contribute to rather than overwrite. Core asks about frozen
 # zones once; the brownfield pack asks again with the codebase in view, and both answers
 # are real. Everywhere else, two writers means one of them is silently discarded.
@@ -67,6 +67,7 @@ TARGETS: dict[str, dict[str, str]] = {
     "capabilities": {
         "packages": "package name -> command set",
         "default_package": "package used when a change matches no other",
+        "external_reviewer": "a command for a second reviewing engine, or empty (ADR-3)",
     },
     "standards": {
         "api_errors": "error envelope convention",
@@ -115,41 +116,60 @@ PROFILE_DEFAULTS: dict[str, dict[str, Any]] = {
 # architecture and chain-consistency were one question asked at two moments, so they are one
 # lens with two modes. Every lens left here has a tool set or a failure mode the others
 # cannot cover.
-LENS_MATRIX: dict[str, dict[str, list[str]]] = {
-    "minimal": {
-        "always": ["correctness"],
-        "route": ["security"],
-        "auth": ["security"],
-        "dependency": ["security"],
-        "data-migration": ["security"],
-        "feature-close": ["design"],
-    },
-    "standard": {
-        "always": ["correctness"],
-        "route": ["security"],
-        "auth": ["security"],
-        "dependency": ["security"],
-        "contract": ["design"],
-        "cross-module": ["design"],
-        "data-migration": ["security", "design"],
-        "money": ["security", "design"],
-        "concurrency": ["design"],
-        "feature-close": ["design"],
-    },
-    "strict": {
-        "always": ["correctness", "security"],
-        "contract": ["design"],
-        "cross-module": ["design"],
-        "auth": ["design"],
-        "data-migration": ["design"],
-        "money": ["design"],
-        "concurrency": ["design"],
-        "feature-close": ["design"],
-    },
-}
+STRICTNESS_ORDER = {"minimal": 0, "standard": 1, "strict": 2}
 
-# Risk tier decides how much verification a change earns. Borrowed from a production
-# multi-agent build where a flat "run every lens" policy proved unaffordable.
+
+def load_lenses(ctx: Ctx) -> dict[str, dict[str, Any]]:
+    """Lens files: the framework's `lenses/`, then a project's `.aegis/lenses/`, which wins.
+
+    A lens is data — a focus and the triggers that select it — not a profile and not code
+    (ADR-3). The profile only decides the tool set: `executes: true` needs `lens-runner`.
+    """
+    from .checks import parse_frontmatter
+    lenses: dict[str, dict[str, Any]] = {}
+    for base in asset_dirs(ctx, "lenses"):
+        for filename in sorted(os.listdir(base)):
+            if not filename.endswith(".md"):
+                continue
+            path = os.path.join(base, filename)
+            front, body = parse_frontmatter(read_text(path))
+            name = front.get("name") or filename[:-3]
+            lenses[name] = {**front, "name": name, "body": body.strip(), "path": path}
+    return lenses
+
+
+def derive_lens_matrix(ctx: Ctx, strictness: str, project_type: str | None
+                       ) -> tuple[dict[str, list[str]], dict[str, list[str]], dict[str, str]]:
+    """(kind -> lenses, lens -> path globs, lens -> profile) for this strictness and project.
+
+    Each lens says from which strictness it is always on, and from which strictness each
+    change kind or path selects it. The three tables that used to be a constant here are
+    reproduced exactly by the shipped lens files — and a project adds a lens with a file.
+    """
+    level = STRICTNESS_ORDER.get(strictness, 1)
+    matrix: dict[str, list[str]] = {"always": []}
+    paths: dict[str, list[str]] = {}
+    profiles: dict[str, str] = {}
+    lenses = load_lenses(ctx)
+    for name in sorted(lenses, key=lambda n: (int(str(lenses[n].get("order") or 50)), n)):
+        lens = lenses[name]
+        types = lens.get("project_types") or []
+        if types and project_type not in types:
+            continue
+        profiles[name] = "lens-runner" if str(lens.get("executes", "")).lower() == "true" else "lens-auditor"
+        always = str(lens.get("always_from") or "never")
+        if always in STRICTNESS_ORDER and STRICTNESS_ORDER[always] <= level:
+            matrix["always"].append(name)
+        kinds = lens.get("kinds") if isinstance(lens.get("kinds"), dict) else {}
+        for kind, from_level in kinds.items():
+            if from_level in STRICTNESS_ORDER and STRICTNESS_ORDER[from_level] <= level:
+                matrix.setdefault(kind, []).append(name)
+        globs = lens.get("paths") if isinstance(lens.get("paths"), list) else []
+        if globs and STRICTNESS_ORDER.get(str(lens.get("paths_from") or "minimal"), 0) <= level:
+            paths[name] = list(globs)
+    return matrix, paths, profiles
+
+
 RISK_TIERS: dict[str, dict[str, Any]] = {
     "A": {
         "match_change_kinds": ["auth", "data-migration", "money", "concurrency"],
@@ -578,8 +598,12 @@ def compile_config(ctx: Ctx, answers: dict) -> dict[str, Any]:
         # failed with "nothing was verified" on an ordinary root-level edit.
         capabilities["default_package"] = detected["default_package"]
 
-    # Derived, not asked: the lens matrix and risk tiers follow from strictness.
-    policy["lens_matrix"] = {k: list(v) for k, v in LENS_MATRIX[str(policy["lens_strictness"])].items()}
+    # Derived, not asked: the lens matrix follows from the lens files, the strictness and the
+    # project type; risk tiers follow from strictness.
+    matrix, lens_paths, lens_profiles = derive_lens_matrix(ctx, str(policy["lens_strictness"]), env.get("type"))
+    policy["lens_matrix"] = matrix
+    policy["lens_paths"] = lens_paths
+    policy["lens_profiles"] = lens_profiles
     if policy.get("pii") == "yes":
         # An answer that changes nothing is a question that should not have been asked.
         # Personal data makes the security lens unconditional, not conditional on the diff.

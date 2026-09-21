@@ -7,7 +7,7 @@
     "path": ".aegis/protocols/audit.md"
   },
   {
-    "body_tokens": 2337,
+    "body_tokens": 2364,
     "change_kinds": [],
     "description": "Run the full Aegis cycle for one task — packet, builder, lenses, refinement, documentation sync, gate. Use to implement a task that already has a manifest.",
     "name": "build",
@@ -45,7 +45,7 @@
     "path": ".aegis/protocols/init.md"
   },
   {
-    "body_tokens": 783,
+    "body_tokens": 781,
     "change_kinds": [],
     "description": "Compare architecture options for a specified feature and write architecture.md plus an ADR. Use after /aegis:spec and before /aegis:tasks, when the approach is not already obvious.",
     "name": "plan",
@@ -78,7 +78,7 @@
     "path": ".aegis/protocols/retro.md"
   },
   {
-    "body_tokens": 848,
+    "body_tokens": 938,
     "change_kinds": [],
     "description": "Run the Aegis review lenses over a task's diff and record their findings, without implementing anything. Use to review completed work, re-review after fixes, or review a task built elsewhere.",
     "name": "review",
@@ -92,7 +92,7 @@
     "path": ".aegis/protocols/review-lens.md"
   },
   {
-    "body_tokens": 737,
+    "body_tokens": 738,
     "change_kinds": [],
     "description": "Elicit scope for a feature and write .aegis/specs/<feature>/spec.md with verifiable requirements. Use when starting a new feature or capability, before any architecture or implementation work.",
     "name": "spec",

@@ -1,19 +1,15 @@
 ---
-name: lens-design
-description: Read-only check that work matches its declared design — module boundaries and interface contracts on a task diff, and the spec-to-tasks-to-code chain when closing a feature. Use for cross-module or contract changes, and at feature close. Does not review correctness, security or style.
-model: sonnet
-tools: Read, Grep, Glob
-disallowedTools: Edit, Write, NotebookEdit, Bash
-skills: [review-lens]
-maxTurns: 25
-color: purple
+name: design
+description: Whether work matches its declared design — boundaries and contracts on a task, the spec-to-code chain at feature close.
+executes: false
+order: 30
+always_from: never
+kinds: {feature-close: minimal, contract: standard, cross-module: standard, data-migration: standard, money: standard, concurrency: standard, auth: strict}
+paths: []
+project_types: []
 ---
 
-You are the design lens. The `review-lens` contract in your context governs scope, severity
-and output; your focus is below. Set `"lens": "design"` in your report and nothing else about
-provenance: the dispatcher attaches `reviewer` and `diff_digest`.
-
-One question in two modes — the prompt says which.
+You are the design lens. One question in two modes — the prompt says which.
 
 ## Mode `task` — boundaries and contracts
 

@@ -49,6 +49,12 @@
       "security"
     ]
   },
+  "lens_paths": {},
+  "lens_profiles": {
+    "correctness": "lens-runner",
+    "design": "lens-auditor",
+    "security": "lens-auditor"
+  },
   "lens_strictness": "standard",
   "mode": "hybrid",
   "nfr_priorities": [

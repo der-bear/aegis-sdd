@@ -258,6 +258,14 @@ R-37. **The base is the local mainline when it is ahead of the remote one.** `ae
       (2026-09-20, TASK-FIRSTHOUR-01: eight files "belong to no task"), and would have handed the
       next task the landed files as its own diff. One rule in `default_base`; no new state.
 
+R-38. **Lenses, roles and engines are data (ADR-3).** A lens is a file — `lenses/<name>.md` shipped,
+      `.aegis/lenses/<name>.md` in a project, which wins on a name clash — with a focus and the
+      triggers that select it; the compiler derives `policy.lens_matrix` from the files, and the
+      shipped files reproduce the former constant exactly. Two auditor profiles replace the three
+      per-lens profiles; `aegis lens prompt` assembles what any engine needs; the second engine is an
+      answer that may be empty, run through one script. Adding a lens is one file and no engine
+      change — the last real gap for public use named in every retro since 0001.
+
 R-27. **Every test added or changed in any of the three tasks shall be shown to fail on the behaviour
       it forbids before it counts.** Two of the previous cycle's document locks passed on the exact
       text they were written to correct; both were found by a lens, not by me. In particular: R-17

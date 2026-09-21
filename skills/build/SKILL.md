@@ -57,7 +57,8 @@ the files the digest covers.
 
 This unions the task's declared change kinds with kinds detected from the actual diff, so a
 security review still happens when authorisation moved through middleware rather than a new
-route. Run exactly the lenses it names — dispatch them in parallel, each in a clean context.
+route. Run exactly the lenses it names — dispatch them in parallel, each in a clean context,
+to the profile the plan names and briefed by `aegis lens prompt <TASK-ID> <lens>`.
 
 **Do not touch the tree until the last of them has reported.** A report is bound to the digest
 the lens was given, so an edit made while another lens is still reading refuses the report it is

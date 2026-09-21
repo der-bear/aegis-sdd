@@ -31,7 +31,7 @@ Ask about the goal, the boundary, and the failure modes — in that order:
 R-1. <verifiable statement>
 R-2. When <trigger>, the system shall <response>.
 ## Acceptance criteria      <!-- each maps to an R-* -->
-## Edge cases               <!-- the builder's test list; lens-correctness runs them -->
+## Edge cases               <!-- the builder's test list; the correctness lens runs them -->
 ## Contracts                <!-- inputs, outputs, events, invariants -->
 ## End-to-end check         <!-- the command or scenario that proves the feature -->
 ## Risks and open questions

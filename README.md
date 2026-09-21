@@ -156,29 +156,48 @@ session's context**, or **an auditor that must be unbiased**.
 | `aegis-builder` | sonnet | + Edit/Write/Bash, `isolation: worktree` | `build-task` |
 | `aegis-doc-manager` | sonnet | + Edit/Write/Bash | `doc-sync` |
 | `aegis-explorer` | sonnet | read-only + Bash | — |
-| `lens-correctness` | sonnet | read-only + **Bash** | `review-lens` |
-| `lens-security` | sonnet | read-only, no Bash | `review-lens` |
-| `lens-design` | sonnet | read-only, no Bash | `review-lens` |
+| `lens-runner` | sonnet | read-only + **Bash** | `review-lens` + a lens file |
+| `lens-auditor` | sonnet | read-only, no Bash | `review-lens` + a lens file |
 
-Three lenses, not five. Documentation obligations are checked deterministically and more
-cheaply by `aegis check docs`; architecture and chain-consistency were one question asked at
-two moments. `lens-correctness` is separate precisely because it is **the only one with
-`Bash`** — the others cannot execute anything, and that is a property, not an instruction.
+A role is a tool set. Two builders are two instances of `aegis-builder`, not a new role, and
+the two lens profiles differ only in `Bash` — the auditor cannot execute anything, which is a
+property, not an instruction.
 
-## Mixed ecosystem: Claude and Codex
+### Lenses are files
+
+What a lens looks for lives in `lenses/<name>.md`: a focus, and the triggers that select it —
+`always_from`, `kinds` and `paths` against the strictness, and `project_types`. A project adds
+its own in `.aegis/lenses/` without touching the framework. `aegis lens plan` computes which
+apply; `aegis lens prompt <TASK> <lens>` briefs whichever engine runs it.
+
+| Lens | Profile | Selected by |
+|---|---|---|
+| correctness | `lens-runner` | always |
+| security | `lens-auditor` | routes, auth, dependencies, migrations; money from `standard`; always at `strict` |
+| design | `lens-auditor` | feature close; contracts, cross-module, migrations, money, concurrency from `standard`; auth at `strict` |
+| accessibility | `lens-auditor` | web-saas: interface files, from `standard` |
+| data-integrity | `lens-auditor` | data-etl: migrations and pipeline files |
+
+Documentation obligations are not a lens: `aegis check docs` answers them deterministically.
+
+## Any runner, any second engine — or none
 
 `aegis init` writes both `CLAUDE.md` and `AGENTS.md`, and exports the runner-neutral
-protocols to `.agents/skills/`, where Codex discovers them itself.
+protocols to `.agents/skills/`, the Agent Skills location Codex and other runners discover.
+The runner changes; `.aegis/` and the CLI do not.
 
-"The builder is never the final reviewer" holds literally, with a different engine, in one
-command:
+"The builder is never the final reviewer" needs a context that did not build the change. A
+second engine strengthens that, and nothing requires one. If you have one, record its command
+once — `aegis answer q.core.second-engine '"gemini -p"'` — and run a lens on it:
 
 ```bash
-scripts/aegis/codex-lens.sh TASK-042-01 security
+scripts/aegis/external-lens.sh TASK-042-01 security gemini:2.5-pro -- gemini -p
+scripts/aegis/external-lens.sh TASK-042-01 security claude:opus -- claude -p --model opus
+scripts/aegis/codex-lens.sh TASK-042-01 security      # Codex defaults for the same script
 ```
 
-It hands Codex the same `review-lens` protocol a Claude lens gets, together with the diff
-and the spec, and records the result through `aegis lens record` — with provenance attached
+The engine gets the same self-contained brief a Claude lens gets (`aegis lens prompt
+--with-contract`), and the report goes through `aegis lens record` — with provenance attached
 by the script, not echoed by the model. Finding ids are derived from the claim text, which
 holds within one reviewer's rounds; two different engines wording the same defect
 differently produce two findings, and reconciliation is explicit rather than assumed.

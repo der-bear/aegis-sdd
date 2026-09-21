@@ -66,6 +66,6 @@ cannot drift. Draw only the intent no generator can express.
 
 ## Gate
 
-`aegis check requirements --feature <name>` and a `lens-design` pass in `closing` mode over
+`aegis check requirements --feature <name>` and the design lens in `closing` mode over
 spec versus architecture. Contradictions here are cheap; the same contradiction found during
 implementation is not.

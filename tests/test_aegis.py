@@ -816,9 +816,9 @@ class TheShippedScriptsMatchTheContracts(unittest.TestCase):
     def test_codex_lens_sends_every_kind_of_change(self):
         # Committed, staged, unstaged and untracked work all reach the reviewer — through
         # `aegis diff`, which covers exactly what the digest covers.
-        script = open(os.path.join(ROOT, "scripts", "aegis", "codex-lens.sh")).read()
-        for needed in ('diff "$task"', "lens plan", "diff_digest"):
-            self.assertIn(needed, script, f"codex-lens.sh must include {needed}")
+        script = open(os.path.join(ROOT, "scripts", "aegis", "external-lens.sh")).read()
+        for needed in ("lens prompt", "lens plan", "diff_digest"):
+            self.assertIn(needed, script, f"external-lens.sh must include {needed}")
 
     def test_the_workflow_does_not_ask_a_lens_to_run_a_command(self):
         # Two of the three lenses have no Bash at all; telling them to record themselves
@@ -1077,8 +1077,9 @@ class SizeBudgetsWarn(ProjectFixture):
         forbidden = ("space is short", "advisory findings go first", "drop observations",
                      "drop the observations", "keep the blocking ones and drop")
         for rel in ("skills/review-lens/SKILL.md", ".aegis/protocols/review-lens.md",
-                    ".agents/skills/review-lens/SKILL.md", "agents/lens-correctness.md",
-                    "agents/lens-security.md", "agents/lens-design.md"):
+                    ".agents/skills/review-lens/SKILL.md", "agents/lens-auditor.md",
+                    "agents/lens-runner.md", "lenses/correctness.md", "lenses/security.md",
+                    "lenses/design.md"):
             text = open(os.path.join(ROOT, rel)).read().lower()
             for phrase in forbidden:
                 self.assertNotIn(phrase, text, f"{rel}: {phrase}")
@@ -2204,7 +2205,7 @@ class ProtocolsSayWhatTheCodeDoes(unittest.TestCase):
 
     def test_each_lens_is_handed_only_its_own_prior_findings(self):
         workflow = self.read("workflows/aegis-task.js")
-        self.assertIn("reviews/${lens}.json", workflow)
+        self.assertIn("lens prompt ${task} ${lens}", workflow)  # the brief carries this lens's own ids
         self.assertNotIn("reviews/*.json", workflow)
 
     def test_documented_record_commands_attach_provenance(self):
@@ -2218,7 +2219,8 @@ class ProtocolsSayWhatTheCodeDoes(unittest.TestCase):
                     self.assertIn("--digest", line)
                     self.assertIn("--reviewer", line)
                     self.assertIn("--lens", line)
-        self.assertNotIn('"reviewer": "lens-correctness"', self.read("agents/lens-correctness.md"))
+        for profile in ("agents/lens-auditor.md", "agents/lens-runner.md"):
+            self.assertNotIn('"reviewer":', self.read(profile))
 
     def test_the_readme_shows_next_as_the_cli_prints_it(self):
         for line in self.read("README.md").splitlines():
@@ -2352,25 +2354,28 @@ class TheRunnersShareOneContract(unittest.TestCase):
             return fh.read()
 
     def test_the_workflow_and_codex_take_the_diff_from_aegis(self):
-        workflow, codex = self.read("workflows/aegis-task.js"), self.read("scripts/aegis/codex-lens.sh")
+        workflow, codex = self.read("workflows/aegis-task.js"), self.read("scripts/aegis/external-lens.sh")
         self.assertIn("${AEGIS} diff ${task}", workflow)
-        self.assertIn('diff "$task"', codex)
+        self.assertIn("lens prompt", codex)  # the prompt carries `aegis diff`
         for source in (workflow, codex):
             self.assertNotIn("ls-files --others", source)
 
     def test_every_recorder_attaches_the_lens_from_the_transport(self):
         self.assertEqual(self.read("workflows/aegis-task.js").count("lens record ${task} --lens ${lens}"), 2)
-        codex = self.read("scripts/aegis/codex-lens.sh")
+        codex = self.read("scripts/aegis/external-lens.sh")
         self.assertIn('--lens "$lens"', codex)
-        self.assertNotIn('\\"reviewer\\": \\"codex:$model\\"', codex)
+        self.assertNotIn('\\"reviewer\\"', codex)
 
     def test_codex_reconciles_its_own_prior_findings(self):
-        codex = self.read("scripts/aegis/codex-lens.sh")
-        self.assertIn("reviews/$lens.json", codex)
-        # Its own record, and the two-phase instruction: fresh findings first, then the list.
-        self.assertIn("followup", codex)
-        self.assertIn("Never copy a prior id", codex)
+        # Codex is a thin wrapper now; the contract lives in external-lens.sh, for any engine.
+        codex = self.read("scripts/aegis/external-lens.sh")
+        self.assertIn("lens prompt", codex)
         self.assertIn("--lens", codex)
+        # The two-phase instruction — fresh findings first, then the reconciled list — travels
+        # in the prompt `aegis lens prompt` assembles, the same for every engine.
+        prompt_source = self.read("scripts/aegis/aegis_cli/flow.py")
+        self.assertIn("Never copy a prior id", prompt_source)
+        self.assertIn("followup", prompt_source)
 
     def test_the_workflow_dispatches_a_builder_only_for_a_finding(self):
         workflow = self.read("workflows/aegis-task.js")
@@ -3244,6 +3249,106 @@ class ASymlinkIsRecordedAsItsTarget(unittest.TestCase):
         subprocess.run(["git", "-C", self.dir, "add", "-A"], check=True)
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "flatten the link"], check=True)
         self.assertIn("link.py", core.changed_files(ctx, None))
+
+
+
+
+class LensesAreData(ProjectFixture):
+    """ADR-3: a lens is a file with a focus and triggers; the plan is computed from the files."""
+
+    # The constant ADR-3 replaced, kept here as the equivalence oracle.
+    FORMER = {
+        "minimal": {"always": ["correctness"], "route": ["security"], "auth": ["security"],
+                    "dependency": ["security"], "data-migration": ["security"], "feature-close": ["design"]},
+        "standard": {"always": ["correctness"], "route": ["security"], "auth": ["security"],
+                     "dependency": ["security"], "contract": ["design"], "cross-module": ["design"],
+                     "data-migration": ["security", "design"], "money": ["security", "design"],
+                     "concurrency": ["design"], "feature-close": ["design"]},
+        "strict": {"always": ["correctness", "security"], "contract": ["design"], "cross-module": ["design"],
+                   "auth": ["design"], "data-migration": ["design"], "money": ["design"],
+                   "concurrency": ["design"], "feature-close": ["design"]},
+    }
+
+    def test_the_shipped_lens_files_reproduce_the_former_matrix(self):
+        ctx = core.Ctx(self.dir)
+        for strictness, former in self.FORMER.items():
+            matrix, _paths, _profiles = config.derive_lens_matrix(ctx, strictness, "api-service")
+            for kind in sorted(set(flow.CHANGE_KINDS) | {"feature-close"}):
+                with self.subTest(strictness=strictness, kind=kind):
+                    expected = set(former["always"]) | set(former.get(kind, []))
+                    self.assertEqual(set(matrix["always"]) | set(matrix.get(kind, [])), expected)
+
+    def test_a_project_adds_a_lens_with_one_file(self):
+        self.write(".aegis/lenses/tenancy.md",
+                   "---\nname: tenancy\ndescription: tenant isolation\nexecutes: false\n"
+                   "always_from: never\nkinds: {}\npaths: [src/orders/**]\n---\n"
+                   "Check that every query is scoped to the tenant.\n")
+        run(["compile"], self.dir)
+        self.make_task()
+        self.write("src/orders/a.py", "A = 1\n")
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertIn("tenancy", plan["lenses"])
+        self.assertEqual((plan["profiles"]["tenancy"], plan["profiles"]["correctness"]),
+                         ("lens-auditor", "lens-runner"))
+        prompt = run(["lens", "prompt", "T-1", "tenancy"], self.dir).stdout
+        self.assertIn("scoped to the tenant", prompt)
+        self.assertIn("+++ b/src/orders/a.py", prompt)
+
+    def test_project_type_lenses_stay_with_their_type(self):
+        ctx = core.Ctx(self.dir)
+        self.assertIn("accessibility", config.derive_lens_matrix(ctx, "standard", "web-saas")[2])
+        library = config.derive_lens_matrix(ctx, "standard", "library")[2]
+        self.assertNotIn("accessibility", library)
+        self.assertNotIn("data-integrity", library)
+
+    def test_the_prompt_carries_only_this_lens_prior_findings(self):
+        self.make_task()
+        self.write("src/orders/a.py", "A = 1\n")
+        self.record("T-1", {"lens": "security", "verdict": "fail", "findings": [
+            {"severity": 3, "message": "the webhook signature is never verified", "path": "src/orders/a.py"}]})
+        security = run(["lens", "prompt", "T-1", "security", "--no-diff"], self.dir).stdout
+        self.assertIn("PHASE 2", security)
+        self.assertIn("webhook signature", security)
+        self.assertNotIn("Diff under review", security)
+        self.assertNotIn("webhook signature", run(["lens", "prompt", "T-1", "correctness", "--no-diff"], self.dir).stdout)
+
+    def test_an_engine_without_the_contract_preloaded_gets_it(self):
+        self.make_task()
+        self.assertIn("Never a finding", run(["lens", "prompt", "T-1", "security", "--with-contract"], self.dir).stdout)
+
+    def test_the_second_engine_is_an_answer_that_may_be_empty(self):
+        self.make_task()
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertIsNone(plan["external_reviewer"])
+        run(["answer", "q.core.second-engine", '"gemini -p"'], self.dir)
+        plan = json.loads(run(["lens", "plan", "T-1"], self.dir).stdout)
+        self.assertEqual(plan["external_reviewer"], "gemini -p")
+
+
+class NoLensOrEngineIsHardWired(unittest.TestCase):
+    def read(self, rel):
+        with open(os.path.join(ROOT, rel), encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_the_workflow_names_no_lens_and_no_vendor(self):
+        workflow = self.read("workflows/aegis-task.js")
+        self.assertIn("lens prompt ${task} ${lens} --no-diff", workflow)
+        for name in ("lens-correctness", "lens-security", "lens-design", "codex"):
+            self.assertNotIn(name, workflow)
+
+    def test_any_engine_runs_through_one_script(self):
+        external = self.read("scripts/aegis/external-lens.sh")
+        for needed in ('lens prompt "$task" "$lens" --with-contract', '--lens "$lens"', "diff_digest", "lens plan"):
+            self.assertIn(needed, external)
+        self.assertNotIn("codex", external.split("set -euo pipefail", 1)[1])
+        self.assertIn("external-lens.sh", self.read("scripts/aegis/codex-lens.sh"))
+
+    def test_lens_profiles_are_tool_sets_not_lenses(self):
+        for name in ("lens-correctness", "lens-security", "lens-design"):
+            self.assertFalse(os.path.exists(os.path.join(ROOT, "agents", f"{name}.md")))
+        auditor, runner = self.read("agents/lens-auditor.md"), self.read("agents/lens-runner.md")
+        self.assertIn("Bash", runner.split("---")[1])
+        self.assertNotIn("tools: Read, Grep, Glob, Bash", auditor)
 
 
 if __name__ == "__main__":

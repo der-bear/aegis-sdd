@@ -78,6 +78,18 @@ const plan = (() => {
 })()
 log(`lenses: ${plan.lenses.join(', ')} (risk tier ${plan.risk_tier || '?'})`)
 
+// A lens is data (ADR-3): its focus and its own prior findings come from `aegis lens prompt`,
+// and its tool profile from the plan. The workflow names no lens and no vendor.
+const brief = (lens) => agent(
+  sh(`${AEGIS} lens prompt ${task} ${lens} --no-diff`),
+  { label: `brief:${lens}`, phase: 'Review', effort: 'low' },
+)
+const profileOf = (lens) => (plan.profiles && plan.profiles[lens]) || 'lens-auditor'
+// A runner lens executes the test suite; neither kind runs `aegis` or records itself.
+const runRule = (lens) => profileOf(lens) === 'lens-runner'
+  ? `Run the project's tests as your focus says. Do not run any aegis command — the recorder records your report.`
+  : `Do not try to run any command.`
+
 // Each lens is an independent auditor in a clean context. Parallel, because they are
 // genuinely independent — and a barrier here is correct: the gate needs all of them.
 //
@@ -86,12 +98,9 @@ log(`lenses: ${plan.lenses.join(', ')} (risk tier ${plan.risk_tier || '?'})`)
 // design, so any task needing one reached the gate with no report at all.
 await pipeline(
   plan.run || plan.lenses, // on a resumed run a fresh record is not dispatched again (R-9)
-  (lens) => agent(
-    `Review task ${task} as the ${lens} lens.\n\nHere is the task packet and the diff:\n\n` +
-    `${diff}\n\n` +
-    `Return ONLY the JSON report your contract specifies. Do not include reviewer or ` +
-    `digest fields — the recorder attaches them. Do not try to run any command.`,
-    { label: `lens:${lens}`, phase: 'Review', agentType: `lens-${lens}` },
+  async (lens) => agent(
+    `${await brief(lens)}\n\n## Task packet and diff\n\n${diff}\n\n` + runRule(lens),
+    { label: `lens:${lens}`, phase: 'Review', agentType: profileOf(lens) },
   ).then((report) => ({ lens, report })),
   ({ lens, report }) => {
     const match = String(report || '').match(/\{[\s\S]*\}/)
@@ -145,30 +154,11 @@ for (let round = 1; round <= MAX_ROUNDS; round++) {
   // Only the lenses the moved files invalidated (R-9); a fresh record is not re-run.
   const roundLenses = replan.run || replan.lenses || plan.lenses
   await parallel(roundLenses.map((lens) => async () => {
-    // Each lens is handed the prior findings *it* raised, from its own record. One shared
-    // list built from every record told each lens to reconcile ids the recorder then
-    // refused as "never raised", and the refine loop could not converge. (The old one-liner
-    // also carried a raw newline inside a Python string, so the list was always empty.)
-    const prior = await agent(
-      sh(`python3 -c "import json,os;p='.aegis/runs/${task}/reviews/${lens}.json';d=json.load(open(p)) if os.path.exists(p) else {};print(chr(10).join(x['id']+' ['+str(x.get('disposition','open'))+'] '+x['message'][:100] for x in d.get('findings',[])))"`),
-      { label: `prior:${lens}:${round}`, phase: 'Refine', effort: 'low' },
-    )
-    const priorText = String(prior || '').trim()
-    const reconcile = priorText
-      ? `Work in two phases, in this order. PHASE 1 — review the diff fresh, as if for the ` +
-        `first time, and write your "findings". PHASE 2 — only after that, reconcile against ` +
-        `the previous findings below in a separate top-level "reconciled" list, one entry per ` +
-        `prior id: {"id": "<id>", "followup": "resolved" or "unresolved", "evidence": "<one line>"}. ` +
-        `Every open prior finding must appear there; never put a prior id inside "findings".\n\n` +
-        `Previous findings from this lens, by id:\n${priorText}\n\n` +
-        `The order matters: reading the prior list first would anchor your fresh scan.\n`
-      : `This lens has no prior findings on this task; review the diff fresh and omit "reconciled".\n`
+    // The brief carries this lens's own prior findings and the two-phase reconciliation;
+    // a lens new to this round gets none and reviews fresh.
     const report = await agent(
-      `Re-review task ${task} as the ${lens} lens after the fix.\n\n` +
-      `Here is the revised packet and diff:\n\n${revised}\n\n` +
-      reconcile +
-      `Return ONLY the JSON report; the recorder attaches provenance. Do not run any command.`,
-      { label: `re:${lens}:${round}`, phase: 'Refine', agentType: `lens-${lens}` },
+      `${await brief(lens)}\n\n## Revised task packet and diff\n\n${revised}\n\n` + runRule(lens),
+      { label: `re:${lens}:${round}`, phase: 'Refine', agentType: profileOf(lens) },
     )
     const match = String(report || '').match(/\{[\s\S]*\}/)
     if (!match) {

@@ -1,6 +1,6 @@
 # ADR-3: Lenses, roles and engines are data; code only computes the plan
 
-Status: accepted — built as its own task once the unblock cycle lands
+Status: accepted — implemented in TASK-LENSES-01 (2026-09-21)
 
 ## Context
 

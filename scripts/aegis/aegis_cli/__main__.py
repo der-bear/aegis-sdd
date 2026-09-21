@@ -142,6 +142,12 @@ def build_parser() -> argparse.ArgumentParser:
     lp = lsub.add_parser("plan")
     lp.add_argument("id")
     lp.add_argument("--closing", action="store_true")
+    lpr = lsub.add_parser("prompt", help="everything one lens needs, for any engine")
+    lpr.add_argument("id")
+    lpr.add_argument("lens")
+    lpr.add_argument("--with-contract", action="store_true", help="include the review contract, for engines that do not preload it")
+    lpr.add_argument("--no-diff", action="store_true", help="omit the packet and diff, when the caller already has them")
+    lpr.add_argument("--closing", action="store_true")
     lr = lsub.add_parser("record", help="read a lens report as JSON on stdin")
     lr.add_argument("id")
     lr.add_argument("--lens", required=True, help="which lens produced the report; attached by the caller")
@@ -487,6 +493,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.lens_command == "plan":
             plan = flow.lens_plan(ctx, args.id, args.closing)
             emit(json.dumps(plan, indent=2, ensure_ascii=False))
+            return 0
+        if args.lens_command == "prompt":
+            emit(flow.lens_prompt(ctx, args.id, args.lens, args.with_contract, not args.no_diff, args.closing))
             return 0
         if args.lens_command == "record":
             raw = sys.stdin.read()

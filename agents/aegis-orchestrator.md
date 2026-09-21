@@ -49,7 +49,8 @@ aegis packet <ID>                 # -> the builder's entire brief; pure, safe to
                                   # dispatch aegis-builder with that text
 aegis lens plan <ID>              # -> exactly which lenses, and why
 aegis diff <ID>                   # -> the diff every lens reads (what the digest covers)
-                                  # dispatch them in parallel with packet + diff; each returns JSON
+                                  # dispatch each to its plan profile, briefed by
+                                  # `aegis lens prompt <ID> <lens>`; each returns JSON
 echo '<json>' | aegis lens record <ID> --lens <name> --reviewer lens-<name> --digest <digest>
                                   # blocking findings -> builder fixes -> re-review each lens
                                   # with its own prior ids -> record its `reconciled` list
