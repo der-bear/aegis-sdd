@@ -1,7 +1,7 @@
 {
-  "diff_digest": "540527b573a39a57",
+  "diff_digest": "65139f39ae838316",
   "files": {
-    ".aegis/runs/TASK-CLEAN-01/manifest.json": "contract:44b3f56d3ce48052eb7fbfe03134b0e870f3487ce4f5d617a393f95002cc4428",
+    ".aegis/runs/TASK-CLEAN-01/manifest.json": "contract:ffbf3c3c58d3cc31bbae04ace94c3c5f88c4d8cbdc479b8a5b73935a355ecc45",
     ".aegis/specs/simple-reliable/spec.md": "af1f17739417996421eeeb9f12bd7196906b05b58822bff9f262b20a4a07c51d",
     ".aegis/waivers.json": "2958d5403e264035abc1ecb42b7f943504c3c35179eb7977fa1ab7c29df0541f",
     ".claude-plugin/plugin.json": "037a9dfab741facf875735da9ce0ed5c62c200eda1b67253385cb22aa4b16ab6",
@@ -9,11 +9,11 @@
     "docs/EVALUATION.md": "f9600bdf7f1d77ea90df77a0d1fb34b60e565d0478f25bf20284e44777bc7ce1",
     "scripts/aegis/aegis_cli/__init__.py": "479c53bcb41e544fa5eb337e3cb42385cb87acf801526b9db039077b4cea4740",
     "scripts/aegis/aegis_cli/checks.py": "60a7019822c968149ada27217aa4d1822de70614280a6d3ac3b1aa9b60301ae0",
-    "scripts/aegis/aegis_cli/core.py": "488adab2cc0a8a4381b5f9d896927ec33283eb355e425d165569ea67c304e776",
+    "scripts/aegis/aegis_cli/core.py": "df1b66a13be9a854a7196325a96128d4bbd9fdd74e636e4097bef81e995a8857",
     "scripts/aegis/aegis_cli/flow.py": "6501c76c52b14385421ebcbbbfd494db4ad24032400e5ed74a2308825d9c20fb",
     "scripts/aegis/aegis_cli/scaffold.py": "22ef57bf92ba3ca952e5d996235ec1b4d004e1723d9a98f0ab2cf7a6616aa67d",
     "scripts/aegis/external-lens.sh": "exec:610c26163344de55cf75070a56320fc2100851b56eebabb0e2f0e1903dffed80",
-    "tests/test_aegis.py": "7f91a69d187c829ee9635db38171bb0e85c6490c6c6c8c90aed189c0f2be28b9"
+    "tests/test_aegis.py": "a3aaea8c5e9a48805e09e0d7ecc666921befce728a7ad43ab6e36b8daf913f29"
   },
   "findings": [
     {
@@ -81,11 +81,11 @@
     ]
   },
   "lens": "design",
-  "recorded": "2026-09-22T01:59:10",
+  "recorded": "2026-09-22T02:31:58",
   "reopened": [],
-  "report_tokens": 99,
+  "report_tokens": 13,
   "reviewer": "sonnet-5",
-  "round": 2,
+  "round": 3,
   "task": "TASK-CLEAN-01",
   "verdict": "pass"
 }

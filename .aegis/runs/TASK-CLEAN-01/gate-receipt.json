@@ -1,6 +1,6 @@
 {
-  "at": "2026-09-22T02:20:22",
-  "diff_digest": "b250a277ef30df95",
+  "at": "2026-09-22T02:34:48",
+  "diff_digest": "65139f39ae838316",
   "note": "written by a passing task gate; `gated` without this is not gated",
   "task": "TASK-CLEAN-01"
 }

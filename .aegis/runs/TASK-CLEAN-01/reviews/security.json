@@ -1,7 +1,7 @@
 {
-  "diff_digest": "b250a277ef30df95",
+  "diff_digest": "65139f39ae838316",
   "files": {
-    ".aegis/runs/TASK-CLEAN-01/manifest.json": "contract:44b3f56d3ce48052eb7fbfe03134b0e870f3487ce4f5d617a393f95002cc4428",
+    ".aegis/runs/TASK-CLEAN-01/manifest.json": "contract:ffbf3c3c58d3cc31bbae04ace94c3c5f88c4d8cbdc479b8a5b73935a355ecc45",
     ".aegis/specs/simple-reliable/spec.md": "af1f17739417996421eeeb9f12bd7196906b05b58822bff9f262b20a4a07c51d",
     ".aegis/waivers.json": "2958d5403e264035abc1ecb42b7f943504c3c35179eb7977fa1ab7c29df0541f",
     ".claude-plugin/plugin.json": "037a9dfab741facf875735da9ce0ed5c62c200eda1b67253385cb22aa4b16ab6",
@@ -62,11 +62,11 @@
     ]
   },
   "lens": "security",
-  "recorded": "2026-09-22T02:17:28",
+  "recorded": "2026-09-22T02:31:57",
   "reopened": [],
   "report_tokens": 13,
   "reviewer": "sonnet-5",
-  "round": 3,
+  "round": 4,
   "task": "TASK-CLEAN-01",
   "verdict": "pass"
 }
