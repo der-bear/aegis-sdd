@@ -1058,6 +1058,7 @@ def _agents_chain(ctx: Ctx) -> list[str]:
 _TESTS_NONE = (
     re.compile(r"^Ran 0 tests?", re.M), re.compile(r"no tests ran", re.I),
     re.compile(r"no tests? (?:were )?found", re.I), re.compile(r"no test files", re.I),
+    re.compile(r"no tests to run", re.I),
     re.compile(r"^Tests:\s+0\b", re.M), re.compile(r"\b0 passed\b"),
     re.compile(r"test result: \w+\. 0 passed", re.M), re.compile(r"OK \(0 tests", re.M),
     re.compile(r"^Tests run: 0", re.M), re.compile(r"\b0 examples?, 0 failures", re.M),
@@ -1073,8 +1074,10 @@ _TESTS_RAN = (
     re.compile(r"^ok \d+\b", re.M),                               # tap
     # `(cached)` too: a warm build cache is the ordinary case on a re-run, and reading it as
     # "nothing ran" hard-failed a green suite.
-    re.compile(r"^ok\s+\S+\s+(?:[\d.]+m?s|\(cached\))", re.M),      # go test, per package
-    re.compile(r"^(?:--- )?PASS\b", re.M),                        # go test
+    # `ok <pkg> 0.004s [no tests to run]` is a filter that matched nothing, exit 0: the case the
+    # docstring below names, and the pattern read it as a run.
+    re.compile(r"^ok\s+\S+\s+(?:[\d.]+m?s|\(cached\))(?! \[no tests to run\])", re.M),  # go test, per package
+    re.compile(r"^--- PASS:", re.M),                              # go test, per test
     re.compile(r"(\d+) (?:tests?|specs?|assertions?) (?:passed|completed|succeeded)", re.I),
 )
 

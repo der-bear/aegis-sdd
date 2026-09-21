@@ -43,5 +43,8 @@ jobs:
 
       # Set up whatever the project's own commands need — services, toolchains, caches —
       # before this step. The gate runs them; it does not provision them.
+      # On a pull request the candidate is the branch and this is the merge invariant. On a push
+      # to the mainline the candidate is empty — the ref is at the pushed commit on both sides —
+      # so this job runs the other half: the bootstrap checks and the project's own commands.
       - name: Gate
         run: aegis gate --stage merge

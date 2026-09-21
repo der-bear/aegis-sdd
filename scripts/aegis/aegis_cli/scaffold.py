@@ -68,9 +68,9 @@ Paths no agent modifies without explicit human instruction:
 
 ## Amendment
 
-Change this file in its own pull request, reviewed by a human, never bundled with feature
-work. If a change here also implies configuration, edit `answers.json` and run
-`aegis compile` in the same pull request.
+Change it in the task whose objective calls for it, and say so in that task's handoff. If a
+change here also implies configuration, edit `answers.json` and run `aegis compile` in the
+same change.
 """
 
 NOTES = """# Working notes
@@ -344,7 +344,7 @@ def _constitution_draft(ctx: Ctx) -> str:
         path = os.path.join(ctx.root, name)
         # A regular file inside the checkout: a README that is a symlink elsewhere would put
         # that file's first paragraph into a committed constitution.
-        if os.path.islink(path) or not os.path.realpath(path).startswith(os.path.realpath(ctx.root) + os.sep):
+        if not os.path.realpath(path).startswith(os.path.realpath(ctx.root) + os.sep):
             continue
         try:
             with open(path, "rb") as fh:
@@ -386,7 +386,7 @@ def _readme_purpose(text: str) -> str:
         # Headings in both spellings (`# Title`, and `Title` over a rule of `=`/`-`/`~`, which
         # is every README.rst), and rst directives, are not prose.
         raw = paragraph.splitlines()
-        rule = [bool(re.fullmatch(r"\s*(=+|-+|~+)\s*", line)) for line in raw] + [False]
+        rule = [bool(re.fullmatch(r"\s*(=+|-+|~+|\*{3,}|_{3,}|(?:\* ){2,}\*|(?:- ){2,}-)\s*", line)) for line in raw] + [False]
         lines = [line.strip() for i, line in enumerate(raw)
                  if line.strip() and not rule[i] and not rule[i + 1]  # the title over a rule, and the rule
                  and not line.lstrip().startswith(("#", ".. "))]
@@ -603,7 +603,9 @@ def scaffold(ctx: Ctx, profile: str, doc_profile: str, force: bool = False) -> l
             # no idea Aegis was installed. Append a pointer, keep their content.
             if pointer:
                 current = read_text(path, default="")
-                if "aegis" not in current.lower():
+                # The marker, as `migrate` tests it: the word "aegis" in any case skipped the
+                # append for a CLAUDE.md that merely mentioned it, and bootstrap then failed.
+                if ".aegis/generated/rules.md" not in current:
                     write_text(path, current.rstrip("\n") + "\n\n" + pointer)
                     created.append(f"{rel} (pointer appended)")
             return

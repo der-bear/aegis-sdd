@@ -1497,6 +1497,23 @@ class TheSecondProjectsFirstHour(ProjectFixture):
             self.assertEqual(run(["scaffold", "--profile", "S"], self.dir).returncode, 0)
         self.assertEqual(open(os.path.join(self.dir, "CLAUDE.md")).read().count("@.aegis/generated/rules.md"), 1)
 
+    def test_a_claude_md_that_mentions_aegis_still_gets_the_pointer(self):
+        # Testing for the word skipped the append; bootstrap then failed with a wrong diagnosis.
+        self.write("CLAUDE.md", "# Theirs\n\nEncryption uses the aegis crate.\n")
+        self.assertEqual(run(["scaffold", "--profile", "S"], self.dir).returncode, 0)
+        self.assertIn("@.aegis/generated/rules.md", open(os.path.join(self.dir, "CLAUDE.md")).read())
+
+    def test_a_thematic_break_and_an_in_repo_symlink_readme(self):
+        from aegis_cli.scaffold import _readme_purpose, _constitution_draft
+        self.assertEqual(_readme_purpose("# W\n\n***\n\nWidgets turns orders into invoices.\n"), "Widgets turns orders into invoices.")
+        self.assertEqual(_readme_purpose("# W\n\n___\n\nWidgets turns orders into invoices.\n"), "Widgets turns orders into invoices.")
+        self.write("docs/README.md", "Widgets turns orders into invoices.\n")
+        if os.path.exists(os.path.join(self.dir, "README.md")):
+            os.remove(os.path.join(self.dir, "README.md"))
+        os.symlink("docs/README.md", os.path.join(self.dir, "README.md"))
+        self.assertIn("turns orders into invoices", _constitution_draft(core.Ctx(self.dir)))
+        self.assertNotIn("reviewed by a human", open(os.path.join(self.dir, ".aegis/constitution.md")).read())
+
     def test_a_readme_outside_the_checkout_is_not_a_purpose(self):
         from aegis_cli.scaffold import _constitution_draft
         outside = tempfile.mkdtemp(prefix="aegis-outside-")
@@ -2512,6 +2529,36 @@ class TheFirstReviewOfTheReissue(ProjectFixture):
         subprocess.run(["git", "-C", self.dir, "commit", "-qm", "r"], check=True)
         self.assertIn("src/orders/résumé.py", core.changed_files(core.Ctx(self.dir), base))
 
+class TheAdoptionKeyIsLiteralAndCarriesTheExecBit(ProjectFixture):
+    """R-12, R-14. `ls-files` takes a pathspec; the exec bit changes what runs."""
+
+    def test_a_glob_looking_name_keys_itself_not_its_neighbour(self):
+        self.write("x1.md", "one\n")
+        self.write("x?.md", "question\n")
+        subprocess.run(["git", "-C", self.dir, "add", "x1.md", "x?.md"], check=True)
+        ctx = core.Ctx(self.dir)
+        self.assertEqual(core._digest_in_index(ctx, "x?.md"), core.content_key(os.path.join(self.dir, "x?.md")))
+        self.assertNotEqual(core._digest_in_index(ctx, "x?.md"), core.content_key(os.path.join(self.dir, "x1.md")))
+
+    def test_chmod_plus_x_changes_the_key_and_a_bare_hash_still_matches(self):
+        self.write("tool", "#!/bin/sh\necho hi\n")
+        full = os.path.join(self.dir, "tool")
+        bare = core.content_key(full)
+        os.chmod(full, 0o755)
+        executable = core.content_key(full)
+        self.assertEqual(executable, "exec:" + bare)
+        self.assertTrue(core.same_key(bare, executable))      # recorded before the rule
+        self.assertFalse(core.same_key(bare, "exec:" + "0" * 64))
+        subprocess.run(["git", "-C", self.dir, "add", "tool"], check=True)
+        self.assertEqual(core._digest_in_index(core.Ctx(self.dir), "tool"), executable)
+
+    def test_a_symlink_target_decodes_the_same_on_both_sides(self):
+        os.symlink("цель.txt", os.path.join(self.dir, "link"))
+        subprocess.run(["git", "-C", self.dir, "add", "link"], check=True)
+        ctx = core.Ctx(self.dir)
+        self.assertEqual(core._digest_in_index(ctx, "link"), core.content_key(os.path.join(self.dir, "link")))
+
+
 class ANonAsciiBaselinedFileLeavesTheBaselineOnceCommitted(unittest.TestCase):
     write = AdoptionRatchetsFromToday.write
 
@@ -2690,6 +2737,8 @@ class TestRunEvidenceIsRead(ProjectFixture):
         ("test result: ok. 7 passed; 0 failed", "ran"),
         ("test result: ok. 0 passed; 0 failed", "none"),
         ("--- PASS: TestFoo (0.00s)\nPASS\nok  example 0.1s", "ran"),
+        ("ok  \texample.com/a\t0.004s [no tests to run]\nPASS", "none"),   # a filter that matched nothing
+        ("PASS\n", "unknown"),                                               # a bare PASS is not a run
         ("no test files", "none"),
         ("12 examples, 0 failures", "ran"),
         ("OK (5 tests, 5 assertions)", "ran"),

@@ -1,0 +1,39 @@
+{
+  "task": "TASK-STABLE-03",
+  "agent": "claude-fable-5.1 (orchestrator and builder)",
+  "summary": "The correctness leftovers of retro 0002 and the lines declined in the last two tasks. R-11: `tests_ran` reads `ok <pkg> … [no tests to run]` as none, a bare PASS is not a run (only `--- PASS:`), `no tests to run` is a no-run phrase. R-12: `_digest_in_index` queries a literal pathspec; the symlink key decodes with os.fsdecode on both sides. R-13 was already delivered (status reports attribution; its lock at the status test) — cited, not re-implemented. R-14: an executable regular file is keyed exec:<sha256> on disk, in the index and at HEAD; `same_key` accepts a bare hash already recorded. R-15: both CI workflows state which half of the gate a push job runs. Scaffold: thematic breaks are rules for the purpose draft; the CLAUDE.md pointer test is the marker, as migrate uses; the constitution's Amendment section matches its header; an in-checkout symlinked README is read. From STABLE-02 round 3: plan lists only names LENS_NAME accepts.",
+  "changed_files": [
+    "scripts/aegis/aegis_cli/checks.py",
+    "scripts/aegis/aegis_cli/core.py",
+    "scripts/aegis/aegis_cli/flow.py",
+    "scripts/aegis/aegis_cli/scaffold.py",
+    "tests/test_aegis.py",
+    ".github/workflows/aegis-gate.yml",
+    "templates/ci/aegis-gate.yml"
+  ],
+  "verification": [
+    {
+      "command": "make lint",
+      "result": "pass"
+    },
+    {
+      "command": "python3 tests/test_aegis.py",
+      "result": "pass",
+      "note": "264 tests"
+    },
+    {
+      "command": "R-27 reverse run: the six new or changed locks against a git archive of 9b85641",
+      "result": "pass",
+      "note": "5 of 6 red there; test_a_symlink_target_decodes_the_same_on_both_sides passes on the old code because this machine's locale is UTF-8, where utf-8 and fsdecode agree — the lock holds the rule, the defect shows only off a UTF-8 locale"
+    }
+  ],
+  "deviations": [
+    "The lease was widened by hand before the claim to templates/** (the CI template R-15 names)."
+  ],
+  "open_questions": [],
+  "new_dependencies": [],
+  "invalidated_assumptions": [],
+  "next_safe_action": "one review round (correctness), gate, land, push; then ADR-3.",
+  "registry_drafts": [],
+  "lease_expansion_request": []
+}

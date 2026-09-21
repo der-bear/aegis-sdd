@@ -792,7 +792,9 @@ def lens_plan(ctx: Ctx, task_id: str, closing_feature: bool = False) -> dict:
     # Which of them must actually run now: the ones with no record, and the ones whose
     # record a moved file of a triggering kind invalidated. A fresh lens is not dispatched.
     reviews = os.path.join(run_dir(ctx, task_id), "reviews")
-    recorded = sorted(n[:-5] for n in os.listdir(reviews) if n.endswith(".json")) if os.path.isdir(reviews) else []
+    # The same name rule as the write path: a hand-placed file in reviews/ is not a lens.
+    recorded = sorted(n[:-5] for n in os.listdir(reviews)
+                      if n.endswith(".json") and LENS_NAME.match(n[:-5])) if os.path.isdir(reviews) else []
     stale: dict[str, str] = {}
     for lens in selected + [lens for lens in recorded if lens not in selected]:
         path = os.path.join(reviews, f"{lens}.json")

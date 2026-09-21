@@ -335,10 +335,21 @@ def content_key(full: str) -> str | None:
         return "symlink:" + os.readlink(full)
     if os.path.isfile(full):
         try:
-            return file_sha256(full)
+            digest = file_sha256(full)
         except OSError:
             return None
+        # The exec bit changes what runs without changing a byte, and `diff_digest` already
+        # counts it; the adoption key dropped it, so `chmod +x` on a baselined path was invisible.
+        return ("exec:" + digest) if os.access(full, os.X_OK) else digest
     return None
+
+
+def same_key(record: str | None, key: str | None) -> bool:
+    """Two content keys for the same content. A bare hash recorded before the exec bit was part
+    of the key still matches an executable holding those bytes."""
+    if record == key:
+        return True
+    return bool(key) and key.startswith("exec:") and key[5:] == record
 
 
 def _git_key(mode: str, blob: bytes) -> str:
@@ -351,10 +362,13 @@ def _git_key(mode: str, blob: bytes) -> str:
     thing ADR-4 exists to make possible.
     """
     if mode == "120000":
-        return "symlink:" + blob.decode("utf-8", "surrogateescape")
+        # `os.fsdecode`, as `content_key` reads the link: the two sides decoded differently off
+        # a UTF-8 locale, and a non-ASCII target never reached the adoption state.
+        return "symlink:" + os.fsdecode(blob)
     # Bytes, not text: a baseline covers binary files too, and decoding them would make two
     # different files hash the same.
-    return hashlib.sha256(blob).hexdigest()
+    digest = hashlib.sha256(blob).hexdigest()
+    return ("exec:" + digest) if mode == "100755" else digest
 
 
 def _blob_key(ctx: Ctx, mode: str, sha: str) -> str | None:
@@ -376,7 +390,9 @@ def _digest_at(ctx: Ctx, rev: str, rel: str) -> str | None:
 
 
 def _digest_in_index(ctx: Ctx, rel: str) -> str | None:
-    entry = git(ctx, "ls-files", "-s", "--", rel).split()
+    # A literal path: `ls-files` takes a pathspec, and a baselined `x?.md` beside `x1.md`
+    # listed both and keyed the wrong one.
+    entry = git(ctx, "ls-files", "-s", "--", ":(literal)" + rel).split()
     if len(entry) < 2:
         return None
     return _blob_key(ctx, entry[0], entry[1])
@@ -399,7 +415,7 @@ def _is_adoption_state(record: str, digest: str | None, at_baseline_head: str | 
         if record == ABSENT:
             return True
         return not absence_is_removal and at_baseline_head is None
-    if digest == record:
+    if same_key(record, digest):
         return True
     return at_baseline_head is not None and digest == at_baseline_head
 
@@ -458,7 +474,7 @@ def _pre_adoption_files(ctx: Ctx, files: set[str]) -> set[str]:
         if record == ABSENT:
             if os.path.lexists(full):
                 continue  # it came back; whoever brought it back owns it
-        elif content_key(full) != record:
+        elif not same_key(record, content_key(full)):
             continue
         at_baseline_head = _digest_at(ctx, head, rel) if known_head else None
         if rel in touched and not _is_adoption_state(
