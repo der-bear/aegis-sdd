@@ -3419,6 +3419,17 @@ class TheDigestIsTheSameInEveryCheckout(ProjectFixture):
         os.chmod(full, 0o664)
         self.assertEqual(self.digest(), clone_like)
 
+    def test_where_git_records_no_modes_the_exec_bit_does_not_move_it(self):
+        subprocess.run(["git", "-C", self.dir, "config", "core.fileMode", "false"], check=True)
+        core._FILE_MODE.pop(self.dir, None)
+        self.make_task()
+        self.write("src/orders/a.py", "A = 1\n")
+        full = os.path.join(self.dir, "src/orders/a.py")
+        os.chmod(full, 0o644)
+        before = self.digest()
+        os.chmod(full, 0o755)
+        self.assertEqual(self.digest(), before)
+
     def test_the_exec_bit_still_moves_it(self):
         self.make_task()
         self.write("src/orders/a.py", "A = 1\n")

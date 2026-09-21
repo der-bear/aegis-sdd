@@ -1,7 +1,7 @@
 {
   "task": "TASK-CLEAN-01",
   "agent": "claude-opus-5 (orchestrator and builder)",
-  "summary": "R-39, what a newcomer reads first says what is true. The version is 0.9.0 in the plugin manifest and the package (1.0 after a third project and one full pull-request cycle). docs/EVALUATION.md is retitled, its intro names every reviewer, §8's closing points forward, and a new §9 covers 2026-09-18..21 — seven tasks and the second project — with rounds, findings and blocking counts counted from the records, who reviewed (the same model as the builder, stated as weaker evidence), lens acceptance from `aegis metrics`, and what it still does not prove; README's pointer to it updated. `init` no longer writes .aegis/product/mission.md and roadmap.md, which nothing read (removed from this repository too). Instructions name 'the <x> lens', not the deleted lens-<x> profiles; the recorder identity lens-<x> in disposition_by is kept, since is_person_name refuses it by that name. The .agents/skills message says 'the copy other runners read'. `aegis metrics` shows its small-sample caveat only when a lens has fewer than ten judged findings. The three one-liners declined in TASK-LENSES-01: flow imports LENS_NAME from config; external-lens.sh counts bytes for the stdin threshold; (the workflow's grep -c FAIL sev-0 was 'none required' and is left). Outside the lease, .aegis/ state: the retro's unmeasured 'eleven' is fifteen, a dated NOTES line says it is dated, the waiver's provenance says policy.delegation was deleted. Round 1 (Sonnet 5, a different model from the builder, after Fable's usage limit ended the first attempt): every number in §9 recomputed from the records and matched; one blocking finding — the caveat test covered only its absence — fixed with a positive-branch test (red on c1da60c); §9 separates the severity-3 finding that held the cap (a count in §8's table, since corrected) from the severity-2 one ADR-5 cites; §8's status cell for TASK-UNBLOCK-03 names its status, merged. R-40, found while recording round 1: I applied the fixes before recording the reports, the records were refused, and restoring the reviewed files with `git checkout` did not reproduce the reviewed digest — git rewrote them at 0644 where they had been 0600. The digest hashed st_mode & 0o777; dozens of tracked files in this checkout are 0600 or 0711, a clone has 0644 and 0755, so the same commit digested differently per checkout, and a pull request's CI run would have found every review stale. The digest now hashes the owner's exec bit and the file type, as git records them; this checkout and a fresh clone agree (540527b573a39a57). Round 1 was recorded at its true digest by recreating the reviewed state exactly — old content, old modes — rather than by editing a record.",
+  "summary": "R-39, what a newcomer reads first says what is true. The version is 0.9.0 in the plugin manifest and the package (1.0 after a third project and one full pull-request cycle). docs/EVALUATION.md is retitled, its intro names every reviewer, §8's closing points forward, and a new §9 covers 2026-09-18..21 — seven tasks and the second project — with rounds, findings and blocking counts counted from the records, who reviewed (the same model as the builder, stated as weaker evidence), lens acceptance from `aegis metrics`, and what it still does not prove; README's pointer to it updated. `init` no longer writes .aegis/product/mission.md and roadmap.md, which nothing read (removed from this repository too). Instructions name 'the <x> lens', not the deleted lens-<x> profiles; the recorder identity lens-<x> in disposition_by is kept, since is_person_name refuses it by that name. The .agents/skills message says 'the copy other runners read'. `aegis metrics` shows its small-sample caveat only when a lens has fewer than ten judged findings. The three one-liners declined in TASK-LENSES-01: flow imports LENS_NAME from config; external-lens.sh counts bytes for the stdin threshold; (the workflow's grep -c FAIL sev-0 was 'none required' and is left). Outside the lease, .aegis/ state: the retro's unmeasured 'eleven' is fifteen, a dated NOTES line says it is dated, the waiver's provenance says policy.delegation was deleted. Round 1 (Sonnet 5, a different model from the builder, after Fable's usage limit ended the first attempt): every number in §9 recomputed from the records and matched; one blocking finding — the caveat test covered only its absence — fixed with a positive-branch test (red on c1da60c); §9 separates the severity-3 finding that held the cap (a count in §8's table, since corrected) from the severity-2 one ADR-5 cites; §8's status cell for TASK-UNBLOCK-03 names its status, merged. R-40, found while recording round 1. In order: I applied round 1's fixes (845c613) before recording its reports, and the records were refused; restoring the two reviewed files with `git checkout` did not reproduce the reviewed digest, because git rewrote them at 0644 where they had been 0600; I recreated the reviewed state exactly — old content, old modes — and recorded round 1 at its true digest; then I made the R-40 fix (0db1eac). The digest hashed st_mode & 0o777; dozens of tracked files in this checkout are 0600 or 0711, a clone has 0644 and 0755, so the same commit digested differently per checkout, and a pull request's CI run would have found every review stale. The digest now hashes the owner's exec bit and the file type, as git records them; this checkout and a fresh clone agree (540527b573a39a57, confirmed independently by the round-2 reviewer in its own clone). Round 2 (Sonnet 5): all three pass; the one advisory, taken — where git records no modes (core.fileMode=false) the digest now ignores the exec bit too, as content_key does.",
   "changed_files": [
     ".aegis/memory/NOTES.md",
     ".aegis/memory/retros/0003.md",
@@ -27,7 +27,7 @@
     {
       "command": "python3 tests/test_aegis.py",
       "result": "pass",
-      "note": "289 tests"
+      "note": "290 tests"
     },
     {
       "command": "aegis gate --stage bootstrap",
@@ -42,6 +42,11 @@
       "command": "lens plan in this checkout and in a fresh clone with the same changes",
       "result": "pass",
       "note": "540527b573a39a57 in both"
+    },
+    {
+      "command": "R-27 reverse run: test_where_git_records_no_modes_the_exec_bit_does_not_move_it against a git archive of 0db1eac",
+      "result": "pass",
+      "note": "red there"
     }
   ],
   "deviations": [
@@ -53,7 +58,7 @@
   "invalidated_assumptions": [
     "the retro's 'R-33 produced eleven findings' — the records say fifteen"
   ],
-  "next_safe_action": "round 2 (all lenses: core.py moved), reconciling round 1 by id; gate, land, push, CI.",
+  "next_safe_action": "round 3 (the cap): reconcile round 2's one advisory; gate, land, push, CI.",
   "registry_drafts": [],
   "lease_expansion_request": []
 }

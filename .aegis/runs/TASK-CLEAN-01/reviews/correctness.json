@@ -1,22 +1,26 @@
 {
-  "diff_digest": "c82cb425d111644f",
+  "diff_digest": "540527b573a39a57",
   "files": {
     ".aegis/runs/TASK-CLEAN-01/manifest.json": "contract:44b3f56d3ce48052eb7fbfe03134b0e870f3487ce4f5d617a393f95002cc4428",
-    ".aegis/specs/simple-reliable/spec.md": "7b259c6a5c4a2b24cd917876940437777fe5ce0d9ebf56ebd9952d777309611e",
+    ".aegis/specs/simple-reliable/spec.md": "af1f17739417996421eeeb9f12bd7196906b05b58822bff9f262b20a4a07c51d",
     ".aegis/waivers.json": "2958d5403e264035abc1ecb42b7f943504c3c35179eb7977fa1ab7c29df0541f",
     ".claude-plugin/plugin.json": "037a9dfab741facf875735da9ce0ed5c62c200eda1b67253385cb22aa4b16ab6",
     "README.md": "a7be128bf4692ecd706d502c9f0e33d3c472c64de4a67073531cc86952b0eadd",
-    "docs/EVALUATION.md": "1c8ae6d5d08a355a44c0a030179ccb9f0b9f71b56fc478d61d508ecad7586e7f",
+    "docs/EVALUATION.md": "f9600bdf7f1d77ea90df77a0d1fb34b60e565d0478f25bf20284e44777bc7ce1",
     "scripts/aegis/aegis_cli/__init__.py": "479c53bcb41e544fa5eb337e3cb42385cb87acf801526b9db039077b4cea4740",
     "scripts/aegis/aegis_cli/checks.py": "60a7019822c968149ada27217aa4d1822de70614280a6d3ac3b1aa9b60301ae0",
+    "scripts/aegis/aegis_cli/core.py": "488adab2cc0a8a4381b5f9d896927ec33283eb355e425d165569ea67c304e776",
     "scripts/aegis/aegis_cli/flow.py": "6501c76c52b14385421ebcbbbfd494db4ad24032400e5ed74a2308825d9c20fb",
     "scripts/aegis/aegis_cli/scaffold.py": "22ef57bf92ba3ca952e5d996235ec1b4d004e1723d9a98f0ab2cf7a6616aa67d",
     "scripts/aegis/external-lens.sh": "exec:610c26163344de55cf75070a56320fc2100851b56eebabb0e2f0e1903dffed80",
-    "tests/test_aegis.py": "4fcb7ad25bcc4ab722dbaeccebe8c610febcefeb2e6f33cfc8dcfef4004e25b1"
+    "tests/test_aegis.py": "7f91a69d187c829ee9635db38171bb0e85c6490c6c6c8c90aed189c0f2be28b9"
   },
   "findings": [
     {
-      "disposition": "open",
+      "disposition": "fixed",
+      "disposition_at": "2026-09-22T01:59:09",
+      "disposition_by": "lens-correctness",
+      "disposition_reason": "lens-correctness round 2: test_a_small_sample_is_named (845c613) seeds security=3/correctness=12 findings and asserts the caveat names security, not correctness; red on c1da60c, green on HEAD.",
       "first_seen_round": 1,
       "id": "F-a7c24d4c",
       "line": 3412,
@@ -29,6 +33,21 @@
         1
       ],
       "severity": 3
+    },
+    {
+      "disposition": "open",
+      "first_seen_round": 2,
+      "id": "F-f9d9e336",
+      "line": 577,
+      "message": "diff_digest hashes the local exec bit unconditionally, but content_key/review_snapshot gate the same bit on file_mode_tracked(ctx), so on a core.fileMode=false checkout the digest still varies with the local exec bit even though git doesn't track it there. Demonstrated in a scratch repo: identical content under core.fileMode=false, digest differs between local modes 0644 and 0755 — the same checkout-dependence R-40 exists to close, for that config.",
+      "minimal_fix": "Gate the marker like content_key does: 'x' if file_mode_tracked(ctx) and stat.st_mode & 0o100 else '-'.",
+      "path": "scripts/aegis/aegis_cli/core.py",
+      "raised_digest": "540527b573a39a57",
+      "requirement": "R-40",
+      "rounds": [
+        2
+      ],
+      "severity": 2
     }
   ],
   "kinds": {
@@ -57,6 +76,10 @@
       "auth",
       "code"
     ],
+    "scripts/aegis/aegis_cli/core.py": [
+      "auth",
+      "code"
+    ],
     "scripts/aegis/aegis_cli/flow.py": [
       "auth",
       "code"
@@ -73,11 +96,11 @@
     ]
   },
   "lens": "correctness",
-  "recorded": "2026-09-22T01:31:05",
+  "recorded": "2026-09-22T01:59:09",
   "reopened": [],
-  "report_tokens": 206,
+  "report_tokens": 333,
   "reviewer": "sonnet-5",
-  "round": 1,
+  "round": 2,
   "task": "TASK-CLEAN-01",
-  "verdict": "fail"
+  "verdict": "pass"
 }
