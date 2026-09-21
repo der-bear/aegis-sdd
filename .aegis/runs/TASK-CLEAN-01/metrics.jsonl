@@ -15,3 +15,4 @@
 {"at": "2026-09-22T02:31:58", "blocking": 0, "event": "lens", "findings": 0, "lens": "design", "round": 3, "task": "TASK-CLEAN-01", "verdict": "pass"}
 {"at": "2026-09-22T02:34:48", "event": "status", "task": "TASK-CLEAN-01", "value": "gated"}
 {"at": "2026-09-22T02:34:48", "event": "gate", "failing_checks": [], "passed": true, "seconds": 169.8, "stage": "task", "task": "TASK-CLEAN-01"}
+{"at": "2026-09-22T02:37:53", "event": "status", "task": "TASK-CLEAN-01", "value": "merged"}
