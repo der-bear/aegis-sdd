@@ -71,12 +71,19 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
   (`@.aegis/generated/rules.md`) as `migrate` uses, not the word "aegis"; the constitution
   template's `## Amendment` section still asks for a human-reviewed PR; drop `islink` and keep the
   realpath test. No task carries them yet; TASK-STABLE-03 (the correctness leftovers of retro 0002) is the natural carrier.
-- TASK-STABLE-02 (R-9, R-10): built and verified (255 tests), **not reviewed, not landed** — the
-  owner closed the session before the review round. Resume with `aegis next`: it says review;
-  the plan names correctness, security and design at tier A. Then STABLE-03 (R-11..R-15 plus the
-  four scaffold lines), then ADR-3 — the historical patch for it is at commit 1277dbe under
-  `.aegis/changes/universal-01/` (written against the pre-deletion code; anchors will need redoing).
-- TASK-STABLE-03 (R-11..R-15) planned and small.
+- 2026-09-21, three tasks landed and pushed, CI green on each: TASK-STABLE-02 (R-9 per-lens
+  staleness by the kinds that moved, with the record remembering what each file was; R-10 the
+  doc-manager verifies and attests under its own name — three rounds), TASK-STABLE-03 (R-11..R-15
+  and the declined lines: the go no-run suffix behind coverage text, the owner's exec bit as git
+  reads it, the pointer marker, the literal pathspec — three rounds), TASK-LENSES-01 (ADR-3: lenses,
+  roles and engines are data; `lenses/<name>.md`, two auditor profiles, `aegis lens prompt`,
+  `external-lens.sh` for any engine; the historical package from 1277dbe applied with two anchors
+  redone — three rounds). Per-lens staleness paid for itself the same day: two cap rounds ran one
+  lens instead of three.
+- Declined in writing, one line each, for the next task that touches the lens tooling:
+  flow.LENS_NAME duplicates config.LENS_FILE_NAME (import the twin); external-lens.sh's 100 KB
+  stdin threshold counts characters, not bytes (`wc -c`); the workflow's `grep -c FAIL` over
+  `check docs` reads an exit-2 error as zero doc work (the task gate still refuses).
 - Published: https://github.com/der-bear/aegis-sdd (public, MIT); `main` pushed through the
   pre-push gate on 2026-09-19, and the first CI run of the merge gate was green in 1m12s.
 - Constitution signature: the owner's.
@@ -85,7 +92,7 @@ writer of a one-place status — and nine circles in the loop; all closed in `fa
 
 ## How to verify the current state
 
-    make check                          # 255 tests + bootstrap gate
-    python3 tests/test_aegis.py         # the same 255
+    make check                          # 279 tests + bootstrap gate
+    python3 tests/test_aegis.py         # the same 279
     scripts/aegis/aegis next
     scripts/aegis/aegis status
